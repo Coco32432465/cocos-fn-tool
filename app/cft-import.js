@@ -15,18 +15,18 @@
   CFT.myName = CFT.myName || '';
 
   /* ------------------------------------------------------------------ Kalibrierung */
-  var DEFAULT_H = 131072;
-  CFT.cal = CFT.cal || { swap: false, fx: false, fy: false, H: 131072, ox: 0, oy: 0, saved: false };
+  var DEFAULT_H = 153000;
+  CFT.cal = CFT.cal || { swap: false, fx: false, fy: false, H: 153000, ox: 0, oy: 0, saved: false };
   try {
     if (root.localStorage) {
-      var sv = JSON.parse(root.localStorage.getItem('cft_cal3') || 'null');
+      var sv = JSON.parse(root.localStorage.getItem('cft_cal4') || 'null');
       if (sv && sv.H) { for (var k in sv) CFT.cal[k] = sv[k]; CFT.cal.saved = true; }
     }
   } catch (e) { /* ohne Speicher weiterarbeiten */ }
 
   CFT.saveCal = function () {
     CFT.cal.saved = true;
-    try { root.localStorage.setItem('cft_cal3', JSON.stringify(CFT.cal)); } catch (e) { /* egal */ }
+    try { root.localStorage.setItem('cft_cal4', JSON.stringify(CFT.cal)); } catch (e) { /* egal */ }
   };
 
   /** Weltkoordinate (cm) -> Position auf dem Kartenbild (0..1) */
@@ -45,7 +45,7 @@
     ['Lifty Lodge', 0.333, 0.150], ['Freaky Fields', 0.600, 0.235], ['Wonkeeland', 0.745, 0.305], ['Chopped Shop', 0.172, 0.330],
     ['Nightmare Neighborhood', 0.428, 0.372], ['Green Hill Zone', 0.317, 0.483], ["Reality's Reign", 0.545, 0.490],
     ['Golden Grove', 0.789, 0.539], ['Stone Sanctum', 0.456, 0.631], ['Shaken Sanctuary', 0.667, 0.676],
-    ['Heatwave Harbor', 0.222, 0.683], ['Sunken Shores', 0.433, 0.794], ['Cluster Coast', 0.733, 0.813], ['Roter-Geist-Insel', 0.295, 0.820]
+    ['Heatwave Harbor', 0.222, 0.683], ['Sunken Shores', 0.433, 0.794], ['Cluster Coast', 0.733, 0.813], ['Roter-Geist-Insel', 0.313, 0.803]
   ];
   /** nächster Ort zu einer Weltposition; innerhalb ~9 % der Kartenbreite = "in", sonst "bei" */
   CFT.poiAt = function (wx, wy) {
@@ -141,7 +141,7 @@
 
     /* --- Zeitnullpunkt: der Parser setzt t0 selbst. Falls nicht (Zeiten absolut), normalisieren wir hier --- */
     /* Lobby-/Vorstart-Positionen weit außerhalb der Karte (vor dem Bus) abschneiden */
-    var LIM = 150000;
+    var LIM = 170000;
     P.forEach(function (p) {
       var i0 = 0;
       while (i0 < p.pts.length && (Math.abs(p.pts[i0][1]) > LIM || Math.abs(p.pts[i0][2]) > LIM)) i0++;

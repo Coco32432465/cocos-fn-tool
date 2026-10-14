@@ -1192,12 +1192,12 @@ $('vimp').onclick=function(){$('fi').click()};
 
 window.vSeek=function(t){seek(t)};
 /* Kalibrierung */
-function calUI(){var c=CF.cal;$('c_sw').checked=!!c.swap;$('c_fx').checked=!!c.fx;$('c_fy').checked=!!c.fy;$('c_h').value=Math.round(c.H||131072);$('c_ox').value=c.ox||0;$('c_oy').value=c.oy||0}
-function calSet(){var c=CF.cal;c.swap=$('c_sw').checked;c.fx=$('c_fx').checked;c.fy=$('c_fy').checked;c.H=Math.max(20000,+$('c_h').value||131072);c.ox=+$('c_ox').value;c.oy=+$('c_oy').value;CF.saveCal();draw()}
+function calUI(){var c=CF.cal;$('c_sw').checked=!!c.swap;$('c_fx').checked=!!c.fx;$('c_fy').checked=!!c.fy;$('c_h').value=Math.round(c.H||153000);$('c_ox').value=c.ox||0;$('c_oy').value=c.oy||0}
+function calSet(){var c=CF.cal;c.swap=$('c_sw').checked;c.fx=$('c_fx').checked;c.fy=$('c_fy').checked;c.H=Math.max(20000,+$('c_h').value||153000);c.ox=+$('c_ox').value;c.oy=+$('c_oy').value;CF.saveCal();draw()}
 ['c_sw','c_fx','c_fy','c_h','c_ox','c_oy'].forEach(function(id){$(id).oninput=calSet;$(id).onchange=calSet});
 $('mc').onclick=function(){calUI();$('cal').hidden=!$('cal').hidden};
 $('c_x').onclick=function(){$('cal').hidden=true};
-$('c_auto').onclick=function(){CF.cal.saved=false;CF.cal.H=131072;CF.cal.ox=0;CF.cal.oy=0;CF.cal.swap=false;CF.cal.fx=false;CF.cal.fy=false;try{localStorage.removeItem('cft_cal3')}catch(e){}
+$('c_auto').onclick=function(){CF.cal.saved=false;CF.cal.H=153000;CF.cal.ox=0;CF.cal.oy=0;CF.cal.swap=false;CF.cal.fx=false;CF.cal.fy=false;try{localStorage.removeItem('cft_cal4')}catch(e){}
  var g=CF.games.filter(function(x){return x.real===R})[0]||CF.games[0];if(g)CF.autoScale(g);calUI();draw()};
 
 if(window.ResizeObserver)new ResizeObserver(function(){if(document.body.classList.contains('vw')){size();draw()}}).observe($('stage'));
