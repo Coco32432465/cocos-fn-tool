@@ -15,6 +15,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.9.1', date: '2026-10-14', tag: 'NEU', text: 'Karten-Legende unter der Karte, dezente rote Gegner-Punkte, Zonen immer lila, du immer im Vordergrund (grün), rotes „!“ für Kills in der Timeline, HUD-Daten (Leben, Schild, Mats, Waffen, Muni) mit klarem Hinweis, wenn sie im Replay fehlen' },
   { v: '0.9.0', date: '2026-10-14', tag: 'NEU', text: 'Feinschliff: fester Analyse-Kasten, Dashboard ohne Scrollen, Muni in den Spielerkarten, Gegner als rote Punkte, Zone-einpassen-Button, Schwarz-Blau als Standard, neues transparentes Icon, Fade-Out-Spur, Spielerzahl max. 100' },
   { v: '0.8.9', date: '2026-10-14', tag: 'NEU', text: 'Dashboard scrollt nicht mehr als Ganzes (Spalten scrollen einzeln). Neue Leben-Tipps: „Wenig HP bei Zonenstart“ und „Heilung nicht genutzt“. Replays werden einmal neu eingelesen, damit Leben & Inventar erscheinen' },
   { v: '0.8.8', date: '2026-10-14', tag: 'FIX', text: 'Live Analysis: Pfeile ‹ › springen jetzt korrekt zum vorherigen/nächsten Fehler (nichts wird mehr übersprungen); Karte um ca. 35 m nachjustiert' },

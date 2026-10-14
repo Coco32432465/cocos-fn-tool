@@ -89,7 +89,8 @@
   var F_BUS = 1, F_SKY = 2, F_DBNO = 16, F_STORM = 32, F_CHUTE = 64, F_AIR = 1 | 2 | 64;
   /* Leben/Schild + Inventar (nur fuer den Replay-Besitzer vorhanden) */
   function seriesAt(a, t) {
-    if (!a || !a.length || t < a[0][0] - 1) return null;
+    if (!a || !a.length) return null;
+    if (t < a[0][0]) return a[0];
     var lo = 0, hi = a.length - 1;
     if (t >= a[hi][0]) return a[hi];
     while (hi - lo > 1) { var m = (lo + hi) >> 1; if (a[m][0] <= t) lo = m; else hi = m; }
@@ -103,13 +104,14 @@
     if (/wads|goldbar|currency_gold/.test(n)) return { k: 'gold' };
     if (/ammo/.test(n)) return { k: 'ammo', l: /shell/.test(n) ? 'Shells' : /rocket/.test(n) ? 'Raketen' : /energy|cell/.test(n) ? 'Energie' : /heavy/.test(n) ? 'Schwer' : /medium/.test(n) ? 'Mittel' : /light/.test(n) ? 'Leicht' : 'Muni' };
     if (/pickaxe|harvest|buildingitem|edittool|^wall|^floor|^stair|^roof|^trap_|emote|spray|toy|contrail|glider/.test(n)) return { k: 'skip' };
-    var r = /_sr_|legendary|_t05/.test(n) ? 5 : /_vr_|epic|_t04/.test(n) ? 4 : /_r_|rare|_t03/.test(n) ? 3 : /_uc_|uncommon|_t02/.test(n) ? 2 : 1;
+    var r = /_sr(_|$)|legendary|_t05/.test(n) ? 5 : /_vr(_|$)|epic|_t04/.test(n) ? 4 : /_uc(_|$)|uncommon|_t02/.test(n) ? 2 : /_r(_|$)|rare|_t03/.test(n) ? 3 : 1;
     if (/chug/.test(n)) return { k: 'heal', l: 'Chug Jug', n: 'chug' };
     if (/shieldsmall|minishield|mini/.test(n)) return { k: 'heal', l: 'Mini-Schild', n: 'mini' };
     if (/shield|slurp|bigpot/.test(n) && !/shotgun|shockwave/.test(n)) return { k: 'heal', l: /slurp/.test(n) ? 'Slurp' : 'Schild', n: 'shield' };
     if (/bandage/.test(n)) return { k: 'heal', l: 'Bandage', n: 'bandage' };
     if (/medkit/.test(n)) return { k: 'heal', l: 'Medkit', n: 'medkit' };
     if (/fish|mushroom|apple|banana|coconut|pepper|corn|slurpfish|potion|splash/.test(n)) return { k: 'heal', l: 'Food', n: 'food' };
+    if (/hook_?gun|grappl/.test(n)) return { k: 'util', l: 'Enterhaken', r: r };
     if (/shotgun/.test(n)) return { k: 'wpn', l: 'SG', r: r };
     if (/smg|submachine|combat_smg|burst_?smg/.test(n)) return { k: 'wpn', l: 'SMG', r: r };
     if (/sniper|dmr|bolt|heavy_?sniper/.test(n)) return { k: 'wpn', l: 'SNP', r: r };
@@ -119,8 +121,9 @@
     if (/^wid_|weapon/.test(n)) return { k: 'wpn', l: 'WPN', r: r };
     return { k: 'util', l: 'Item', r: r };
   }
-  CFT.vitAt = function (p, t) { var e = seriesAt(p.vit, t); return e ? { hp: e[1], sh: e[2] } : null; };
+  CFT.vitAt = function (p, t) { if (!p.vit || p.vit.length < 5) return null; var e = seriesAt(p.vit, t); return e ? { hp: e[1], sh: e[2] } : null; };
   CFT.invAt = function (p, t, names) {
+    if (!p.inv || p.inv.length < 2) return null;
     var e = seriesAt(p.inv, t);
     if (!e) return null;
     var o = { wood: 0, stone: 0, metal: 0, gold: 0, wpn: [], heal: {}, util: [], ammo: {} };
@@ -640,7 +643,7 @@
         ? e.kn + (e.down ? ' schießt ' : ' eliminiert ') + e.vn + (e.down ? ' nieder' : '') + dd
         : e.vn + (e.down ? ' wurde niedergeschossen' : ' ist ausgeschieden');
       var c = (kt || vt) ? (e.down ? '#fbbf77' : (kt ? A : '#f4f4f5')) : '#ffffff22';
-      var item = { t: e.t, mk: kt || vt, c: c, txt: txt };
+      var item = { t: e.t, mk: kt || vt, c: c, txt: txt, kill: kt && !e.down };
       if (!e.down && e.v != null) item.e = { t: e.t, v: e.v, k: e.k != null ? e.k : 999 };
       feed.push(item);
     });

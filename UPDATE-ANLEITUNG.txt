@@ -96,3 +96,7 @@ v0.9.0:
 - Live-Analysis-Kasten hat feste Hoehe (springt nicht mehr). Muni-Zeile in den Spielerkarten. Gegner rot. Button "Zone einpassen" (Kreis-Symbol) an der Karte.
 - Standard-Theme: Schwarz-Blau (gespeicherte Wahl bleibt). Icon (app/icon.png, icon.ico, build/icon.ico) mit transparentem Hintergrund neu erstellt.
 - Spur = nur die letzten ~28 s, verblasst. Spielerzahl am Start max. 100.
+
+v0.9.1:
+- Legende unter der Karte, Gegner dezent rot, Zonen lila (alle Themes), eigener Spieler gruen und zuoberst gezeichnet, rotes ! bei Team-Kills in der Timeline.
+- HUD-Mapping geprueft (mit echter Parser-Ausgabe): Leben/Schild/Waffen/Muni/Mats kommen an; Hinweise statt leerer Boxen.
