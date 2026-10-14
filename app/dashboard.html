@@ -392,6 +392,33 @@ main .center>.slider{flex:1 1 260px;min-height:200px}
 .fokusl li div{flex:1;min-width:0}.fokusl b{display:block;font-size:15px;line-height:1.15}.fokusl small{color:var(--mute);font-size:12px}
 .fokusl li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:4px 10px}.fokusl li .imp2{grid-column:2;justify-self:start;font-size:11px;padding:4px 8px}.fokusl small{display:block}
 @media (max-width:760px){.fb{grid-template-columns:1fr}.ft .tt b{font-size:16px}}
+
+/* ===== v0.9.3 Update-Modal, Discord/Lizenz ===== */
+#updm,#lic{position:fixed;inset:0;z-index:95;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(3,5,12,.78);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+#updm{z-index:99}
+#updm.on,#lic.on{display:flex;animation:fade .3s}
+.mbox{width:min(480px,100%);padding:30px 30px 26px;border-radius:18px;text-align:center;background:linear-gradient(180deg,rgba(24,24,32,.96),rgba(12,12,18,.98));border:1px solid rgba(var(--rgb),.6);box-shadow:0 0 0 1px rgba(var(--rgb),.25),0 0 60px rgba(var(--rgb),.35),0 30px 80px #000}
+.mbox .mic{width:62px;height:62px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--acc);background:rgba(var(--rgb),.14);box-shadow:0 0 26px rgba(var(--rgb),.5)}
+.mbox .mic svg{width:30px;height:30px;stroke:var(--acc);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.mbox h2{font:800 22px 'Orbitron',sans-serif;letter-spacing:.06em;color:#fff;text-shadow:0 0 22px rgba(var(--rgb),.5)}
+.mbox p{margin:10px 0 0;color:#b8b8c6;font-size:16px;line-height:1.35}
+.mbox .mr{display:flex;gap:10px;margin-top:22px;justify-content:center;flex-wrap:wrap}
+.mbox .mr .go{flex:1 1 180px;padding:12px 18px;font-size:15px}
+.mbox .mr .gh{padding:12px 18px;border-radius:10px;border:1px solid var(--line);color:var(--mute);transition:.2s}.mbox .mr .gh:hover{border-color:var(--acc);color:var(--txt)}
+.mbox label{display:block;text-align:left;margin-top:16px;font:700 11px 'Orbitron',sans-serif;letter-spacing:.12em;color:var(--mute);text-transform:uppercase}
+.mbox input{width:100%;margin-top:6px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:#0A0A0C;color:var(--txt);font:600 17px 'Rajdhani',sans-serif;letter-spacing:.04em;outline:none;transition:.2s}
+.mbox input:focus{border-color:var(--acc);box-shadow:0 0 16px rgba(var(--rgb),.35)}
+.mbox input.key{font-family:'Orbitron',sans-serif;font-size:15px;letter-spacing:.14em;text-align:center;text-transform:uppercase}
+.mbox .lst{min-height:22px;margin-top:12px;font-size:14px;color:var(--mute)}.mbox .lst.ok{color:#4ade80}.mbox .lst.bad{color:#ff5a67}
+.mbox .lnk2{display:inline-block;margin-top:12px;color:var(--acc-light,var(--acc));font-size:14px;text-decoration:underline;cursor:pointer}
+#mdc{position:absolute;top:22px;right:28px;z-index:2;display:flex;align-items:center;gap:10px;padding:9px 15px;border-radius:11px;background:#ffffff0a;border:1px solid rgba(var(--rgb2),.4);color:var(--txt);transition:.2s;text-align:left}
+#mdc:hover{background:rgba(var(--rgb),.1);box-shadow:0 0 18px rgba(var(--rgb),.3)}
+#mdc svg{width:22px;height:22px;fill:#e8e8ee;flex:none}
+#mdc small{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);line-height:1}
+#mdc strong{display:block;font-size:15px;line-height:1.15}
+#mdc.on{background:#22c55e1a;border-color:#22c55e66}#mdc.on strong{color:#4ade80}
+#mdc.warn{border-color:#fb923c88}#mdc.warn strong{color:#fb923c}
+.mt.locked{filter:saturate(.5)}
 /* ===== v0.8.6 Review-Layout: 2 Spalten, Tabs rechts ===== */
 .vgrid{grid-template-columns:minmax(0,1fr) 400px;gap:16px;padding:14px 18px}
 .vr{overflow:hidden;gap:10px}
@@ -923,6 +950,7 @@ header .mbtn{margin-right:14px}
   </div>
 </div>
 <div id="menu" role="dialog" aria-label="Modus wählen">
+  <button id="mdc" type="button" aria-label="Discord verknüpfen"><svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.2a18.3 18.3 0 0 0-5.6 0L8.6 3a19.7 19.7 0 0 0-4.9 1.4C.6 9 0 13.5.3 18a19.9 19.9 0 0 0 6 3l1.3-2.1c-.7-.3-1.4-.6-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.9 19.9 0 0 0 6-3c.4-5.2-.7-9.7-3.4-13.6ZM8.5 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.1 1.1 2.1 2.4-.9 2.4-2.1 2.4Zm7 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.1 1.1 2.1 2.4-.9 2.4-2.1 2.4Z"/></svg><span><small>Discord</small><strong id="mdcs">Verknüpfen</strong></span></button>
   <div class="mh"><small>Coco's Fn Tool</small><h1>SELECT A MODE</h1></div>
   <div class="tiles">
   <button class="mt soon" tabindex="0" aria-disabled="true"><svg class="art" viewBox="0 0 200 150" aria-hidden="true"><path d="M34 96c-8-26 8-52 34-58 10-18 40-22 54-6 22 0 40 18 36 42-4 20-26 30-50 26-14 10-40 12-52 0-12-2-20-2-22-4z" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M18 30L180 118" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="3 6" opacity=".55"/><path d="M60 92c20-6 30-20 52-18s28-12 40-22" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="6 5"/><path d="M152 52a12 12 0 1 1 .1 0z" fill="var(--acc)"/><circle cx="152" cy="46" r="4" fill="#0A0A0C"/><circle cx="60" cy="92" r="5" fill="var(--acc2)"/></svg><h2>DROP MAP &amp; ROUTES</h2><p>Landing-Spots planen &amp; Loot-Routen analysieren</p><span class="badge">Demnächst</span></button>
@@ -933,6 +961,13 @@ header .mbtn{margin-right:14px}
   </div>
   <div class="mf">Weitere Modi werden freigeschaltet</div>
 </div>
+<div id="updm" role="alertdialog" aria-modal="true" aria-labelledby="updmt"><div class="mbox"><div class="mic"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></div><h2 id="updmt">Update <span id="updmv"></span> ist bereit</h2><p>Die neue Version ist heruntergeladen. Starte die App neu, um sie zu installieren – das dauert nur einen Moment.</p><div class="mr"><button class="go" id="updmgo">Jetzt neu starten</button><button class="gh" id="updml">Später</button></div></div></div>
+<div id="lic" role="dialog" aria-modal="true" aria-labelledby="lict"><div class="mbox"><div class="mic"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><h2 id="lict">Discord &amp; Lizenz</h2><p id="licp">Verknüpfe deinen Discord-Account und gib deinen Lizenz-Key ein, um die VOD-Analyse freizuschalten.</p>
+<label for="licd">Discord-Name</label><input id="licd" autocomplete="off" placeholder="z. B. coco#0001 oder coco">
+<label for="lick">Lizenz-Key eingeben</label><input id="lick" class="key" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19">
+<div class="lst" id="lics"></div>
+<div class="mr"><button class="go" id="licgo">Aktivieren</button><button class="gh" id="licl">Später</button></div>
+<a class="lnk2" id="licj">Discord-Server beitreten</a></div></div>
 <div id="veil"></div>
 <div id="toast" role="status"></div>
 <script src="cft-import.js"></script>
@@ -1027,7 +1062,7 @@ function analyze(paths,openFirst,quiet){
   if(!done.length)return;
   var g=done[done.length-1];
   if(quiet){toast(done.length+' neue'+(done.length===1?'s Replay':' Replays')+' analysiert');return g}
-  if(done.length>1)toast(done.length+' Replays analysiert – Cup-Report ist bereit');
+  if(done.length>1)toast(done.length+' Replays analysiert – '+cftReportName().cap+' ist bereit');
   else toast('Fertig: '+(g.m.pl>0?'Platz #'+g.m.pl+' · ':'')+g.m.k+' Elims · Note '+g.m.g);
   if(openFirst)openViewer(g.m);return g})}
 /* neue Replays im Ordner automatisch im Hintergrund analysieren (Einstellung: config.js) */
@@ -1182,6 +1217,14 @@ function draw(){
   ctx.restore()}
  V.F.forEach(function(f){if(f.e&&f.mk&&f.e.v!=null&&V.P[f.e.v]){var age=t-f.t;if(age>=0&&age<4){var a=pos(V.P[f.e.v],f.t);ctx.strokeStyle='rgba('+THEME.rgb+','+(1-age/4)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(a[0]),Y(a[1]),6+age*10,0,6.2832);ctx.stroke()}}});
  (V.H||[]).forEach(function(h){var age=t-h.t;if(age>=0&&age<3){var a=pos(V.P[0],t),b=pos(V.P[h.f],t),k=1-age/3;ctx.save();ctx.strokeStyle='rgba(255,59,74,'+k+')';ctx.lineWidth=2;ctx.shadowColor='#ff3b4a';ctx.shadowBlur=10;ctx.beginPath();ctx.moveTo(X(a[0]),Y(a[1]));ctx.lineTo(X(b[0]),Y(b[1]));ctx.stroke();ctx.fillStyle='rgba(255,110,130,'+k+')';ctx.font='800 15px Orbitron,sans-serif';ctx.fillText('\u2212'+h.d,X(a[0])+10,Y(a[1])-8-age*10);ctx.restore()}});
+ if(R){
+  function shot(k,v,tt,alpha,dash){var A=V.P[k],B=V.P[v];if(!A||!B||(CF.started&&!CF.started(A.real,tt)))return;var a=pos(A,tt),b=pos(B,tt),ax=X(a[0]),ay=Y(a[1]),bx=X(b[0]),by=Y(b[1]),ang=Math.atan2(by-ay,bx-ax),r=7;
+   ctx.save();ctx.strokeStyle='rgba(255,70,84,'+alpha+')';ctx.fillStyle='rgba(255,70,84,'+alpha+')';ctx.lineWidth=2;if(dash)ctx.setLineDash([5,4]);
+   ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx-Math.cos(ang)*r,by-Math.sin(ang)*r);var ss=ctx.strokeStyle;ctx.strokeStyle='rgba(10,10,12,'+alpha*.75+')';ctx.lineWidth=5.5;ctx.stroke();ctx.strokeStyle=ss;ctx.lineWidth=2.6;ctx.stroke();ctx.setLineDash([]);
+   ctx.beginPath();ctx.moveTo(bx-Math.cos(ang)*r,by-Math.sin(ang)*r);ctx.lineTo(bx-Math.cos(ang)*(r+9)+Math.sin(ang)*5,by-Math.sin(ang)*(r+9)-Math.cos(ang)*5);ctx.lineTo(bx-Math.cos(ang)*(r+9)-Math.sin(ang)*5,by-Math.sin(ang)*(r+9)+Math.cos(ang)*5);ctx.closePath();ctx.fill();
+   ctx.beginPath();ctx.arc(ax,ay,5.5,0,6.2832);ctx.lineWidth=1.5;ctx.stroke();ctx.restore()}
+  V.F.forEach(function(f){if(!f.h)return;var age=t-f.t;if(age>=-2.5&&age<=1.5)shot(f.h.k,f.h.v,Math.min(t,f.t),Math.max(.15,1-Math.max(0,age)/1.5)*.95,false)});
+  (R.hits||[]).forEach(function(h){var age=t-h.t;if(age>=0&&age<1.6)shot(h.k,0,t,(1-age/1.6)*.8,true)})}
  var al=0,ke=0;function drawP(p,i){var a=pos(p,t),x=X(a[0]),y=Y(a[1]),dead=p.dead!=null&&t>=p.dead;if(!dead)al++;
   if(R&&!CF.started(p.real,t))return;
   if(dead){ctx.strokeStyle=i<TN?TC[i]:'#e5383b99';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-4,y-4);ctx.lineTo(x+4,y+4);ctx.moveTo(x+4,y-4);ctx.lineTo(x-4,y+4);ctx.stroke();return}
@@ -1269,7 +1312,7 @@ function updCards(t){
    var dz=(q&&zs)?Math.hypot(q[0]-zs.c[0],q[1]-zs.c[1])/100-zs.c[2]/100:null,dm=(q&&mp&&i>0)?Math.round(Math.hypot(q[0]-mp[0],q[1]-mp[1])/100):null;
    var vt=CF.vitAt(p.real,t);
    if(vt){var hv=dead?0:vt.hp,sv=dead?0:vt.sh;bars=bar('hp','LEBEN',hv,100)+bar('sh','SCHILD',sv,100)}
-   else bars='<div class="nod">'+(i===0?'Diese Datei enthält keine HUD-Daten (Leben, Mats, Waffen). Das Replay muss mit dem neuen Parser einmal neu eingelesen werden.':'Leben &amp; Schild von Mitspielern stehen nicht im Replay.')+'</div>';
+   else bars='<div class="nod">'+(i===0?(R.hasNet?'Für dich wurden in diesem Replay keine Leben-Werte aufgezeichnet.':'Diese Datei enthält keine HUD-Daten (Netzwerkdaten). Das Replay muss mit dem neuen Parser einmal neu eingelesen werden.'):'Leben &amp; Schild von Mitspielern stehen nicht im Replay.')+'</div>';
    var iv=CF.invAt(p.real,t,R.invNames||[]);
    if(!iv&&i===0&&vt)inv='<div class="note">In diesem Replay wurde kein Inventar aufgezeichnet.</div>';
    if(iv){
@@ -1446,11 +1489,23 @@ function renderFocus(){
  [].forEach.call(el.querySelectorAll('.fgo,.go,.occ button'),function(b){b.onclick=function(e){e.stopPropagation();jumpTo(+b.dataset.g,+b.dataset.t)}});
  var mo=$('fmore');if(mo)mo.onclick=function(){FMORE=!FMORE;renderFocus()};
  renderFocusMini(F)}
-window.cftFocusRefresh=function(){if(!CF.games.length){renderFocusMini([]);return}G=CF.games;renderFocusMini(focusGroups())};
+window.cftFocusRefresh=function(){window.cftApplyNames();if(!CF.games.length){renderFocusMini([]);return}G=CF.games;renderFocusMini(focusGroups())};
 function renderFocusMini(F){
  var p=$('fokus');if(!p)return;p.hidden=!F.length;if(!F.length)return;
  $('fokusl').innerHTML=F.slice(0,3).map(function(f,n){var m=f.w.m,im=impactOf(m);return '<li data-g="'+f.w.g.i+'" data-t="'+Math.round(m.t)+'"><span class="rk">'+(n+1)+'</span><div><b>'+esc(FL[f.k]||'Fehler')+'</b><small>Game '+(f.w.g.i+1)+' · Zone '+m.zone+' · '+CF.fmt(Math.round(m.t))+'</small></div><span class="imp2 '+im.c+'">'+esc(im.t)+'</span></li>'}).join('');
  [].forEach.call($('fokusl').children,function(li){li.onclick=function(){jumpTo(+li.dataset.g,+li.dataset.t)}})}
+window.cftReportName=function(){
+ var gs=(window.CFT&&CFT.games)||[],n=gs.length;
+ if(!n)return{up:'CUP REPORT',cap:'Cup-Report'};
+ var ks={};gs.forEach(function(g){var p=String((g.real&&g.real.meta&&g.real.meta.playlist)||'').toLowerCase();ks[/scrim/.test(p)?'s':/ranked|rank/.test(p)?'r':/showdown|cup|tournament|fncs|cash|arena/.test(p)?'c':'x']=1});
+ var kk=Object.keys(ks);
+ if(kk.length===1&&kk[0]==='s')return{up:'SCRIM REPORT',cap:'Scrim-Report'};
+ if(kk.length===1&&kk[0]==='r')return{up:'RANKED REPORT',cap:'Ranked-Report'};
+ if(kk.length===1&&kk[0]==='c')return{up:'CUP REPORT',cap:'Cup-Report'};
+ return n===1?{up:'GAME REPORT',cap:'Game-Report'}:{up:'SESSION REPORT',cap:'Session-Report'}};
+window.cftApplyNames=function(){var r=cftReportName(),a=document.getElementById('vr'),b=document.getElementById('rcr'),c=document.getElementById('rpo');
+ if(a)a.textContent=r.up;if(b)b.textContent=r.up;if(c)c.innerHTML=r.cap+' öffnen · alle Games &amp; Muster';
+ var o=document.getElementById('obr');if(o)o.textContent='Stattdessen den '+r.cap+' öffnen'};
 function topReal(){
  var all=[];G.forEach(function(g){(g.mis||[]).forEach(function(m){all.push({g:g,m:m})})});
  all.sort(function(a,b){return b.m.sev-a.m.sev});
@@ -1466,7 +1521,7 @@ function renderPoi(real){
  $('poil').innerHTML=L.map(function(x,i){var a=Math.round(x.t/x.c),tag=L.length>1&&i===hi?' top':L.length>1&&i===lo?' low':'';
   return '<div class="poir'+tag+'"><div><b>'+esc(x.n)+'</b>'+(tag===' top'?'<em>STARK</em>':tag===' low'?'<em>SCHWACH</em>':'')+'</div><div><small>Games</small><b>'+x.c+'</b></div><div><small>Ø Note</small><b>'+a+'</b></div><div><small>Ø Platz</small><b>'+(x.pc?'#'+Math.round(x.pl/x.pc):'–')+'</b></div><div class="bar2"><i style="width:'+a+'%"></i></div></div>'}).join('')}
 function render(){
- G=gamesNow();window.scoreUpd&&scoreUpd();if(sel>=G.length||sel<0)sel=Math.max(0,G.length-1);var REAL=!!CF.games.length;
+ window.cftApplyNames();G=gamesNow();window.scoreUpd&&scoreUpd();if(sel>=G.length||sel<0)sel=Math.max(0,G.length-1);var REAL=!!CF.games.length;
  $('rs').textContent=REAL?'Deine Replays · '+G.length+' Game'+(G.length>1?'s':''):'Cash Cup · 11 Games (Demo)';
  if(false)gen();renderPoi(REAL);
  $('gs').innerHTML=G.map(function(g){var c=sc(g.tot);return '<button class="gb" data-i="'+g.i+'"><small>'+(g.i+1)+'</small><b style="color:'+c+'">'+g.tot+'</b><i style="background:'+c+'"></i></button>'}).join('');
@@ -1562,6 +1617,61 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
     if(s.state==='ready')t.textContent='Update '+s.version+' ist bereit';
   }
   window.fn.updateStatus().then(show);window.fn.onUpdate(show);
+})();
+</script>
+<script>
+/* ===== Update-Modal (Home) ===== */
+(function(){
+  if(!window.fn||!window.fn.onUpdate)return;
+  var m=document.getElementById('updm'),st=null,later=false;
+  function check(){var show=st&&st.state==='ready'&&!later&&document.body.classList.contains('mn');m.classList.toggle('on',!!show);if(show)document.getElementById('updmv').textContent=st.version||''}
+  document.getElementById('updmgo').onclick=function(){window.fn.installUpdate()};
+  document.getElementById('updml').onclick=function(){later=true;check()};
+  window.fn.updateStatus().then(function(s){st=s;check()});window.fn.onUpdate(function(s){st=s;check()});
+  new MutationObserver(check).observe(document.body,{attributes:true,attributeFilter:['class']});
+})();
+/* ===== Discord-Verknüpfung & Lizenz-Key (Vorbereitung) ===== */
+(function(){
+  var CC=window.CFT_CONFIG||{},LC=CC.license||{},KEY='cft_lic',$=function(i){return document.getElementById(i)};
+  function get(){try{return JSON.parse(localStorage.getItem(KEY)||'null')||{}}catch(e){return{}}}
+  function put(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
+  function ok(){var s=get();return !!(s.discord&&s.ok)}
+  function chip(){var s=get(),b=$('mdc'),t=$('mdcs');if(!b)return;b.classList.remove('on','warn');
+    if(s.discord&&s.ok){b.classList.add('on');t.textContent='✓ '+s.discord}
+    else if(s.discord){b.classList.add('warn');t.textContent=LC.required?'Lizenz fehlt':s.discord}
+    else t.textContent='Verknüpfen'}
+  var box=$('lic'),sEl=$('lics');
+  function say(m,c){sEl.textContent=m||'';sEl.className='lst'+(c?' '+c:'')}
+  function open(){var s=get();$('licd').value=s.discord||'';$('lick').value=s.key||'';say('');$('licl').style.display=(LC.required&&!ok())?'none':'';box.classList.add('on');setTimeout(function(){($('licd').value?$('lick'):$('licd')).focus()},50)}
+  function close(){box.classList.remove('on')}
+  function verify(discord,key){
+    if(LC.endpoint){
+      return fetch(LC.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({discord:discord,key:key})})
+       .then(function(r){return r.json()}).then(function(j){return{ok:!!j.ok,msg:j.message||''}}).catch(function(){return{ok:false,msg:'Lizenz-Server nicht erreichbar.'}})}
+    /* ohne Server: nur das Key-Format pruefen (Platzhalter bis das Backend steht) */
+    return Promise.resolve(/^[A-Z0-9]{4}(-[A-Z0-9]{4}){3}$/.test(key)?{ok:true,msg:'Key-Format gültig (lokal geprüft – es ist noch kein Lizenz-Server hinterlegt).'}:{ok:false,msg:'Ungültiges Format. Erwartet: XXXX-XXXX-XXXX-XXXX'})}
+  $('lick').oninput=function(){var v=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,16);this.value=v.replace(/(.{4})(?=.)/g,'$1-')};
+  $('licgo').onclick=function(){
+    var dn=$('licd').value.trim(),k=$('lick').value.trim().toUpperCase();
+    if(!dn){say('Bitte deinen Discord-Namen eintragen.','bad');return}
+    if(!k&&!LC.required){put({discord:dn,key:'',ok:false});chip();say('Discord verknüpft.','ok');setTimeout(close,700);return}
+    if(!k){say('Bitte deinen Lizenz-Key eingeben.','bad');return}
+    say('Prüfe …');
+    verify(dn,k).then(function(r){put({discord:dn,key:k,ok:r.ok,ts:Date.now()});chip();say(r.ok?(r.msg||'Lizenz aktiv.'):(r.msg||'Key ungültig.'),r.ok?'ok':'bad');if(r.ok)setTimeout(close,1100)})};
+  $('licl').onclick=close;
+  $('licj').onclick=function(){if(CC.discordInvite)window.open(CC.discordInvite,'_blank','noopener');else say('Discord-Einladung fehlt – in app/config.js eintragen.','bad')};
+  $('mdc').onclick=open;
+  box.addEventListener('keydown',function(e){if(e.key==='Enter')$('licgo').click();if(e.key==='Escape'&&!(LC.required&&!ok()))close()});
+  /* Gate: VOD-Analyse nur mit aktiver Lizenz (wenn license.required) */
+  function gate(e){if(LC.required&&!ok()){e.stopImmediatePropagation();e.preventDefault();open()}}
+  var vod=$('mtVod');if(vod){vod.addEventListener('click',gate,true);vod.classList.toggle('locked',!!(LC.required&&!ok()))}
+  window.cftLicense={ok:ok,open:open,state:get};
+  chip();
+  /* beim Start / beim Betreten des Menues pruefen */
+  function onMenu(){if(document.body.classList.contains('mn')&&LC.required&&!ok())open();if(vod)vod.classList.toggle('locked',!!(LC.required&&!ok()))}
+  new MutationObserver(onMenu).observe(document.body,{attributes:true,attributeFilter:['class']});
+  var s0=get();if(LC.endpoint&&s0.discord&&s0.key)verify(s0.discord,s0.key).then(function(r){if(r.ok!==!!s0.ok){s0.ok=r.ok;put(s0);chip();onMenu()}});
+  onMenu();
 })();
 </script>
 <div id="stg" role="dialog" aria-modal="true" aria-label="Einstellungen">

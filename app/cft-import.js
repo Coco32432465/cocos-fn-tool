@@ -191,6 +191,7 @@
       };
     });
 
+    var hasNet = !!((d.vitals && Object.keys(d.vitals).length) || (d.inv && d.inv.p && Object.keys(d.inv.p).length));
     /* --- Zeitnullpunkt: der Parser setzt t0 selbst. Falls nicht (Zeiten absolut), normalisieren wir hier --- */
     /* Lobby-/Vorstart-Positionen weit außerhalb der Karte (vor dem Bus) abschneiden */
     var LIM = 170000;
@@ -224,6 +225,18 @@
     }
     if (!me) P.filter(function (p) { return !p.bot && p.pts.length; }).forEach(function (p) { if (!me || p.pts.length > me.pts.length) me = p; });
     if (!me || me.pts.length < 10) throw new Error('Für deinen Spieler wurden keine (oder zu wenige) Positionsdaten gefunden.');
+    /* --- Leben/Inventar-Zuordnung absichern (Solo: Besitzer-ID kann fehlen -> Schluessel "-1" oder andere ID) --- */
+    (function () {
+      function longest(obj, skip) {
+        var bk = null, bl = 0;
+        Object.keys(obj || {}).forEach(function (k) { var l = (obj[k] || []).length; if (l > bl && !skip[k]) { bl = l; bk = k; } });
+        return bk;
+      }
+      var ownV = {}, ownI = {};
+      P.forEach(function (p) { if (p !== me && p.vit.length >= 5) ownV[String(p.id)] = 1; if (p !== me && p.inv.length >= 2) ownI[String(p.id)] = 1; });
+      if (me.vit.length < 5) { var kv = longest(d.vitals, ownV); if (kv && d.vitals[kv].length >= 5) me.vit = d.vitals[kv].filter(function (a) { return a && a.length >= 3; }).map(function (a) { return [a[0] - shift, a[1], a[2]]; }); }
+      if (me.inv.length < 2) { var ki = longest((d.inv || {}).p, ownI); if (ki && d.inv.p[ki].length >= 2) me.inv = d.inv.p[ki].filter(function (a) { return a && a.length >= 2; }).map(function (a) { return [a[0] - shift, a[1]]; }); }
+    })();
     var span = me.pts[me.pts.length - 1][0] - me.pts[0][0];
     if (span < 60) throw new Error('Deine Positionen haben keine gültigen Zeitstempel (Zeitspanne nur ' + Math.round(span) + ' s). Bitte ReplayDump aus Version 0.7.0 oder neuer verwenden.');
 
@@ -313,7 +326,7 @@
       return { id: p.id, name: p.name, team: p.team, bot: p.bot, pts: p.pts, dead: p.dead, dbno: dbno, mate: i < tn, vit: p.vit, inv: p.inv };
     });
 
-    var R = { dur: dur, tn: tn, nPlayers: Math.max(tn, Math.min(100, P.length)), players: players, zones: Zs, z0: z0, drops: drops, deadTimes: deadTimes, feed: [], cal: null, invNames: ((d.inv || {}).names || []) };
+    var R = { dur: dur, tn: tn, nPlayers: Math.max(tn, Math.min(100, P.length)), players: players, zones: Zs, z0: z0, drops: drops, deadTimes: deadTimes, feed: [], cal: null, invNames: ((d.inv || {}).names || []), hasNet: hasNet };
     var mp = players[0];
 
     /* --- Platzierung --- */
@@ -572,6 +585,26 @@
       txt: far.n + ' wurde' + (far.kn ? ' von ' + far.kn : '') + (far.down ? ' niedergeschossen' : ' eliminiert') + ', während du ' + meters(far.d) + ' m entfernt warst.',
       better: 'Haltet engen Kontakt: wenn ein Mate down geht, musst du in wenigen Sekunden bei ihm sein können. Bleibt unter ca. 40 m zusammen und gebt euch Cover beim Wiederbeleben.' });
 
+    /* --- Treffer auf dich (geschaetzt): HP+Schild-Abfall mit Gegner im Umkreis --- */
+    R.hits = [];
+    if (mp.vit && mp.vit.length >= 5) {
+      var lastHit = -9;
+      for (var vi = 1; vi < mp.vit.length && R.hits.length < 400; vi++) {
+        var va = mp.vit[vi - 1], vb = mp.vit[vi], drop = (va[1] + va[2]) - (vb[1] + vb[2]);
+        if (drop < 8 || vb[0] - va[0] > 4 || vb[0] - lastHit < 0.8) continue;
+        var tb = vb[0], pme = posAt(mp, tb), bestF = null;
+        if (!pme) continue;
+        for (var fi = tn; fi < players.length; fi++) {
+          var fp = players[fi];
+          if (!present(fp, tb)) continue;
+          var fq = posAt(fp, tb); if (!fq) continue;
+          var dd0 = dist(fq, pme);
+          if (dd0 < 12000 && (!bestF || dd0 < bestF.d)) bestF = { k: fi, d: dd0 };
+        }
+        if (bestF) { R.hits.push({ t: Math.round(tb * 10) / 10, k: bestF.k, dmg: Math.round(drop) }); lastHit = tb; }
+      }
+    }
+
     /* --- Analyse: Leben / Schild / Heilung (nur wenn der Replay-Besitzer Leben-Daten hat) --- */
     if (mp.vit && mp.vit.length > 5) {
       var invN = (d.inv || {}).names || [];
@@ -655,6 +688,7 @@
       var c = (kt || vt) ? (e.down ? '#fbbf77' : (kt ? A : '#f4f4f5')) : '#ffffff22';
       var item = { t: e.t, mk: kt || vt, c: c, txt: txt, kill: kt && !e.down };
       if (!e.down && e.v != null) item.e = { t: e.t, v: e.v, k: e.k != null ? e.k : 999 };
+      if (vt && e.k != null && e.k >= tn && e.k < players.length) item.h = { k: e.k, v: e.v, down: !!e.down };
       feed.push(item);
     });
     Zs.forEach(function (z, idx) { feed.push({ t: z.s, mk: true, c: '#d4d4d8', txt: 'Zone ' + (idx + 2) + ' zieht zu' }); });

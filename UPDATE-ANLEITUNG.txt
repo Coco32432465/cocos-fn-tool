@@ -105,3 +105,10 @@ v0.9.2:
 - Cup-Report: Fokus-Liste (Top 5, "Mehr anzeigen" bis 10), Gruppierung nach Fehlerart ueber alle Games, Score = Schwere + Wiederholung + HP-Verlust, Platzierungsfaktor.
 - Auswirkung: "Game vorbei" / "-X HP" (HP+Schild-Verlust im Fehlerfenster, nur mit Leben-Daten) / Meter/Sekunden als Fallback.
 - Klick auf Zeile = aufklappen, Play-Button oder "Alle Stellen"-Chips = direkt in den Viewer. Kompakte Top 3 im Dashboard rechts.
+
+v0.9.3:
+- Update-Hinweis als zentriertes Modal (abgedunkelter Hintergrund) auf dem Startbildschirm.
+- Parser: HP/Schild/Inventar ohne bekannte Spieler-ID (Solo) werden dem Replay-Besitzer zugeordnet. Dafuer Tag v0.9.3 pushen (Actions baut ReplayDump neu); Replays werden einmalig neu geparst.
+- Dynamische Namen: GAME REPORT / SESSION REPORT / SCRIM REPORT je nach Modus und Anzahl Dateien.
+- Discord-Button im Menue; Lizenz-Modal. config.js -> license { required, endpoint }. Ohne endpoint wird nur das Key-Format geprueft (Platzhalter, keine echte Sicherheit). Echtes Discord-Login braucht ein Backend.
+- Karte: rote Schusslinie Angreifer -> du bei Schaden (Kills durchgezogen, sonst gestrichelt = Schaetzung).

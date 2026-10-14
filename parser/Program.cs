@@ -390,6 +390,7 @@ sealed class Extras
     public readonly Dictionary<int, List<Hp>> Vitals = new();
     public readonly Dictionary<int, List<Snap>> Inv = new();
     public readonly Dictionary<uint, List<Snap>> OrphanInv = new();
+    public readonly Dictionary<uint, List<Hp>> OrphanHp = new();
 
     public string Info = "";
     public void Write(Utf8JsonWriter w, double t0, int ownerId, int ownerTeam, JsonElement playerData)
@@ -421,11 +422,19 @@ sealed class Extras
         }
         w.WriteEndObject();
 
-        // Inventare ohne Spieler-Zuordnung gehoeren (replays nehmen nur das eigene Inventar auf) dem Replay-Besitzer
-        if (ownerId >= 0 && OrphanInv.Count > 0)
+        // Inventar / Leben ohne Spieler-Zuordnung gehoeren (Replays nehmen nur die eigenen Werte auf) dem Replay-Besitzer.
+        // Solo-Replays loesen die Pawn->Spieler-Kette teils nicht auf; ohne bekannte Besitzer-ID landet es unter Schluessel -1.
+        int okey = ownerId >= 0 ? ownerId : -1;
+        team.Add(-1);
+        if (OrphanInv.Count > 0)
         {
             var best = OrphanInv.OrderByDescending(kv => kv.Value.Count).First();
-            if (!Inv.ContainsKey(ownerId)) Inv[ownerId] = best.Value;
+            if (!Inv.TryGetValue(okey, out var cur) || cur.Count < best.Value.Count / 4) Inv[okey] = best.Value;
+        }
+        if (OrphanHp.Count > 0)
+        {
+            var best = OrphanHp.OrderByDescending(kv => kv.Value.Count).First();
+            if (best.Value.Count >= 5 && (!Vitals.TryGetValue(okey, out var curH) || curH.Count < 5)) Vitals[okey] = best.Value;
         }
 
         // --- Inventar (nur dein Team): Namenstabelle + pro Spieler [t, [[nameIdx, anzahl], ...]] ---
@@ -499,9 +508,10 @@ sealed class VitalsReader : FortniteReplayReader.ReplayReader
         try
         {
             Flush();
+            foreach (var g in _pendHp.GroupBy(x => x.ch)) Collected.OrphanHp[g.Key] = g.Select(x => x.hp).ToList();
             int k = BestCandidate(out var handle);
             Collected.Info = k >= 0 ? "shield-handle=" + handle : "shield-handle=default";
-            if (k >= 0) foreach (var l in Collected.Vitals.Values) foreach (var e in l) if (e.C != null && k < e.C.Length) e.S = e.C[k];
+            if (k >= 0) foreach (var l in Collected.Vitals.Values.Concat(Collected.OrphanHp.Values)) foreach (var e in l) if (e.C != null && k < e.C.Length) e.S = e.C[k];
         }
         catch { }
     }

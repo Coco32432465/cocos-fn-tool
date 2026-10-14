@@ -15,6 +15,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.9.3', date: '2026-10-14', tag: 'NEU', text: 'Update-Hinweis als zentriertes Fenster, Solo-HUD-Fix (Leben/Schild/Mats auch in Solo-Runden, Replays werden einmalig neu analysiert), dynamische Report-Namen (Game/Session/Scrim Report), Discord-Button + Lizenz-Key-Vorbereitung, rote Schusslinie auf der Karte bei Treffern' },
   { v: '0.9.2', date: '2026-10-14', tag: 'NEU', text: '„Woran du arbeiten solltest“: Top 5 über alle Games (Mehr anzeigen), gleiche Fehler gruppiert („5× in 3 Games“), rote Auswirkungs-Badges (Game vorbei, −HP, Meter), aufklappbar mit Direktsprung ins Replay; Top 3 auch im Dashboard' },
   { v: '0.9.1', date: '2026-10-14', tag: 'NEU', text: 'Karten-Legende unter der Karte, dezente rote Gegner-Punkte, Zonen immer lila, du immer im Vordergrund (grün), rotes „!“ für Kills in der Timeline, HUD-Daten (Leben, Schild, Mats, Waffen, Muni) mit klarem Hinweis, wenn sie im Replay fehlen' },
   { v: '0.9.0', date: '2026-10-14', tag: 'NEU', text: 'Feinschliff: fester Analyse-Kasten, Dashboard ohne Scrollen, Muni in den Spielerkarten, Gegner als rote Punkte, Zone-einpassen-Button, Schwarz-Blau als Standard, neues transparentes Icon, Fade-Out-Spur, Spielerzahl max. 100' },
