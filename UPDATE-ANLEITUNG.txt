@@ -57,3 +57,7 @@ Die Versionsnummer kommt aus dem Tag, package.json muss dafür nicht geändert w
 - Schriften liegen lokal in app/fonts (App sieht auch offline gleich aus).
 - Discord-Link, Social-Links und Auto-Analyse einstellen: app/config.js bearbeiten.
 - Epic-Feld ist nur noch ein Spielername (zum Erkennen der Figur im Replay).
+
+v0.8.2:
+- Neues Hauptmenue "Select a Mode" beim Start (Kachel 1 = VOD Review, Kacheln 2-5 "Demnaechst").
+- Button "Hauptmenue" oben links in Dashboard, Viewer und Report. Neue Modi: Kachel in app/dashboard.html (#menu) von class "soon" auf aktiv umstellen.

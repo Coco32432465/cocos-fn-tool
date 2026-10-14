@@ -510,11 +510,46 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
 .poir em{font-style:normal;font-size:10px;padding:1px 7px;border-radius:6px;margin-left:8px;font-family:'Orbitron',sans-serif;letter-spacing:.08em}
 .poir.top em{background:#4ade8022;color:#4ade80}.poir.low em{background:rgba(var(--rgb),.18);color:var(--acc)}
 @media (max-width:700px){.poir{grid-template-columns:1fr 1fr}}
+
+/* ===== Hauptmenü (Select a Mode) ===== */
+#menu{position:fixed;inset:0;z-index:65;display:none;flex-direction:column;align-items:center;padding:28px 32px 22px;overflow:hidden;
+ background:radial-gradient(60vmax 40vmax at 50% -10%,rgba(var(--rgb),.16),transparent 65%),radial-gradient(50vmax 50vmax at 50% 120%,rgba(var(--rgb2),.1),transparent 60%),var(--bg)}
+body.mn #menu{display:flex;animation:fade .45s}
+#menu .mh{text-align:center;margin-bottom:22px}
+#menu .mh small{display:block;font:600 12px 'Rajdhani',sans-serif;letter-spacing:.4em;text-transform:uppercase;color:var(--acc-light)}
+#menu .mh h1{font:900 clamp(22px,3.2vw,38px) 'Orbitron',sans-serif;letter-spacing:.12em;margin-top:6px;color:#fff;text-shadow:0 0 28px rgba(var(--rgb),.45)}
+#menu .tiles{flex:1;min-height:0;width:100%;max-width:1500px;display:grid;grid-template-columns:1.5fr repeat(4,1fr);gap:16px;padding:10px 0}
+.mt{position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:22px 20px;text-align:left;cursor:pointer;color:var(--txt);
+ border:1px solid rgba(var(--rgb),.22);border-radius:14px;overflow:hidden;font-family:inherit;
+ background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01)) ,repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 2px,transparent 2px 9px),rgba(18,18,24,.72);
+ backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .22s ease,border-color .22s,box-shadow .22s}
+.mt::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 60% at 50% 0,rgba(var(--rgb),.16),transparent 70%);opacity:.5;transition:opacity .22s;pointer-events:none}
+.mt .no{position:absolute;top:14px;left:18px;font:900 13px 'Orbitron',sans-serif;letter-spacing:.2em;color:rgba(var(--rgb),.7)}
+.mt .ic{position:absolute;top:44px;left:18px;width:46px;height:46px;stroke:var(--acc);fill:none;stroke-width:1.6;opacity:.85}
+.mt h2{position:relative;font:800 clamp(15px,1.5vw,21px)/1.15 'Orbitron',sans-serif;letter-spacing:.06em;color:#fff}
+.mt p{position:relative;font-size:15px;line-height:1.3;color:var(--dim,#9a9aa6)}
+.mt .badge{position:relative;align-self:flex-start;font:700 11px 'Rajdhani',sans-serif;letter-spacing:.2em;text-transform:uppercase;padding:4px 10px;border-radius:99px;border:1px solid rgba(255,255,255,.18);color:#b9b9c4;background:rgba(255,255,255,.05)}
+.mt .go{position:relative;align-self:stretch;text-align:center;font:800 14px 'Orbitron',sans-serif;letter-spacing:.16em;padding:13px 10px;border-radius:9px;background:var(--acc);color:#fff;box-shadow:0 0 22px rgba(var(--rgb),.5)}
+.mt.on-main{border-color:rgba(var(--rgb),.7);box-shadow:0 0 0 1px rgba(var(--rgb),.35),0 0 38px rgba(var(--rgb),.28)}
+.mt.on-main::before{opacity:1}
+.mt.soon{cursor:not-allowed;filter:saturate(.55)}
+.mt.soon h2,.mt.soon p,.mt.soon .ic{opacity:.62}
+.mt:hover,.mt:focus-visible{transform:scale(1.035);border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 0 44px rgba(var(--rgb),.55),inset 0 0 40px rgba(var(--rgb),.1);outline:none;z-index:2}
+.mt:hover::before{opacity:1}
+.mt.soon:hover{box-shadow:0 0 0 1px rgba(var(--rgb),.6),0 0 30px rgba(var(--rgb),.3)}
+#menu .mf{margin-top:12px;font-size:13px;letter-spacing:.15em;color:#6c6c78;text-transform:uppercase}
+.mbtn{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font:700 13px 'Rajdhani',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:7px 13px;border-radius:8px;border:1px solid rgba(var(--rgb),.5);background:rgba(var(--rgb),.1);transition:box-shadow .2s,background .2s}
+.mbtn:hover{background:rgba(var(--rgb),.22);box-shadow:0 0 16px rgba(var(--rgb),.45)}
+.mbtn svg{width:15px;height:15px;stroke:var(--acc);fill:none;stroke-width:2}
+header .mbtn{margin-right:14px}
+@media (max-width:1100px){#menu{overflow-y:auto}#menu .tiles{grid-template-columns:1fr 1fr;grid-auto-rows:minmax(190px,auto)}.mt:first-child{grid-column:1/-1}}
+@media (max-width:600px){#menu .tiles{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
 <header>
+  <button class="mbtn" data-menu aria-label="Hauptmenü"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Hauptmenü</button>
   <div class="brand">
     <svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg>
     <b class="disp">Coco's <span>Fn</span> Tool</b>
@@ -649,7 +684,7 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
 </footer>
 <div id="viewer">
   <div class="vtop rtop">
-    <button class="back" id="vb">← Dashboard</button>
+    <button class="mbtn" data-menu aria-label="Hauptmenü"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Hauptmenü</button><button class="back" id="vb">← Dashboard</button>
     <div class="brand sm"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg><b class="disp">Coco's <span>Fn</span> Tool</b></div>
     <nav class="vtabs" role="tablist"><button class="vtab" id="vr" role="tab">Cup Report</button><button class="vtab on" id="vv" role="tab">Replay Viewer</button></nav>
     <div class="sp"></div>
@@ -713,7 +748,7 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
   </div>
 </div>
 <div id="report">
-  <div class="vtop rtop"><button class="back" id="rb">← Dashboard</button><div class="brand sm"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg><b class="disp">Coco's <span>Fn</span> Tool</b></div>
+  <div class="vtop rtop"><button class="mbtn" data-menu aria-label="Hauptmenü"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Hauptmenü</button><button class="back" id="rb">← Dashboard</button><div class="brand sm"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg><b class="disp">Coco's <span>Fn</span> Tool</b></div>
     <nav class="vtabs" role="tablist"><button class="vtab on" id="rcr" role="tab">Cup Report</button><button class="vtab" id="rv" role="tab">Replay Viewer</button></nav>
     <small id="rs"></small><div class="sp"></div>
     <div class="score" id="rscore" title="Durchschnitt aller Games"><small>Session-Score</small><b>–</b></div>
@@ -760,6 +795,17 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
       <div class="obn"><button class="gbtn" id="obb">Zurück</button><button class="nbtn" id="obf">Weiter</button></div>
     </div>
   </div>
+</div>
+<div id="menu" role="dialog" aria-label="Modus wählen">
+  <div class="mh"><small>Coco's Fn Tool</small><h1>SELECT A MODE</h1></div>
+  <div class="tiles">
+  <button class="mt on-main" id="mtVod"><span class="no">01</span><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/></svg><h2>VOD REVIEW &amp; AI ANALYSIS</h2><p>Replays analysieren, Fehler erkennen &amp; Cup-Reports</p><span class="go">REVIEW STARTEN</span></button>
+  <button class="mt soon" tabindex="0" aria-disabled="true"><span class="no">02</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 3L3 5v16l6-2 6 2 6-2V3l-6 2z"/><path d="M9 3v16M15 5v16"/></svg><h2>DROP MAP &amp; ROUTES</h2><p>Landing-Spots planen &amp; Loot-Routen analysieren</p><span class="badge">Demnächst</span></button>
+  <button class="mt soon" tabindex="0" aria-disabled="true"><span class="no">03</span><svg class="ic" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></svg><h2>TOURNAMENT TRACKER</h2><p>Cups, FNCS Termine &amp; PR-Verlauf im Blick</p><span class="badge">Demnächst</span></button>
+  <button class="mt soon" tabindex="0" aria-disabled="true"><span class="no">04</span><svg class="ic" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><h2>META HUB &amp; LOADOUTS</h2><p>Waffen-Stats, Pro-Keybinds &amp; aktuelle Patchnotes</p><span class="badge">Demnächst</span></button>
+  <button class="mt soon" tabindex="0" aria-disabled="true"><span class="no">05</span><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.8"/><path d="M2 20c0-4 3-6 7-6s7 2 7 6M16 14c3 0 6 1.5 6 5"/></svg><h2>SCRIM FINDER &amp; DUO SYNERGY</h2><p>Duo-Partner finden &amp; Team-Kommunikation verbessern</p><span class="badge">Demnächst</span></button>
+  </div>
+  <div class="mf">Weitere Modi werden freigeschaltet</div>
 </div>
 <div id="veil"></div>
 <div id="toast" role="status"></div>
@@ -1359,6 +1405,19 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
         m.textContent=s.state==='none'?'Du hast die neueste Version.':s.state==='downloading'?'Update '+(s.version||'')+' wird geladen …':s.state==='ready'?'Update '+s.version+' ist bereit (unten rechts neu starten).':s.state==='error'?'Update-Suche fehlgeschlagen.':'Keine Antwort erhalten, versuche es gleich noch einmal.'})},2500)
     });
   };
+})();
+</script>
+<script>
+(function(){
+var b=document.body;
+function show(){b.classList.add('mn')}
+function hide(){b.classList.remove('mn')}
+[].forEach.call(document.querySelectorAll('[data-menu]'),function(e){e.addEventListener('click',show)});
+document.getElementById("mtVod").addEventListener('click',hide);
+document.addEventListener('keydown',function(e){if(e.code==='Escape'&&b.classList.contains('mn')&&(b.classList.contains('vw')||b.classList.contains('rp')||window.__menuUsed))hide()});
+window.showMenu=show;window.hideMenu=hide;
+show();
+document.getElementById("mtVod").addEventListener('click',function(){window.__menuUsed=1});
 })();
 </script>
 </body>
