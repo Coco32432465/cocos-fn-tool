@@ -1,0 +1,29 @@
+name = "cft-license"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Stuendlich: abgelaufene Keys -> Customer-Rolle entziehen
+[triggers]
+crons = ["0 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cft-license"
+database_id = "HIER_DIE_DATABASE_ID_EINTRAGEN"
+
+# Oeffentliche IDs (keine Geheimnisse)
+[vars]
+DISCORD_APP_ID = "1559989883362091160"
+DISCORD_PUBLIC_KEY = "817e93caa2e752cb077d5bf744c039da23178d1124e9ad3a603861f287da60c3"
+GUILD_ID = "1175531248836411432"
+CUSTOMER_ROLE_ID = "1559988863324262440"
+TICKET_CATEGORY_ID = "1175768388975476838"
+PANEL_CHANNEL_ID = "1559989415122833428"
+ADMIN_USER_IDS = "802638794348167229"
+# Preise (nur Anzeige im Ticket-Text)
+PRICE_WEEK = "5 €"
+PRICE_MONTH = "15 €"
+PAYMENT_TEXT = "Zahlungsart klaerst du im Ticket mit dem Team (z. B. PayPal)."
+
+# Geheimnisse NICHT hier eintragen, sondern mit `wrangler secret put`:
+#   BOT_TOKEN, CLIENT_SECRET, SIGNING_KEY, SETUP_SECRET

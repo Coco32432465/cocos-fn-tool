@@ -1,0 +1,14 @@
+{
+  "name": "cft-license-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute cft-license --remote --file=schema.sql",
+    "gen-key": "node scripts/gen-signing-key.mjs",
+    "test": "node test/run.mjs"
+  },
+  "devDependencies": { "wrangler": "^4" }
+}

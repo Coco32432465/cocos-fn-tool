@@ -3,6 +3,7 @@ const { execFile } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
+const license = require('./license');
 
 const parserExe = () =>
   app.isPackaged
@@ -77,7 +78,7 @@ const cacheDir = () => {
   fs.mkdirSync(d, { recursive: true });
   return d;
 };
-const CACHE_VERSION = 'p2'; // erhöhen, wenn sich der Parser ändert
+const CACHE_VERSION = 'p3'; // erhöhen, wenn sich der Parser ändert
 function cacheFile(file) {
   const st = fs.statSync(file);
   const key = (path.basename(file) + '_' + st.size + '_' + Math.round(st.mtimeMs)).replace(/[^\w.-]+/g, '_');
@@ -111,5 +112,8 @@ ipcMain.handle('parse-replay', (_e, file) => new Promise((resolve, reject) => {
   });
 }));
 
-app.whenReady().then(() => { createWindow(); initUpdater(); });
+app.whenReady().then(() => {
+  const L = license.register(ipcMain, { userDataDir: app.getPath('userData'), appDir: __dirname, openExternal: u => shell.openExternal(u) });
+  createWindow(); initUpdater(); L.start();
+});
 app.on('window-all-closed', () => app.quit());

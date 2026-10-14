@@ -8,5 +8,12 @@ contextBridge.exposeInMainWorld('fn', {
   updateStatus: () => ipcRenderer.invoke('get-update-status'),
   checkUpdate: () => ipcRenderer.invoke('check-update'),
   installUpdate: () => ipcRenderer.invoke('install-update'),
+  // Lizenz
+  licState: () => ipcRenderer.invoke('lic-state'),
+  licLogin: () => ipcRenderer.invoke('lic-login'),
+  licLoginCancel: () => ipcRenderer.invoke('lic-login-cancel'),
+  licActivate: (k) => ipcRenderer.invoke('lic-activate', k),
+  licRefresh: () => ipcRenderer.invoke('lic-refresh'),
+  licLogout: () => ipcRenderer.invoke('lic-logout'),
   onUpdate: (cb) => ipcRenderer.on('update-status', (_e, s) => cb(s))
 });

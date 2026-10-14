@@ -112,3 +112,9 @@ v0.9.3:
 - Dynamische Namen: GAME REPORT / SESSION REPORT / SCRIM REPORT je nach Modus und Anzahl Dateien.
 - Discord-Button im Menue; Lizenz-Modal. config.js -> license { required, endpoint }. Ohne endpoint wird nur das Key-Format geprueft (Platzhalter, keine echte Sicherheit). Echtes Discord-Login braucht ein Backend.
 - Karte: rote Schusslinie Angreifer -> du bei Schaden (Kills durchgezogen, sonst gestrichelt = Schaetzung).
+
+v0.9.4:
+- Lizenz-System scharf: app/config.js -> license { required: true, endpoint, publicKey }. required:false = jeder darf rein.
+- Neue Datei license.js (Hauptprozess): Discord-Login ueber den Server, Key-Aktivierung, signierte Zeittickets (7 Tage, Erneuerung alle 6 h, Offline bis Ablauf). Gespeichert in %APPDATA%\Coco's Fn Tool\license.json.
+- Server + Bot: Ordner license-server/ (siehe EINRICHTUNG.md). Wird NICHT in die App gepackt.
+- Noch eintragen: discordInvite in app/config.js, damit "Key kaufen" den Server oeffnet.

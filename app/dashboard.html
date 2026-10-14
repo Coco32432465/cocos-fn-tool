@@ -410,7 +410,7 @@ main .center>.slider{flex:1 1 260px;min-height:200px}
 .mbox input:focus{border-color:var(--acc);box-shadow:0 0 16px rgba(var(--rgb),.35)}
 .mbox input.key{font-family:'Orbitron',sans-serif;font-size:15px;letter-spacing:.14em;text-align:center;text-transform:uppercase}
 .mbox .lst{min-height:22px;margin-top:12px;font-size:14px;color:var(--mute)}.mbox .lst.ok{color:#4ade80}.mbox .lst.bad{color:#ff5a67}
-.mbox .lnk2{display:inline-block;margin-top:12px;color:var(--acc-light,var(--acc));font-size:14px;text-decoration:underline;cursor:pointer}
+.mbox .licrow{margin-top:14px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:rgba(var(--rgb),.08);font-size:15px;color:var(--txt)}.mbox .licrow b{color:var(--acc-light,var(--acc))}.mbox .go.dc{width:100%;margin-top:16px;padding:13px 18px;font-size:15px}.mbox .lnk2{display:inline-block;margin-top:12px;color:var(--acc-light,var(--acc));font-size:14px;text-decoration:underline;cursor:pointer}
 #mdc{position:absolute;top:22px;right:28px;z-index:2;display:flex;align-items:center;gap:10px;padding:9px 15px;border-radius:11px;background:#ffffff0a;border:1px solid rgba(var(--rgb2),.4);color:var(--txt);transition:.2s;text-align:left}
 #mdc:hover{background:rgba(var(--rgb),.1);box-shadow:0 0 18px rgba(var(--rgb),.3)}
 #mdc svg{width:22px;height:22px;fill:#e8e8ee;flex:none}
@@ -962,12 +962,13 @@ header .mbtn{margin-right:14px}
   <div class="mf">Weitere Modi werden freigeschaltet</div>
 </div>
 <div id="updm" role="alertdialog" aria-modal="true" aria-labelledby="updmt"><div class="mbox"><div class="mic"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></div><h2 id="updmt">Update <span id="updmv"></span> ist bereit</h2><p>Die neue Version ist heruntergeladen. Starte die App neu, um sie zu installieren – das dauert nur einen Moment.</p><div class="mr"><button class="go" id="updmgo">Jetzt neu starten</button><button class="gh" id="updml">Später</button></div></div></div>
-<div id="lic" role="dialog" aria-modal="true" aria-labelledby="lict"><div class="mbox"><div class="mic"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><h2 id="lict">Discord &amp; Lizenz</h2><p id="licp">Verknüpfe deinen Discord-Account und gib deinen Lizenz-Key ein, um die VOD-Analyse freizuschalten.</p>
-<label for="licd">Discord-Name</label><input id="licd" autocomplete="off" placeholder="z. B. coco#0001 oder coco">
-<label for="lick">Lizenz-Key eingeben</label><input id="lick" class="key" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19">
+<div id="lic" role="dialog" aria-modal="true" aria-labelledby="lict"><div class="mbox"><div class="mic"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><h2 id="lict">Discord &amp; Lizenz</h2><p id="licp">Verbinde dein Discord-Konto und gib deinen Lizenz-Key ein, um die VOD-Analyse freizuschalten. Den Key bekommst du im Discord über ein Ticket.</p>
+<div class="licrow" id="licw"></div>
+<div id="lics1"><button class="go dc" id="licdc">Mit Discord verbinden</button></div>
+<div id="lics2"><label for="lick">Lizenz-Key eingeben</label><input id="lick" class="key" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19"></div>
 <div class="lst" id="lics"></div>
-<div class="mr"><button class="go" id="licgo">Aktivieren</button><button class="gh" id="licl">Später</button></div>
-<a class="lnk2" id="licj">Discord-Server beitreten</a></div></div>
+<div class="mr"><button class="go" id="licgo">Aktivieren</button><button class="gh" id="lico">Abmelden</button><button class="gh" id="licl">Später</button></div>
+<a class="lnk2" id="licj">Key kaufen / Discord-Server öffnen</a></div></div>
 <div id="veil"></div>
 <div id="toast" role="status"></div>
 <script src="cft-import.js"></script>
@@ -1630,48 +1631,61 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
   window.fn.updateStatus().then(function(s){st=s;check()});window.fn.onUpdate(function(s){st=s;check()});
   new MutationObserver(check).observe(document.body,{attributes:true,attributeFilter:['class']});
 })();
-/* ===== Discord-Verknüpfung & Lizenz-Key (Vorbereitung) ===== */
+/* ===== Discord-Verknüpfung & Lizenz (Server-geprüft, Details in license.js) ===== */
 (function(){
-  var CC=window.CFT_CONFIG||{},LC=CC.license||{},KEY='cft_lic',$=function(i){return document.getElementById(i)};
-  function get(){try{return JSON.parse(localStorage.getItem(KEY)||'null')||{}}catch(e){return{}}}
-  function put(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
-  function ok(){var s=get();return !!(s.discord&&s.ok)}
-  function chip(){var s=get(),b=$('mdc'),t=$('mdcs');if(!b)return;b.classList.remove('on','warn');
-    if(s.discord&&s.ok){b.classList.add('on');t.textContent='✓ '+s.discord}
-    else if(s.discord){b.classList.add('warn');t.textContent=LC.required?'Lizenz fehlt':s.discord}
+  var CC=window.CFT_CONFIG||{},F=window.fn||{},$=function(i){return document.getElementById(i)};
+  var HAS=!!F.licState,S={enabled:false,required:false,valid:true,connected:false,user:null},busy=false;
+  function ok(){return !(S.enabled&&S.required)||!!S.valid}
+  function fd(t){return new Date(t*1000).toLocaleDateString('de-DE')}
+  function chip(){var b=$('mdc'),t=$('mdcs');if(!b)return;b.classList.remove('on','warn');
+    if(!S.enabled){t.textContent='Discord';return}
+    if(S.valid){b.classList.add('on');t.textContent='✓ '+(S.user&&S.user.name||'Aktiv')}
+    else if(S.connected){b.classList.add('warn');t.textContent='Lizenz fehlt'}
     else t.textContent='Verknüpfen'}
   var box=$('lic'),sEl=$('lics');
   function say(m,c){sEl.textContent=m||'';sEl.className='lst'+(c?' '+c:'')}
-  function open(){var s=get();$('licd').value=s.discord||'';$('lick').value=s.key||'';say('');$('licl').style.display=(LC.required&&!ok())?'none':'';box.classList.add('on');setTimeout(function(){($('licd').value?$('lick'):$('licd')).focus()},50)}
-  function close(){box.classList.remove('on')}
-  function verify(discord,key){
-    if(LC.endpoint){
-      return fetch(LC.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({discord:discord,key:key})})
-       .then(function(r){return r.json()}).then(function(j){return{ok:!!j.ok,msg:j.message||''}}).catch(function(){return{ok:false,msg:'Lizenz-Server nicht erreichbar.'}})}
-    /* ohne Server: nur das Key-Format pruefen (Platzhalter bis das Backend steht) */
-    return Promise.resolve(/^[A-Z0-9]{4}(-[A-Z0-9]{4}){3}$/.test(key)?{ok:true,msg:'Key-Format gültig (lokal geprüft – es ist noch kein Lizenz-Server hinterlegt).'}:{ok:false,msg:'Ungültiges Format. Erwartet: XXXX-XXXX-XXXX-XXXX'})}
+  function render(){
+    var v=S.valid&&S.enabled,c=S.connected;
+    $('lics1').style.display=(!c&&!v)?'':'none';
+    $('lics2').style.display=(c&&!v)?'':'none';
+    $('licgo').style.display=(c&&!v)?'':'none';
+    $('lico').style.display=c?'':'none';
+    var w=$('licw');
+    if(v){w.style.display='';w.innerHTML='Lizenz aktiv'+(S.keyExp?' bis <b>'+fd(S.keyExp)+'</b>':'')+(S.user?' · '+esc(S.user.name):'')}
+    else if(c){w.style.display='';w.innerHTML='Verbunden als <b>'+esc(S.user&&S.user.name||'Discord')+'</b>'}
+    else w.style.display='none';
+    $('licl').textContent=v?'Schließen':'Später';
+    $('licl').style.display=(S.required&&!v)?'none':'';
+    chip();var vod=$('mtVod');if(vod)vod.classList.toggle('locked',!ok())}
+  function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function open(){say('');$('lick').value='';render();box.classList.add('on');setTimeout(function(){if(S.connected&&!S.valid)$('lick').focus()},50)}
+  function close(){if(S.enabled&&S.required&&!S.valid)return;box.classList.remove('on')}
+  function load(){return HAS?F.licState().then(function(s){S=s;render();return s}):Promise.resolve(S)}
   $('lick').oninput=function(){var v=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,16);this.value=v.replace(/(.{4})(?=.)/g,'$1-')};
+  $('licdc').onclick=function(){
+    if(busy)return;busy=true;var b=this;b.textContent='Warte auf Bestätigung im Browser …';b.disabled=true;
+    say('Bestätige dein Discord-Konto im Browser. Danach geht es hier automatisch weiter.');
+    F.licLogin().then(function(s){S=s;say(s.error||(s.connected?'Verbunden. Jetzt deinen Key eingeben.':''),s.error?'bad':'ok');render()})
+      .catch(function(){say('Verbindung fehlgeschlagen.','bad')})
+      .then(function(){busy=false;b.disabled=false;b.textContent='Mit Discord verbinden'})};
   $('licgo').onclick=function(){
-    var dn=$('licd').value.trim(),k=$('lick').value.trim().toUpperCase();
-    if(!dn){say('Bitte deinen Discord-Namen eintragen.','bad');return}
-    if(!k&&!LC.required){put({discord:dn,key:'',ok:false});chip();say('Discord verknüpft.','ok');setTimeout(close,700);return}
-    if(!k){say('Bitte deinen Lizenz-Key eingeben.','bad');return}
+    var k=$('lick').value.trim().toUpperCase();
+    if(!/^[A-Z0-9]{4}(-[A-Z0-9]{4}){3}$/.test(k)){say('Bitte den kompletten Key eingeben (XXXX-XXXX-XXXX-XXXX).','bad');return}
     say('Prüfe …');
-    verify(dn,k).then(function(r){put({discord:dn,key:k,ok:r.ok,ts:Date.now()});chip();say(r.ok?(r.msg||'Lizenz aktiv.'):(r.msg||'Key ungültig.'),r.ok?'ok':'bad');if(r.ok)setTimeout(close,1100)})};
-  $('licl').onclick=close;
-  $('licj').onclick=function(){if(CC.discordInvite)window.open(CC.discordInvite,'_blank','noopener');else say('Discord-Einladung fehlt – in app/config.js eintragen.','bad')};
+    F.licActivate(k).then(function(s){S=s;render();if(s.valid){say('Lizenz aktiv. Viel Erfolg!','ok');setTimeout(close,1100)}else say(s.error||'Key ungültig.','bad')})};
+  $('lico').onclick=function(){if(F.licLoginCancel)F.licLoginCancel();F.licLogout().then(function(s){S=s;say('Abgemeldet.');render();if(S.enabled&&S.required)open()})};
+  $('licl').onclick=function(){if(busy&&F.licLoginCancel)F.licLoginCancel();close()};
+  $('licj').onclick=function(){if(CC.discordInvite)window.open(CC.discordInvite,'_blank','noopener');else say('Discord-Einladung fehlt – in app/config.js (discordInvite) eintragen.','bad')};
   $('mdc').onclick=open;
-  box.addEventListener('keydown',function(e){if(e.key==='Enter')$('licgo').click();if(e.key==='Escape'&&!(LC.required&&!ok()))close()});
-  /* Gate: VOD-Analyse nur mit aktiver Lizenz (wenn license.required) */
-  function gate(e){if(LC.required&&!ok()){e.stopImmediatePropagation();e.preventDefault();open()}}
-  var vod=$('mtVod');if(vod){vod.addEventListener('click',gate,true);vod.classList.toggle('locked',!!(LC.required&&!ok()))}
-  window.cftLicense={ok:ok,open:open,state:get};
-  chip();
-  /* beim Start / beim Betreten des Menues pruefen */
-  function onMenu(){if(document.body.classList.contains('mn')&&LC.required&&!ok())open();if(vod)vod.classList.toggle('locked',!!(LC.required&&!ok()))}
+  box.addEventListener('keydown',function(e){if(e.key==='Enter'&&$('lics2').style.display!=='none')$('licgo').click();if(e.key==='Escape')close()});
+  /* Gate: VOD-Analyse nur mit gueltiger Lizenz */
+  function gate(e){if(!ok()){e.stopImmediatePropagation();e.preventDefault();open()}}
+  var vod=$('mtVod');if(vod)vod.addEventListener('click',gate,true);
+  window.cftLicense={ok:ok,open:open,state:function(){return S}};
+  function onMenu(){if(document.body.classList.contains('mn')&&!ok())open();if(vod)vod.classList.toggle('locked',!ok())}
   new MutationObserver(onMenu).observe(document.body,{attributes:true,attributeFilter:['class']});
-  var s0=get();if(LC.endpoint&&s0.discord&&s0.key)verify(s0.discord,s0.key).then(function(r){if(r.ok!==!!s0.ok){s0.ok=r.ok;put(s0);chip();onMenu()}});
-  onMenu();
+  load().then(onMenu);
+  setInterval(function(){var was=ok();load().then(function(){if(was&&!ok())onMenu()})},60000);
 })();
 </script>
 <div id="stg" role="dialog" aria-modal="true" aria-label="Einstellungen">
