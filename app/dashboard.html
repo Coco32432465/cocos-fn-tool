@@ -574,7 +574,7 @@ body.mn #menu{display:flex;animation:fade .45s}
  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .22s ease,border-color .22s,box-shadow .22s}
 .mt::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 60% at 50% 0,rgba(var(--rgb),.16),transparent 70%);opacity:.5;transition:opacity .22s;pointer-events:none}
 .mt .art{position:absolute;left:0;right:0;top:0;width:100%;height:56%;padding:22px 18px 0;opacity:.8;transition:opacity .22s,transform .3s;filter:drop-shadow(0 0 14px rgba(var(--rgb),.35))}
-.mt:hover .art{opacity:1;transform:scale(1.05)}
+.mt:hover .art{opacity:1}
 .mt.on-main .art{opacity:1}
 .mt h2{position:relative;font:800 clamp(15px,1.5vw,21px)/1.15 'Orbitron',sans-serif;letter-spacing:.06em;color:#fff}
 .mt p{position:relative;font-size:15px;line-height:1.3;color:var(--dim,#9a9aa6)}
@@ -584,7 +584,7 @@ body.mn #menu{display:flex;animation:fade .45s}
 .mt.on-main::before{opacity:1}
 .mt.soon{cursor:not-allowed;filter:saturate(.55)}
 .mt.soon h2,.mt.soon p{opacity:.7}.mt.soon .art{opacity:.55}
-.mt:hover,.mt:focus-visible{transform:scale(1.07);border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 0 44px rgba(var(--rgb),.55),inset 0 0 40px rgba(var(--rgb),.1);outline:none;z-index:2}
+.mt:hover,.mt:focus-visible{transform:translateY(-8px);border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 0 44px rgba(var(--rgb),.55),inset 0 0 40px rgba(var(--rgb),.1);outline:none;z-index:2}
 .mt:hover::before{opacity:1}
 .mt.soon:hover{box-shadow:0 0 0 1px rgba(var(--rgb),.6),0 0 30px rgba(var(--rgb),.3)}
 #menu .mf{margin-top:12px;font-size:13px;letter-spacing:.15em;color:#6c6c78;text-transform:uppercase}
