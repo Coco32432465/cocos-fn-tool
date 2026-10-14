@@ -1,0 +1,52 @@
+UPDATES VERTEILEN (GitHub Releases)
+===================================
+
+EINMALIG
+1. Auf github.com ein Konto anlegen (kostenlos) und ein neues Repository erstellen:
+   Name: cocos-fn-tool  -  Sichtbarkeit: PUBLIC (öffentlich)
+   (Bei einem privaten Repository können die Apps keine Updates laden.)
+2. In package.json im Abschnitt "publish" "DEIN-GITHUB-NAME" durch deinen GitHub-Benutzernamen ersetzen.
+3. build.bat ausführen und die erste Version von Hand installieren.
+
+BEI JEDEM UPDATE
+1. Änderungen machen und in package.json die "version" erhöhen (z. B. 0.5.0 -> 0.5.1). Ohne höhere Nummer erkennt die App kein Update.
+2. build.bat ausführen. Im Ordner "dist" entstehen drei wichtige Dateien:
+     CocosFnTool-Setup-0.5.1.exe
+     CocosFnTool-Setup-0.5.1.exe.blockmap
+     latest.yml
+3. Auf GitHub: Repository -> Releases -> "Create a new release"
+     Tag: v0.5.1 (zur Version passend)
+     Alle drei Dateien hochladen (per Drag & Drop)
+     "Publish release" klicken (NICHT als Draft/Entwurf lassen)
+4. Fertig. Installierte Apps finden das Update beim nächsten Start (und stündlich),
+   laden es im Hintergrund und zeigen unten rechts "Jetzt neu starten".
+
+
+VERSION 0.7.1 - NEU
+===================
+- Viewer, Zonen, Spuren, Kill-Feed und Cup-Report laufen mit echten Replay-Daten.
+- Replays im Fortnite-Ordner werden automatisch gelistet (Tab "Turniere & Cups").
+- Gelesene Replays werden zwischengespeichert (zweites Öffnen ist sofort da).
+- Parser (parser/Program.cs) wurde abgesichert: build.bat baut ihn automatisch neu.
+- Die Karte ist fest eingebaut (nur ein-/ausblendbar).
+- Patchnotes pflegen: nur app/patchnotes.js bearbeiten (neuer Eintrag oben einfügen).
+- Statusleiste unten zeigt den überwachten Replay-Ordner und dient als Quick-Drop.
+
+
+AUTOMATISCH BAUEN (GitHub Actions) – empfohlen
+==============================================
+Einmalig:
+1. Den ganzen Projektordner ins GitHub-Repository hochladen
+   (inkl. des versteckten Ordners ".github"; node_modules, dist, bin NICHT hochladen).
+2. Repository -> Settings -> Actions -> General -> "Workflow permissions"
+   -> "Read and write permissions" aktivieren -> Save.
+
+Bei jedem Update:
+1. Geänderte Dateien im Repository ersetzen (Add file -> Upload files) und "Commit changes".
+2. Repository -> Releases -> "Draft a new release" -> bei "Choose a tag" z. B. v0.7.2 eintippen
+   -> "Create new tag" -> "Publish release".
+   (Alternativ im Terminal: git tag v0.7.2 && git push origin v0.7.2)
+3. Reiter "Actions": der Lauf "Release bauen" dauert ca. 5-8 Minuten.
+   Danach hängen .exe, .blockmap und latest.yml automatisch am Release.
+   Die installierten Apps laden das Update beim nächsten Start.
+Die Versionsnummer kommt aus dem Tag, package.json muss dafür nicht geändert werden.

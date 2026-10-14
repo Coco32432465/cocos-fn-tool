@@ -1,0 +1,49 @@
+{
+  "name": "cocos-fn-tool",
+  "productName": "Coco's Fn Tool",
+  "version": "0.7.1",
+  "description": "Fortnite Replay Analyse",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "de.coco.fntool",
+    "productName": "Coco's Fn Tool",
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "bin/ReplayDump.exe",
+        "to": "ReplayDump.exe"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "CocosFnTool-Setup-${version}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Coco32432465",
+        "repo": "cocos-fn-tool",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.0"
+  }
+}

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coco's Fn Tool</title>
+<script>
+/* Farbschemata (Theme) – wird vor dem ersten Zeichnen gesetzt */
+(function(){
+  var T={
+    rot:{name:'Schwarz · Rot',acc:'#FF003C',acc2:'#EF4444',rgb:'255,0,60',rgb2:'239,68,68',dark:'#B0002A',light:'#FF6B88',pale:'#FFB3C0',deep:'110,0,25',t:['#3a0813','#240510','#55091b','#330714','#2a0a14','#ffd5dc']},
+    blau:{name:'Schwarz · Blau',acc:'#2F7BFF',acc2:'#5B9BFF',rgb:'47,123,255',rgb2:'91,155,255',dark:'#1544B0',light:'#6FA6FF',pale:'#BBD3FF',deep:'10,30,110',t:['#0b1a3d','#050d26','#10306b','#08173a','#0a1630','#d8e6ff']}
+  };
+  function apply(n,save){
+    if(!T[n])n='rot';var t=T[n],s=document.documentElement.style;
+    s.setProperty('--acc',t.acc);s.setProperty('--acc2',t.acc2);s.setProperty('--rgb',t.rgb);s.setProperty('--rgb2',t.rgb2);
+    s.setProperty('--acc-dark',t.dark);s.setProperty('--acc-light',t.light);s.setProperty('--acc-pale',t.pale);s.setProperty('--rgb-deep',t.deep);
+    window.THEME=t;window.THEME_NAME=n;document.documentElement.setAttribute('data-theme',n);
+    if(save){try{localStorage.setItem('cft_theme',n)}catch(e){}}
+    try{window.dispatchEvent(new Event('themechange'))}catch(e){}
+  }
+  window.THEMES=T;window.applyTheme=function(n){apply(n,true)};
+  var n='rot';try{n=localStorage.getItem('cft_theme')||'rot'}catch(e){}
+  apply(n,false);
+})();
+</script>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600&display=swap">
+<style>
+:root{
+  --bg:#0A0A0C; --bg2:#121218; --acc:#FF003C;--acc2:#EF4444;--rgb:255,0,60;--rgb2:239,68,68;--acc-dark:#B0002A;--acc-light:#FF6B88;--acc-pale:#FFB3C0;--rgb-deep:110,0,25;--bad:#EF4444; --txt:#E8E8EE; --mute:#7C7C8A;
+  color-scheme: dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'Rajdhani',system-ui,sans-serif;overflow:hidden}
+
+/* ---------- Dashboard (Platzhalter) ---------- */
+#app{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);opacity:0;transition:opacity 1s ease}
+#app.show{opacity:1}
+.top{display:flex;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid #ffffff12;background:var(--bg2)}
+.top b{font-family:'Orbitron',sans-serif;letter-spacing:.12em;font-size:15px}
+.top b span{color:var(--acc)}
+.grid{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;padding:24px;align-content:start;overflow:auto}
+.card{background:var(--bg2);border:1px solid #ffffff10;border-radius:12px;padding:20px;min-height:140px;box-shadow:inset 0 0 0 1px rgba(var(--rgb),.06)}
+.card h3{font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:.1em;color:var(--acc2);margin-bottom:8px}
+.card p{color:var(--mute);font-size:15px}
+.replay{margin-left:auto;background:none;color:var(--mute);border:1px solid #ffffff22;border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}
+.replay:hover{color:var(--txt);border-color:var(--acc)}
+
+/* ---------- Splash ---------- */
+#splash{position:fixed;inset:0;z-index:10;background:radial-gradient(ellipse at center,var(--bg2) 0%,var(--bg) 70%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;overflow:hidden;
+  transition:opacity 1s ease,transform 1s ease,filter 1s ease}
+#splash.out{opacity:0;transform:scale(1.04);filter:blur(6px);pointer-events:none}
+
+/* Nebel */
+.fog{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;animation:drift 14s ease-in-out infinite alternate}
+.fog.a{width:55vmax;height:55vmax;right:-20vmax;top:-22vmax;background:radial-gradient(circle,rgba(var(--rgb),.33),transparent 65%)}
+.fog.b{width:50vmax;height:50vmax;left:-20vmax;bottom:-22vmax;background:radial-gradient(circle,rgba(var(--rgb2),.33),transparent 65%);animation-delay:-6s}
+.fog.c{width:40vmax;height:40vmax;left:30%;top:30%;background:radial-gradient(circle,rgba(var(--rgb),.08),transparent 65%);animation-duration:20s}
+@keyframes drift{to{transform:translate(4vmax,3vmax) scale(1.15)}}
+
+/* Raster + Scanlines */
+.grid-bg{position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(#ffffff06 1px,transparent 1px),linear-gradient(90deg,#ffffff06 1px,transparent 1px);
+  background-size:48px 48px;
+  -webkit-mask-image:radial-gradient(ellipse at center,#000 10%,transparent 75%);mask-image:radial-gradient(ellipse at center,#000 10%,transparent 75%)}
+.scan{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,#0000 0 3px,#00000030 3px 4px)}
+.scan::after{content:"";position:absolute;left:0;right:0;height:18vh;top:-20vh;background:linear-gradient(transparent,rgba(var(--rgb),.07),transparent);animation:sweep 5s linear infinite}
+@keyframes sweep{to{top:110vh}}
+
+/* Tech-Linien Ecken */
+.corner{position:absolute;width:min(46vw,460px);height:auto;color:var(--acc);opacity:.85}
+.corner.tr{top:0;right:0}
+.corner.bl{bottom:0;left:0;transform:rotate(180deg)}
+.corner path,.corner line,.corner polyline{stroke-dasharray:600;stroke-dashoffset:600;animation:draw 2.2s .2s cubic-bezier(.6,0,.2,1) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.corner .blink{animation:blink 1.6s steps(2) infinite;stroke-dasharray:none;stroke-dashoffset:0}
+@keyframes blink{50%{opacity:.15}}
+
+/* Logo */
+.logo-wrap{position:relative;width:clamp(150px,26vmin,240px);aspect-ratio:1;display:grid;place-items:center;z-index:2;animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+.logo-wrap::before{content:"";position:absolute;inset:-25%;background:radial-gradient(circle,rgba(var(--rgb),.4),transparent 62%);animation:pulse 2.4s ease-in-out infinite}
+.logo-wrap svg{position:relative;width:100%;height:100%;filter:drop-shadow(0 0 14px var(--acc)) drop-shadow(0 0 38px rgba(var(--rgb),.53))}
+.ring{transform-origin:100px 100px;animation:spin 14s linear infinite}
+.ring2{transform-origin:100px 100px;animation:spin 22s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{opacity:.45;transform:scale(1.08)}}
+@keyframes rise{from{opacity:0;transform:translateY(20px) scale(.9)}}
+
+/* Titel */
+h1{position:relative;z-index:2;margin-top:clamp(20px,4vmin,36px);font-family:'Orbitron',sans-serif;font-weight:900;
+  font-size:clamp(24px,5.4vmin,46px);letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:0 16px;
+  text-shadow:0 0 18px rgba(var(--rgb),.4);animation:rise .9s .25s cubic-bezier(.2,.8,.2,1) both}
+h1 em{font-style:normal;color:var(--acc);text-shadow:0 0 14px var(--acc),0 0 34px rgba(var(--rgb),.6)}
+.tag{z-index:2;margin-top:6px;font-size:clamp(12px,1.9vmin,15px);letter-spacing:.42em;text-transform:uppercase;color:var(--mute);animation:rise .9s .4s both}
+
+/* Ladebalken */
+.loader{position:relative;z-index:2;width:min(86vw,460px);margin-top:clamp(26px,5vmin,44px);animation:rise .9s .55s both}
+.bar{position:relative;height:8px;border-radius:99px;background:#ffffff10;border:1px solid #ffffff14;overflow:hidden}
+.fill{position:absolute;left:0;top:0;bottom:0;width:0%;border-radius:99px;
+  background:linear-gradient(90deg,var(--acc-dark),var(--acc),var(--acc-light));box-shadow:0 0 14px var(--acc),0 0 30px rgba(var(--rgb),.53)}
+.fill::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,#ffffff70 50%,transparent 70%);transform:translateX(-100%);animation:shine 1.3s linear infinite}
+@keyframes shine{to{transform:translateX(100%)}}
+.meta{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;font-size:15px;color:var(--mute);letter-spacing:.06em}
+.meta .pct{font-family:'Orbitron',sans-serif;font-size:13px;color:var(--acc2);text-shadow:0 0 8px var(--acc)}
+#status::after{content:"";display:inline-block;width:1ch;animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+#status.done::after{content:"";animation:none}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.2s!important}
+}
+</style>
+</head>
+<body>
+
+<!-- Haupt-Viewer (Platzhalter für dein Dashboard) -->
+<main id="app" aria-hidden="true">
+  <header class="top"><b>COCO'S <span>FN</span> TOOL</b><button class="replay" id="replay">Intro erneut</button></header>
+  <section class="grid">
+    <div class="card"><h3>REPLAY-VIEWER</h3><p>Hier kommt dein Haupt-Viewer hin.</p></div>
+    <div class="card"><h3>KARTENDATEN</h3><p>Map, Drops, Rotationen …</p></div>
+    <div class="card"><h3>ANALYSE</h3><p>Fehler, Noten, Statistiken …</p></div>
+  </section>
+</main>
+
+<!-- Splash -->
+<div id="splash" role="status" aria-live="polite">
+  <div class="fog a"></div><div class="fog b"></div><div class="fog c"></div>
+  <div class="grid-bg"></div>
+
+  <svg class="corner tr" viewBox="0 0 400 300" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+    <polyline points="400,40 300,40 270,70 150,70 120,100 20,100"/>
+    <polyline points="400,90 330,90 310,110 230,110" opacity=".6"/>
+    <polyline points="400,160 360,160 340,180 340,260" opacity=".5"/>
+    <line x1="400" y1="20" x2="190" y2="20" opacity=".35"/>
+    <path d="M400 0 L400 60 L350 0 Z" fill="currentColor" stroke="none" opacity=".25"/>
+    <rect class="blink" x="14" y="94" width="10" height="10" fill="currentColor" stroke="none"/>
+    <rect class="blink" x="334" y="254" width="10" height="10" fill="currentColor" stroke="none"/>
+  </svg>
+  <svg class="corner bl" viewBox="0 0 400 300" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+    <polyline points="400,40 300,40 270,70 150,70 120,100 20,100"/>
+    <polyline points="400,90 330,90 310,110 230,110" opacity=".6"/>
+    <polyline points="400,160 360,160 340,180 340,260" opacity=".5"/>
+    <line x1="400" y1="20" x2="190" y2="20" opacity=".35"/>
+    <path d="M400 0 L400 60 L350 0 Z" fill="currentColor" stroke="none" opacity=".25"/>
+    <rect class="blink" x="14" y="94" width="10" height="10" fill="currentColor" stroke="none"/>
+    <rect class="blink" x="334" y="254" width="10" height="10" fill="currentColor" stroke="none"/>
+  </svg>
+
+  <div class="scan"></div>
+
+  <div class="logo-wrap">
+    <svg viewBox="0 0 200 200" aria-label="FN Logo">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1B1B24"/><stop offset="1" stop-color="#0A0A0C"/>
+        </linearGradient>
+        <linearGradient id="r" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" style="stop-color:var(--acc-light)"/><stop offset="1" style="stop-color:var(--acc)"/>
+        </linearGradient>
+      </defs>
+      <circle class="ring" cx="100" cy="100" r="94" fill="none" stroke-width="1.5" stroke-dasharray="4 10" opacity=".7" style="stroke:var(--acc)"/>
+      <circle class="ring2" cx="100" cy="100" r="86" fill="none" stroke-width="1" stroke-dasharray="40 14 6 14" opacity=".45" style="stroke:var(--acc)"/>
+      <!-- Shield -->
+      <path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="url(#g)" stroke="url(#r)" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M100 30 L156 48 L151 106 Q148 140 100 168 Q52 140 49 106 L44 48 Z" fill="none" stroke-width="1" opacity=".5" style="stroke:var(--acc)"/>
+      <!-- Zacken -->
+      <path d="M32 40 L14 30 L30 64 Z M168 40 L186 30 L170 64 Z" style="fill:var(--acc)"/>
+      <!-- FN -->
+      <text x="100" y="116" text-anchor="middle" font-family="Orbitron, Arial Black, sans-serif" font-weight="900" font-size="54" fill="url(#r)" letter-spacing="2">FN</text>
+      <path d="M62 128 H138" stroke-width="2" opacity=".8" style="stroke:var(--acc)"/>
+      <path d="M78 138 H122" stroke-width="2" opacity=".4" style="stroke:var(--acc)"/>
+    </svg>
+  </div>
+
+  <h1>Coco's <em>Fn</em> Tool</h1>
+  <p class="tag">Replay · Analyse · Review</p>
+
+  <div class="loader">
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar">
+      <div class="fill" id="fill"></div>
+    </div>
+    <div class="meta"><span id="status">Starte</span><span class="pct" id="pct">0%</span></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var splash=document.getElementById('splash'), app=document.getElementById('app'),
+      fill=document.getElementById('fill'), pct=document.getElementById('pct'),
+      status=document.getElementById('status'), bar=document.getElementById('bar');
+
+  // Statusmeldungen: [ab Prozent, Text]
+  var steps=[[0,'Initialisiere Kern'],[18,'Lade Replay-Parser'],[42,'Initialisiere Kartendaten'],
+             [66,'Synchronisiere Assets'],[86,'Baue Viewer auf'],[100,'Bereit']];
+  var DURATION=4600; // ms bis 100 %
+  var raf, t0;
+
+  // Weicher Verlauf mit kleinen "Hängern" wie bei echtem Laden
+  function ease(t){ return t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2; }
+  function wobble(t){ return t + Math.sin(t*18)*0.012*(1-t); }
+
+  function tick(now){
+    if(!t0) t0=now;
+    var t=Math.min((now-t0)/DURATION,1);
+    var p=Math.max(0,Math.min(1,wobble(ease(t)))); if(t===1)p=1;
+    var v=Math.round(p*100);
+    fill.style.width=(p*100)+'%';
+    pct.textContent=v+'%';
+    bar.setAttribute('aria-valuenow',v);
+    for(var i=steps.length-1;i>=0;i--){ if(v>=steps[i][0]){ if(status.dataset.t!==steps[i][1]){status.dataset.t=steps[i][1];status.textContent=steps[i][1];} break; } }
+    if(t<1){ raf=requestAnimationFrame(tick); } else { finish(); }
+  }
+
+  function finish(){
+    status.classList.add('done');
+    setTimeout(function(){
+      splash.classList.add('out');
+      setTimeout(function(){ location.href='dashboard.html'; },900);
+    },450);
+  }
+
+  function start(){
+    cancelAnimationFrame(raf); t0=null;
+    splash.style.display='flex'; splash.classList.remove('out');
+    app.classList.remove('show'); app.setAttribute('aria-hidden','true');
+    status.classList.remove('done');
+    fill.style.width='0%'; pct.textContent='0%';
+    raf=requestAnimationFrame(tick);
+  }
+
+  document.getElementById('replay').addEventListener('click',start);
+  start();
+})();
+</script>
+</body>
+</html>
