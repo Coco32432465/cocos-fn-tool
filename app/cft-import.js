@@ -568,6 +568,42 @@
       txt: far.n + ' wurde' + (far.kn ? ' von ' + far.kn : '') + (far.down ? ' niedergeschossen' : ' eliminiert') + ', während du ' + meters(far.d) + ' m entfernt warst.',
       better: 'Haltet engen Kontakt: wenn ein Mate down geht, musst du in wenigen Sekunden bei ihm sein können. Bleibt unter ca. 40 m zusammen und gebt euch Cover beim Wiederbeleben.' });
 
+    /* --- Analyse: Leben / Schild / Heilung (nur wenn der Replay-Besitzer Leben-Daten hat) --- */
+    if (mp.vit && mp.vit.length > 5) {
+      var invN = (d.inv || {}).names || [];
+      var healN = function (t) {
+        var iv = CFT.invAt(mp, t, invN), o = [], n = 0;
+        if (iv) Object.keys(iv.heal).forEach(function (k) { o.push(iv.heal[k] + '× ' + k); n += iv.heal[k]; });
+        return { txt: o.join(', '), n: n, has: !!iv };
+      };
+      var lowBest = null;
+      Zs.forEach(function (z, k) {
+        if (k < 2 || z.s <= (landT != null ? landT + 10 : 0) || (mp.dead != null && z.s > mp.dead - 3)) return;
+        var v0 = CFT.vitAt(mp, z.s); if (!v0) return;
+        var tot = v0.hp + v0.sh, hl = healN(z.s);
+        if (tot < 130 && (!lowBest || tot < lowBest.tot)) lowBest = { z: z, k: k, v: v0, tot: tot, hl: hl };
+      });
+      if (lowBest) {
+        var lz = lowBest.k + 1, lv = lowBest.v, lh = lowBest.hl;
+        mis.push({ t: lowBest.z.s, kind: 'lowhp', sev: 440 + Math.min(60, (130 - lowBest.tot) / 2), val: Math.round(lowBest.tot) + ' HP', unit: 'bei Zonenstart', zone: lz,
+          facts: ['Leben ' + Math.round(lv.hp), 'Schild ' + Math.round(lv.sh)].concat(lh.has ? [lh.n ? lh.txt + ' im Inventar' : 'keine Heilung im Inventar'] : []),
+          txt: 'Zone ' + lz + ' zog zu und du hattest nur ' + Math.round(lv.hp) + ' Leben und ' + Math.round(lv.sh) + ' Schild – das ist wenig Puffer für den ersten Fight im Kreis.',
+          better: lh.has && lh.n
+            ? 'Du hattest ' + lh.txt + ' dabei: heile während der Rotation (Bandage/Schild trinken, solange niemand schießt), damit du mit vollem Puffer in die Zone kommst.'
+            : 'Sammle vor Zone ' + lz + ' Schild und Heilung ein (Kisten, Loot der Gegner), statt mit halber Leiste in den Kreis zu gehen.' });
+      }
+      /* mit ungenutzter Heilung gestorben */
+      if (mp.dead != null && mp.dead > 30) {
+        var vD = CFT.vitAt(mp, mp.dead - 8), hD = healN(mp.dead - 3);
+        if (vD && hD.has && hD.n >= 2 && vD.hp + vD.sh < 150) {
+          mis.push({ t: mp.dead - 8, kind: 'unheal', sev: 680, val: hD.n + '×', unit: 'Heilung übrig', zone: zoneNo(R, mp.dead - 8),
+            facts: ['Leben ' + Math.round(vD.hp), 'Schild ' + Math.round(vD.sh), hD.txt + ' übrig'],
+            txt: 'Kurz vor deiner Elimination hattest du nur ' + Math.round(vD.hp) + ' Leben und ' + Math.round(vD.sh) + ' Schild – im Inventar lagen aber noch ' + hD.txt + '.',
+            better: 'Nutze Heilung, sobald du aus dem Fight bist: erst Deckung bauen, dann trinken/heilen. Mit vollem Schild überlebst du den nächsten Peek deutlich öfter.' });
+        }
+      }
+    }
+
     /* --- Analyse: Team-Abstand über das ganze Game --- */
     if (tn > 1 && landT != null) {
       var sp = [], endS = tEnd != null ? tEnd : dur, worst = null;

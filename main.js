@@ -77,7 +77,7 @@ const cacheDir = () => {
   fs.mkdirSync(d, { recursive: true });
   return d;
 };
-const CACHE_VERSION = 'p1'; // erhöhen, wenn sich der Parser ändert
+const CACHE_VERSION = 'p2'; // erhöhen, wenn sich der Parser ändert
 function cacheFile(file) {
   const st = fs.statSync(file);
   const key = (path.basename(file) + '_' + st.size + '_' + Math.round(st.mtimeMs)).replace(/[^\w.-]+/g, '_');

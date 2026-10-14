@@ -86,3 +86,8 @@ v0.8.7:
 
 v0.8.8:
 - Live Analysis: Vor/Zurueck-Pfeile korrigiert. Karten-Offset ox=0.012/oy=-0.011 (Key cft_cal5, alte Kalibrierung wird ignoriert).
+
+v0.8.9:
+- Dashboard: kein Seiten-Scrollen mehr, Spalten scrollen einzeln.
+- main.js: CACHE_VERSION p2 -> alle Replays werden einmal mit dem neuen Parser neu eingelesen (dauert pro Replay etwas; Leben/Inventar erscheinen danach).
+- Neue Tipps (cft-import.js): lowhp (wenig Leben/Schild bei Zonenstart), unheal (mit ungenutzter Heilung gestorben).

@@ -15,6 +15,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.8.9', date: '2026-10-14', tag: 'NEU', text: 'Dashboard scrollt nicht mehr als Ganzes (Spalten scrollen einzeln). Neue Leben-Tipps: „Wenig HP bei Zonenstart“ und „Heilung nicht genutzt“. Replays werden einmal neu eingelesen, damit Leben & Inventar erscheinen' },
   { v: '0.8.8', date: '2026-10-14', tag: 'FIX', text: 'Live Analysis: Pfeile ‹ › springen jetzt korrekt zum vorherigen/nächsten Fehler (nichts wird mehr übersprungen); Karte um ca. 35 m nachjustiert' },
   { v: '0.8.7', date: '2026-10-14', tag: 'FIX', text: 'Hauptmenü: Kacheln sind beim Drüberfahren nicht mehr unscharf (Hover hebt sie jetzt an, statt sie zu skalieren)' },
   { v: '0.8.6', date: '2026-10-14', tag: 'NEU', text: 'Review-Layout aufgeräumt: größere Karte, rechts Tabs (Analyse / Feed / Games). Spielerkarten zeigen Leben, Schild, Mats, Waffen & Heilung (Daten nur für dich – aus neu eingelesenen Replays)' },

@@ -328,6 +328,17 @@ body.vw #sbar,body.rp #sbar{display:none}
 @media (max-height:800px){.pc .slots{display:none}.pc{padding:8px 10px}}
 @media (max-width:1180px){.vgrid{grid-template-columns:1fr;overflow-y:auto;display:flex;flex-direction:column}.vl,.vr{overflow:visible}#viewer .stage{flex:none;height:min(100vw,56vh)}#viewer .feed{flex:none}.vgl{max-height:none}.vl{order:2}.vr{order:1}}
 
+
+/* ===== v0.8.9 Dashboard: kein Seiten-Scrollen, Spalten scrollen einzeln ===== */
+html,body{height:100%}
+body{height:100vh;height:100dvh;min-height:0;overflow:hidden}
+main{flex:1 1 0;min-height:0;overflow:hidden;grid-template-rows:minmax(0,1fr)}
+main>aside,main>.col,main>section{min-height:0;overflow-y:auto;overflow-x:hidden;padding-right:3px}
+main>aside::-webkit-scrollbar,main>.col::-webkit-scrollbar,main>section::-webkit-scrollbar{width:6px}
+main>aside::-webkit-scrollbar-thumb,main>.col::-webkit-scrollbar-thumb,main>section::-webkit-scrollbar-thumb{background:#ffffff1f;border-radius:6px}
+main .center>.slider{flex:1 1 260px;min-height:200px}
+@media (max-width:1100px){main{overflow-y:auto;grid-template-rows:none}main>aside,main>.col,main>section{overflow:visible}}
+@media (max-width:760px){body{height:auto;overflow:auto}}
 /* ===== v0.8.6 Review-Layout: 2 Spalten, Tabs rechts ===== */
 .vgrid{grid-template-columns:minmax(0,1fr) 400px;gap:16px;padding:14px 18px}
 .vr{overflow:hidden;gap:10px}
@@ -1214,7 +1225,7 @@ function updCards(t){
   }
   h+='<div class="pc'+(dead?' dead':dn?' dn':'')+'" style="--c:'+c+'"><div class="ph"><i class="av">'+esc(String(p.n).charAt(0).toUpperCase())+'</i><div><b>'+nm+'</b><small>'+(i===0?'DU':'MATE')+(sub?' · '+sub:'')+'</small></div><em class="st">'+st+'</em></div>'+bars+pm+inv+'</div>'}
  if(HUDC.pc!==h){HUDC.pc=h;var pe=$('pcards');pe.style.gridTemplateColumns='repeat('+Math.max(1,Math.min(n,4))+',minmax(0,1fr))';pe.innerHTML=h}}
-var KL={rot:'POSITIONING',storm:'STORM DAMAGE',early:'HOT DROP / EARLY DEATH',alone:'ALONE · TEAM SPACING',death:'CRITICAL MISTAKE',team:'TEAM SPACING',spread:'TEAM SPACING',edge:'ZONE POSITION',height:'HIGH GROUND',outnum:'OUTNUMBERED',lowground:'HIGH GROUND LOST',range:'LONG RANGE',aftermate:'AFTER TEAM LOSS'};
+var KL={rot:'POSITIONING',storm:'STORM DAMAGE',early:'HOT DROP / EARLY DEATH',alone:'ALONE · TEAM SPACING',death:'CRITICAL MISTAKE',team:'TEAM SPACING',spread:'TEAM SPACING',lowhp:'LOW HP · ZONENSTART',unheal:'HEILUNG NICHT GENUTZT',edge:'ZONE POSITION',height:'HIGH GROUND',outnum:'OUTNUMBERED',lowground:'HIGH GROUND LOST',range:'LONG RANGE',aftermate:'AFTER TEAM LOSS'};
 function factsH(m){return m.facts&&m.facts.length?'<div class="facts">'+m.facts.map(function(f){return '<span>'+esc(f)+'</span>'}).join('')+'</div>':''}
 function updLA(force){
  var L=V.mis||[],idx=-1,q,key;
