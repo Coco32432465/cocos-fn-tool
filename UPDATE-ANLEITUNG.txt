@@ -83,3 +83,6 @@ v0.8.6:
 
 v0.8.7:
 - Hauptmenue: Hover-Effekt ohne Skalierung (Text war unscharf).
+
+v0.8.8:
+- Live Analysis: Vor/Zurueck-Pfeile korrigiert. Karten-Offset ox=0.012/oy=-0.011 (Key cft_cal5, alte Kalibrierung wird ignoriert).

@@ -16,17 +16,17 @@
 
   /* ------------------------------------------------------------------ Kalibrierung */
   var DEFAULT_H = 153000;
-  CFT.cal = CFT.cal || { swap: false, fx: false, fy: false, H: 153000, ox: 0, oy: 0, saved: false };
+  CFT.cal = CFT.cal || { swap: false, fx: false, fy: false, H: 153000, ox: 0.012, oy: -0.011, saved: false };
   try {
     if (root.localStorage) {
-      var sv = JSON.parse(root.localStorage.getItem('cft_cal4') || 'null');
+      var sv = JSON.parse(root.localStorage.getItem('cft_cal5') || 'null');
       if (sv && sv.H) { for (var k in sv) CFT.cal[k] = sv[k]; CFT.cal.saved = true; }
     }
   } catch (e) { /* ohne Speicher weiterarbeiten */ }
 
   CFT.saveCal = function () {
     CFT.cal.saved = true;
-    try { root.localStorage.setItem('cft_cal4', JSON.stringify(CFT.cal)); } catch (e) { /* egal */ }
+    try { root.localStorage.setItem('cft_cal5', JSON.stringify(CFT.cal)); } catch (e) { /* egal */ }
   };
 
   /** Weltkoordinate (cm) -> Position auf dem Kartenbild (0..1) */
