@@ -61,3 +61,5 @@ Die Versionsnummer kommt aus dem Tag, package.json muss dafür nicht geändert w
 v0.8.2:
 - Neues Hauptmenue "Select a Mode" beim Start (Kachel 1 = VOD Review, Kacheln 2-5 "Demnaechst").
 - Button "Hauptmenue" oben links in Dashboard, Viewer und Report. Neue Modi: Kachel in app/dashboard.html (#menu) von class "soon" auf aktiv umstellen.
+- Hauptmenue: VOD Review in der Mitte, alle Kacheln gleich gross (Hover vergroessert), Bilder pro Kachel.
+- Neue Farbschemata in den Einstellungen: Schwarz+Gruen/Gold, Zwei Farben: Blau-Lila, Gruen-Blau. Neues Schema: in app/dashboard.html im Theme-Block mk(name,gruppe,farbe1,farbe2) ergaenzen.

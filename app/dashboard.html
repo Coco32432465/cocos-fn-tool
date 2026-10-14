@@ -7,9 +7,22 @@
 <script>
 /* Farbschemata (Theme) – wird vor dem ersten Zeichnen gesetzt */
 (function(){
+  function hex(h){return[1,3,5].map(function(i){return parseInt(h.substr(i,2),16)})}
+  function mix(c,k,w){return c.map(function(v,i){return Math.round(v*(1-w)+k*w)})}
+  function H(c){return'#'+c.map(function(v){return('0'+v.toString(16)).slice(-2)}).join('')}
+  function mk(name,grp,a,b){
+    var c=hex(a),d=hex(b||a);
+    return{name:name,grp:grp,acc:a,acc2:b||H(mix(c,255,.25)),rgb:c.join(','),rgb2:d.join(','),dark:H(mix(c,0,.38)),light:H(mix(c,255,.35)),pale:H(mix(c,255,.7)),
+      deep:c.map(function(v){return Math.round(v*.43)}).join(','),
+      t:[H(mix(c,0,.77)),H(mix(c,0,.86)),H(mix(c,0,.67)),H(mix(c,0,.8)),H(mix(d,0,.82)),H(mix(c,255,.84))]}
+  }
   var T={
-    rot:{name:'Schwarz · Rot',acc:'#FF003C',acc2:'#EF4444',rgb:'255,0,60',rgb2:'239,68,68',dark:'#B0002A',light:'#FF6B88',pale:'#FFB3C0',deep:'110,0,25',t:['#3a0813','#240510','#55091b','#330714','#2a0a14','#ffd5dc']},
-    blau:{name:'Schwarz · Blau',acc:'#2F7BFF',acc2:'#5B9BFF',rgb:'47,123,255',rgb2:'91,155,255',dark:'#1544B0',light:'#6FA6FF',pale:'#BBD3FF',deep:'10,30,110',t:['#0b1a3d','#050d26','#10306b','#08173a','#0a1630','#d8e6ff']}
+    rot:{grp:1,name:'Schwarz · Rot',acc:'#FF003C',acc2:'#EF4444',rgb:'255,0,60',rgb2:'239,68,68',dark:'#B0002A',light:'#FF6B88',pale:'#FFB3C0',deep:'110,0,25',t:['#3a0813','#240510','#55091b','#330714','#2a0a14','#ffd5dc']},
+    blau:{grp:1,name:'Schwarz · Blau',acc:'#2F7BFF',acc2:'#5B9BFF',rgb:'47,123,255',rgb2:'91,155,255',dark:'#1544B0',light:'#6FA6FF',pale:'#BBD3FF',deep:'10,30,110',t:['#0b1a3d','#050d26','#10306b','#08173a','#0a1630','#d8e6ff']},
+    gruen:mk('Schwarz · Grün',1,'#19E36B'),
+    gold:mk('Schwarz · Gold',1,'#FFB800'),
+    bl:mk('Blau · Lila',2,'#3B82F6','#A855F7'),
+    gb:mk('Grün · Blau',2,'#10E5A0','#2F7BFF')
   };
   function apply(n,save){
     if(!T[n])n='rot';var t=T[n],s=document.documentElement.style;
@@ -492,6 +505,7 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
 #stg h3{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);margin:18px 0 10px}
 #stg .thm{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #stg .thm button{display:flex;flex-direction:column;gap:10px;padding:10px;border-radius:12px;border:1px solid var(--line);background:#ffffff05;color:var(--txt);text-align:left;cursor:pointer;font:600 15px 'Rajdhani',system-ui,sans-serif;transition:.2s}
+#stg .thg{grid-column:1/-1;margin:6px 0 0;font:700 12px 'Rajdhani',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--acc-light)}#stg .thg:first-child{margin-top:0}
 #stg .thm button:hover{border-color:#ffffff40}
 #stg .thm button.on{border-color:var(--acc);box-shadow:0 0 18px rgba(var(--rgb),.4);background:rgba(var(--rgb),.08)}
 #stg .sw{height:54px;border-radius:8px;border:1px solid #ffffff14;position:relative;overflow:hidden}
@@ -518,14 +532,15 @@ body.mn #menu{display:flex;animation:fade .45s}
 #menu .mh{text-align:center;margin-bottom:22px}
 #menu .mh small{display:block;font:600 12px 'Rajdhani',sans-serif;letter-spacing:.4em;text-transform:uppercase;color:var(--acc-light)}
 #menu .mh h1{font:900 clamp(22px,3.2vw,38px) 'Orbitron',sans-serif;letter-spacing:.12em;margin-top:6px;color:#fff;text-shadow:0 0 28px rgba(var(--rgb),.45)}
-#menu .tiles{flex:1;min-height:0;width:100%;max-width:1500px;display:grid;grid-template-columns:1.5fr repeat(4,1fr);gap:16px;padding:10px 0}
-.mt{position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:22px 20px;text-align:left;cursor:pointer;color:var(--txt);
+#menu .tiles{flex:1;min-height:0;width:100%;max-width:1500px;display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:18px 0;align-items:stretch}
+.mt{position:relative;display:flex;min-height:0;flex-direction:column;justify-content:flex-end;gap:10px;padding:22px 20px;text-align:left;cursor:pointer;color:var(--txt);
  border:1px solid rgba(var(--rgb),.22);border-radius:14px;overflow:hidden;font-family:inherit;
  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01)) ,repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 2px,transparent 2px 9px),rgba(18,18,24,.72);
  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:transform .22s ease,border-color .22s,box-shadow .22s}
 .mt::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 60% at 50% 0,rgba(var(--rgb),.16),transparent 70%);opacity:.5;transition:opacity .22s;pointer-events:none}
-.mt .no{position:absolute;top:14px;left:18px;font:900 13px 'Orbitron',sans-serif;letter-spacing:.2em;color:rgba(var(--rgb),.7)}
-.mt .ic{position:absolute;top:44px;left:18px;width:46px;height:46px;stroke:var(--acc);fill:none;stroke-width:1.6;opacity:.85}
+.mt .art{position:absolute;left:0;right:0;top:0;width:100%;height:56%;padding:22px 18px 0;opacity:.8;transition:opacity .22s,transform .3s;filter:drop-shadow(0 0 14px rgba(var(--rgb),.35))}
+.mt:hover .art{opacity:1;transform:scale(1.05)}
+.mt.on-main .art{opacity:1}
 .mt h2{position:relative;font:800 clamp(15px,1.5vw,21px)/1.15 'Orbitron',sans-serif;letter-spacing:.06em;color:#fff}
 .mt p{position:relative;font-size:15px;line-height:1.3;color:var(--dim,#9a9aa6)}
 .mt .badge{position:relative;align-self:flex-start;font:700 11px 'Rajdhani',sans-serif;letter-spacing:.2em;text-transform:uppercase;padding:4px 10px;border-radius:99px;border:1px solid rgba(255,255,255,.18);color:#b9b9c4;background:rgba(255,255,255,.05)}
@@ -533,8 +548,8 @@ body.mn #menu{display:flex;animation:fade .45s}
 .mt.on-main{border-color:rgba(var(--rgb),.7);box-shadow:0 0 0 1px rgba(var(--rgb),.35),0 0 38px rgba(var(--rgb),.28)}
 .mt.on-main::before{opacity:1}
 .mt.soon{cursor:not-allowed;filter:saturate(.55)}
-.mt.soon h2,.mt.soon p,.mt.soon .ic{opacity:.62}
-.mt:hover,.mt:focus-visible{transform:scale(1.035);border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 0 44px rgba(var(--rgb),.55),inset 0 0 40px rgba(var(--rgb),.1);outline:none;z-index:2}
+.mt.soon h2,.mt.soon p{opacity:.7}.mt.soon .art{opacity:.55}
+.mt:hover,.mt:focus-visible{transform:scale(1.07);border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 0 44px rgba(var(--rgb),.55),inset 0 0 40px rgba(var(--rgb),.1);outline:none;z-index:2}
 .mt:hover::before{opacity:1}
 .mt.soon:hover{box-shadow:0 0 0 1px rgba(var(--rgb),.6),0 0 30px rgba(var(--rgb),.3)}
 #menu .mf{margin-top:12px;font-size:13px;letter-spacing:.15em;color:#6c6c78;text-transform:uppercase}
@@ -542,7 +557,7 @@ body.mn #menu{display:flex;animation:fade .45s}
 .mbtn:hover{background:rgba(var(--rgb),.22);box-shadow:0 0 16px rgba(var(--rgb),.45)}
 .mbtn svg{width:15px;height:15px;stroke:var(--acc);fill:none;stroke-width:2}
 header .mbtn{margin-right:14px}
-@media (max-width:1100px){#menu{overflow-y:auto}#menu .tiles{grid-template-columns:1fr 1fr;grid-auto-rows:minmax(190px,auto)}.mt:first-child{grid-column:1/-1}}
+@media (max-width:1100px){#menu{overflow-y:auto}#menu .tiles{grid-template-columns:1fr 1fr;grid-auto-rows:minmax(190px,auto)}.mt:nth-child(3){grid-column:1/-1;order:-1}}
 @media (max-width:600px){#menu .tiles{grid-template-columns:1fr}}
 </style>
 </head>
@@ -799,11 +814,11 @@ header .mbtn{margin-right:14px}
 <div id="menu" role="dialog" aria-label="Modus wählen">
   <div class="mh"><small>Coco's Fn Tool</small><h1>SELECT A MODE</h1></div>
   <div class="tiles">
-  <button class="mt on-main" id="mtVod"><span class="no">01</span><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/></svg><h2>VOD REVIEW &amp; AI ANALYSIS</h2><p>Replays analysieren, Fehler erkennen &amp; Cup-Reports</p><span class="go">REVIEW STARTEN</span></button>
-  <button class="mt soon" tabindex="0" aria-disabled="true"><span class="no">02</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 3L3 5v16l6-2 6 2 6-2V3l-6 2z"/><path d="M9 3v16M15 5v16"/></svg><h2>DROP MAP &amp; ROUTES</h2><p>Landing-Spots planen &amp; Loot-Routen analysieren</p><span class="badge">Demnächst</span></button>
-  <button class="mt soon" tabindex="0" aria-disabled="true"><span class="no">03</span><svg class="ic" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></svg><h2>TOURNAMENT TRACKER</h2><p>Cups, FNCS Termine &amp; PR-Verlauf im Blick</p><span class="badge">Demnächst</span></button>
-  <button class="mt soon" tabindex="0" aria-disabled="true"><span class="no">04</span><svg class="ic" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><h2>META HUB &amp; LOADOUTS</h2><p>Waffen-Stats, Pro-Keybinds &amp; aktuelle Patchnotes</p><span class="badge">Demnächst</span></button>
-  <button class="mt soon" tabindex="0" aria-disabled="true"><span class="no">05</span><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.8"/><path d="M2 20c0-4 3-6 7-6s7 2 7 6M16 14c3 0 6 1.5 6 5"/></svg><h2>SCRIM FINDER &amp; DUO SYNERGY</h2><p>Duo-Partner finden &amp; Team-Kommunikation verbessern</p><span class="badge">Demnächst</span></button>
+  <button class="mt soon" tabindex="0" aria-disabled="true"><svg class="art" viewBox="0 0 200 150" aria-hidden="true"><path d="M34 96c-8-26 8-52 34-58 10-18 40-22 54-6 22 0 40 18 36 42-4 20-26 30-50 26-14 10-40 12-52 0-12-2-20-2-22-4z" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M18 30L180 118" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="3 6" opacity=".55"/><path d="M60 92c20-6 30-20 52-18s28-12 40-22" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="6 5"/><path d="M152 52a12 12 0 1 1 .1 0z" fill="var(--acc)"/><circle cx="152" cy="46" r="4" fill="#0A0A0C"/><circle cx="60" cy="92" r="5" fill="var(--acc2)"/></svg><h2>DROP MAP &amp; ROUTES</h2><p>Landing-Spots planen &amp; Loot-Routen analysieren</p><span class="badge">Demnächst</span></button>
+  <button class="mt soon" tabindex="0" aria-disabled="true"><svg class="art" viewBox="0 0 200 150" aria-hidden="true"><path d="M70 20h60v34a30 30 0 0 1-60 0z" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M70 28H48v10a20 20 0 0 0 22 20M130 28h22v10a20 20 0 0 1-22 20" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M100 84v22M76 112h48" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="30" y="122" width="40" height="22" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="80" y="112" width="40" height="32" fill="rgba(var(--rgb),.3)" stroke="var(--acc)" stroke-width="2"/><rect x="130" y="128" width="40" height="16" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M100 30l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z" fill="var(--acc)" transform="translate(0 4) scale(.9) translate(11 0)"/></svg><h2>TOURNAMENT TRACKER</h2><p>Cups, FNCS Termine &amp; PR-Verlauf im Blick</p><span class="badge">Demnächst</span></button>
+  <button class="mt on-main" id="mtVod"><svg class="art" viewBox="0 0 200 150" aria-hidden="true"><rect x="22" y="14" width="156" height="98" rx="8" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M34 100L70 62l24 20 34-44 38 40" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/><circle cx="128" cy="38" r="20" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="4 4"/><circle cx="128" cy="38" r="4" fill="var(--acc)"/><circle cx="70" cy="62" r="4" fill="var(--acc2)"/><rect x="22" y="124" width="156" height="6" rx="3" fill="rgba(255,255,255,.12)"/><rect x="22" y="124" width="88" height="6" rx="3" fill="var(--acc)"/><circle cx="110" cy="127" r="6" fill="#fff"/><path d="M92 54l-0 0" /></svg><h2>VOD REVIEW &amp; AI ANALYSIS</h2><p>Replays analysieren, Fehler erkennen &amp; Cup-Reports</p><span class="go">REVIEW STARTEN</span></button>
+  <button class="mt soon" tabindex="0" aria-disabled="true"><svg class="art" viewBox="0 0 200 150" aria-hidden="true"><rect x="20" y="70" width="22" height="64" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="52" y="44" width="22" height="90" fill="rgba(var(--rgb),.3)" stroke="var(--acc)" stroke-width="2"/><rect x="84" y="82" width="22" height="52" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M118 40h34l8-8h20v14h-16l-6 6h-12l-4 20h-14l4-20h-14z" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="156" cy="100" r="18" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M156 74v12M156 114v12M130 100h12M170 100h12" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="156" cy="100" r="2.5" fill="var(--acc)"/></svg><h2>META HUB &amp; LOADOUTS</h2><p>Waffen-Stats, Pro-Keybinds &amp; aktuelle Patchnotes</p><span class="badge">Demnächst</span></button>
+  <button class="mt soon" tabindex="0" aria-disabled="true"><svg class="art" viewBox="0 0 200 150" aria-hidden="true"><circle cx="64" cy="48" r="16" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M32 106c0-24 14-36 32-36s32 12 32 36z" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="140" cy="48" r="16" fill="rgba(var(--rgb2),.18)" stroke="var(--acc2)" stroke-width="2"/><path d="M108 106c0-24 14-36 32-36s32 12 32 36z" fill="rgba(var(--rgb2),.18)" stroke="var(--acc2)" stroke-width="2" stroke-linejoin="round"/><path d="M82 24h36a8 8 0 0 1 8 8v10a8 8 0 0 1-8 8h-18l-10 8v-8h-8a8 8 0 0 1-8-8V32a8 8 0 0 1 8-8z" fill="#0A0A0C" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round"/><path d="M88 36h28M88 43h18" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><h2>SCRIM FINDER &amp; DUO SYNERGY</h2><p>Duo-Partner finden &amp; Team-Kommunikation verbessern</p><span class="badge">Demnächst</span></button>
   </div>
   <div class="mf">Weitere Modi werden freigeschaltet</div>
 </div>
@@ -1383,9 +1398,13 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
   var $=function(i){return document.getElementById(i)},box=$('stg');
   function cards(){
     var T=window.THEMES||{},cur=window.THEME_NAME;
-    $('stgt').innerHTML=Object.keys(T).map(function(k){var t=T[k];
-      return '<button data-t="'+k+'" class="'+(k===cur?'on':'')+'"><span class="sw" style="background:linear-gradient(135deg,#0A0A0C 40%,'+t.deep.replace(/^(\d+),(\d+),(\d+)$/,'rgb($1,$2,$3)')+')"><b style="background:'+t.acc+';box-shadow:0 0 14px '+t.acc+'"></b><i style="background:linear-gradient(90deg,'+t.dark+','+t.acc+','+t.light+')"></i></span>'+t.name+'</button>'}).join('');
-    [].forEach.call($('stgt').children,function(b){b.onclick=function(){window.applyTheme(b.dataset.t);cards()}});
+    var G={1:'Schwarz + Farbe',2:'Zwei Farben'},h='';
+    [1,2].forEach(function(g){
+      h+='<h4 class="thg">'+G[g]+'</h4>';
+      Object.keys(T).filter(function(k){return(T[k].grp||1)===g}).forEach(function(k){var t=T[k];
+        h+='<button data-t="'+k+'" class="'+(k===cur?'on':'')+'"><span class="sw" style="background:linear-gradient(135deg,#0A0A0C 40%,rgb('+t.deep+'))"><b style="background:linear-gradient(135deg,'+t.acc+','+t.acc2+');box-shadow:0 0 14px '+t.acc+'"></b><i style="background:linear-gradient(90deg,'+(g===2?t.acc+','+t.acc2:t.dark+','+t.acc+','+t.light)+')"></i></span>'+t.name+'</button>'})});
+    $('stgt').innerHTML=h;
+    [].forEach.call($('stgt').querySelectorAll('button'),function(b){b.onclick=function(){window.applyTheme(b.dataset.t);cards()}});
   }
   window.openSettings=function(){
     cards();$('stgm').textContent='';box.classList.add('on');
