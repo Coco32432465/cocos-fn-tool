@@ -101,7 +101,7 @@
     if (/stoneitemdata/.test(n)) return { k: 'stone' };
     if (/metalitemdata/.test(n)) return { k: 'metal' };
     if (/wads|goldbar|currency_gold/.test(n)) return { k: 'gold' };
-    if (/ammo/.test(n)) return { k: 'ammo' };
+    if (/ammo/.test(n)) return { k: 'ammo', l: /shell/.test(n) ? 'Shells' : /rocket/.test(n) ? 'Raketen' : /energy|cell/.test(n) ? 'Energie' : /heavy/.test(n) ? 'Schwer' : /medium/.test(n) ? 'Mittel' : /light/.test(n) ? 'Leicht' : 'Muni' };
     if (/pickaxe|harvest|buildingitem|edittool|^wall|^floor|^stair|^roof|^trap_|emote|spray|toy|contrail|glider/.test(n)) return { k: 'skip' };
     var r = /_sr_|legendary|_t05/.test(n) ? 5 : /_vr_|epic|_t04/.test(n) ? 4 : /_r_|rare|_t03/.test(n) ? 3 : /_uc_|uncommon|_t02/.test(n) ? 2 : 1;
     if (/chug/.test(n)) return { k: 'heal', l: 'Chug Jug', n: 'chug' };
@@ -123,10 +123,11 @@
   CFT.invAt = function (p, t, names) {
     var e = seriesAt(p.inv, t);
     if (!e) return null;
-    var o = { wood: 0, stone: 0, metal: 0, gold: 0, wpn: [], heal: {}, util: [] };
+    var o = { wood: 0, stone: 0, metal: 0, gold: 0, wpn: [], heal: {}, util: [], ammo: {} };
     e[1].forEach(function (it) {
       var nm = names[it[0]], c = itemCat(nm), n = it[1];
       if (c.k === 'wood' || c.k === 'stone' || c.k === 'metal' || c.k === 'gold') o[c.k] += n;
+      else if (c.k === 'ammo') o.ammo[c.l] = (o.ammo[c.l] || 0) + n;
       else if (c.k === 'wpn') o.wpn.push({ l: c.l, r: c.r, raw: nm });
       else if (c.k === 'util') o.util.push({ l: c.l, n: n, raw: nm });
       else if (c.k === 'heal') o.heal[c.l] = (o.heal[c.l] || 0) + n;
@@ -309,7 +310,7 @@
       return { id: p.id, name: p.name, team: p.team, bot: p.bot, pts: p.pts, dead: p.dead, dbno: dbno, mate: i < tn, vit: p.vit, inv: p.inv };
     });
 
-    var R = { dur: dur, tn: tn, nPlayers: P.length, players: players, zones: Zs, z0: z0, drops: drops, deadTimes: deadTimes, feed: [], cal: null, invNames: ((d.inv || {}).names || []) };
+    var R = { dur: dur, tn: tn, nPlayers: Math.max(tn, Math.min(100, P.length)), players: players, zones: Zs, z0: z0, drops: drops, deadTimes: deadTimes, feed: [], cal: null, invNames: ((d.inv || {}).names || []) };
     var mp = players[0];
 
     /* --- Platzierung --- */
