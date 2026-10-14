@@ -2,7 +2,8 @@
    PATCHNOTES – hier pflegen, nichts anderes im Code anfassen.
 
    Neuer Eintrag = einfach OBEN in die Liste einfügen:
-     { v: '0.7.1', date: '2026-10-20', tag: 'FIX', text: 'Kurzer Satz, was neu ist' },
+     { v: '0.8.0', date: '2026-10-14', tag: 'NEU',     text: 'Neues 3-Spalten-Layout: Games, Matrix, Spieler-Cards, Live Analysis & Event Feed' },
+  { v: '0.7.1', date: '2026-10-20', tag: 'FIX', text: 'Kurzer Satz, was neu ist' },
 
    v     Versionsnummer (ohne "v")
    date  Datum JJJJ-MM-TT (optional; daraus wird "Heute", "vor 3 Tagen" ...)

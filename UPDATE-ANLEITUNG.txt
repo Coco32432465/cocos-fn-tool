@@ -22,8 +22,9 @@ BEI JEDEM UPDATE
    laden es im Hintergrund und zeigen unten rechts "Jetzt neu starten".
 
 
-VERSION 0.7.1 - NEU
+VERSION 0.8.0 - NEU
 ===================
+- Neues 3-Spalten-Layout (Top-Bar mit Tabs, Score, Import; Games, Matrix, Daten-Status; Spieler-Cards; Live Analysis).
 - Viewer, Zonen, Spuren, Kill-Feed und Cup-Report laufen mit echten Replay-Daten.
 - Replays im Fortnite-Ordner werden automatisch gelistet (Tab "Turniere & Cups").
 - Gelesene Replays werden zwischengespeichert (zweites Öffnen ist sofort da).

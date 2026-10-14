@@ -389,7 +389,7 @@
       ev.forEach(function (e) { if (!first && ((e.v != null && e.v < tn) || (e.k != null && e.k < tn))) first = e; });
       if (first && first.t > landT) feed.push({ t: first.t, mk: true, c: '#d4d4d8', tip: true, txt: 'Erster Kampf deines Teams ' + Math.round(first.t - landT) + ' s nach der Landung' });
     }
-    mis.forEach(function (m) { feed.push({ t: m.t, mk: true, c: '#fb923c', tip: true, mis: true, txt: m.txt, better: m.better }); });
+    mis.forEach(function (m) { feed.push({ t: m.t, mk: true, c: '#fb923c', tip: true, mis: true, txt: m.txt, better: m.better, kind: m.kind, val: m.val, unit: m.unit, zone: m.zone, snap: m.snap }); });
     good.slice(0, 2).forEach(function (g) { feed.push({ t: g.t, mk: true, c: '#4ade80', tip: true, txt: g.txt }); });
     feed.sort(function (a, b) { return a.t - b.t; });
     R.feed = feed;
