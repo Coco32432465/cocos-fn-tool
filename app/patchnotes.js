@@ -15,6 +15,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.8.6', date: '2026-10-14', tag: 'NEU', text: 'Review-Layout aufgeräumt: größere Karte, rechts Tabs (Analyse / Feed / Games). Spielerkarten zeigen Leben, Schild, Mats, Waffen & Heilung (Daten nur für dich – aus neu eingelesenen Replays)' },
   { v: '0.8.5', date: '2026-10-14', tag: 'NEU', text: 'Replay-Karte: Zoomen (Mausrad, +/−), Verschieben per Ziehen, „Mir folgen“, Spur ein-/ausblendbar' },
   { v: '0.8.4', date: '2026-10-14', tag: 'NEU', text: 'Deutlich bessere Tipps: Zonenrand/Deep-Position, Höhe im Endgame, Hot Drops, Team-Abstand, Todesursachen mit Fakten-Chips' },
   { v: '0.8.3', date: '2026-10-14', tag: 'NEU', text: 'Hauptmenü mit Bildern (VOD Review in der Mitte), 4 neue Farbschemata (Grün, Gold, Blau·Lila, Grün·Blau), genauere Kartenausrichtung, Landeort Roter-Geist-Insel' },

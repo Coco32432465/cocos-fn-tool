@@ -87,6 +87,52 @@
   function flagsAt(p, t) { return p.pts.length ? p.pts[idxAt(p.pts, t)][4] : 0; }
   function alive(p, t) { return p.dead == null || t < p.dead; }
   var F_BUS = 1, F_SKY = 2, F_DBNO = 16, F_STORM = 32, F_CHUTE = 64, F_AIR = 1 | 2 | 64;
+  /* Leben/Schild + Inventar (nur fuer den Replay-Besitzer vorhanden) */
+  function seriesAt(a, t) {
+    if (!a || !a.length || t < a[0][0] - 1) return null;
+    var lo = 0, hi = a.length - 1;
+    if (t >= a[hi][0]) return a[hi];
+    while (hi - lo > 1) { var m = (lo + hi) >> 1; if (a[m][0] <= t) lo = m; else hi = m; }
+    return a[lo];
+  }
+  function itemCat(n) {
+    n = String(n || '').toLowerCase();
+    if (/wooditemdata/.test(n)) return { k: 'wood' };
+    if (/stoneitemdata/.test(n)) return { k: 'stone' };
+    if (/metalitemdata/.test(n)) return { k: 'metal' };
+    if (/wads|goldbar|currency_gold/.test(n)) return { k: 'gold' };
+    if (/ammo/.test(n)) return { k: 'ammo' };
+    if (/pickaxe|harvest|buildingitem|edittool|^wall|^floor|^stair|^roof|^trap_|emote|spray|toy|contrail|glider/.test(n)) return { k: 'skip' };
+    var r = /_sr_|legendary|_t05/.test(n) ? 5 : /_vr_|epic|_t04/.test(n) ? 4 : /_r_|rare|_t03/.test(n) ? 3 : /_uc_|uncommon|_t02/.test(n) ? 2 : 1;
+    if (/chug/.test(n)) return { k: 'heal', l: 'Chug Jug', n: 'chug' };
+    if (/shieldsmall|minishield|mini/.test(n)) return { k: 'heal', l: 'Mini-Schild', n: 'mini' };
+    if (/shield|slurp|bigpot/.test(n) && !/shotgun|shockwave/.test(n)) return { k: 'heal', l: /slurp/.test(n) ? 'Slurp' : 'Schild', n: 'shield' };
+    if (/bandage/.test(n)) return { k: 'heal', l: 'Bandage', n: 'bandage' };
+    if (/medkit/.test(n)) return { k: 'heal', l: 'Medkit', n: 'medkit' };
+    if (/fish|mushroom|apple|banana|coconut|pepper|corn|slurpfish|potion|splash/.test(n)) return { k: 'heal', l: 'Food', n: 'food' };
+    if (/shotgun/.test(n)) return { k: 'wpn', l: 'SG', r: r };
+    if (/smg|submachine|combat_smg|burst_?smg/.test(n)) return { k: 'wpn', l: 'SMG', r: r };
+    if (/sniper|dmr|bolt|heavy_?sniper/.test(n)) return { k: 'wpn', l: 'SNP', r: r };
+    if (/pistol|revolver|handcannon|sidearm/.test(n)) return { k: 'wpn', l: 'PIS', r: r };
+    if (/assault|rifle|scar|burst|ar_/.test(n)) return { k: 'wpn', l: 'AR', r: r };
+    if (/rocket|launcher|grenade|boom|c4|clingers|stink|impulse|trap|shockwave|bouncer|portafort|rift|kit|guardian/.test(n)) return { k: 'util', l: /grenade/.test(n) ? 'Granate' : /launcher|rocket/.test(n) ? 'Raketen' : /shockwave/.test(n) ? 'Shockwave' : 'Util', r: r };
+    if (/^wid_|weapon/.test(n)) return { k: 'wpn', l: 'WPN', r: r };
+    return { k: 'util', l: 'Item', r: r };
+  }
+  CFT.vitAt = function (p, t) { var e = seriesAt(p.vit, t); return e ? { hp: e[1], sh: e[2] } : null; };
+  CFT.invAt = function (p, t, names) {
+    var e = seriesAt(p.inv, t);
+    if (!e) return null;
+    var o = { wood: 0, stone: 0, metal: 0, gold: 0, wpn: [], heal: {}, util: [] };
+    e[1].forEach(function (it) {
+      var nm = names[it[0]], c = itemCat(nm), n = it[1];
+      if (c.k === 'wood' || c.k === 'stone' || c.k === 'metal' || c.k === 'gold') o[c.k] += n;
+      else if (c.k === 'wpn') o.wpn.push({ l: c.l, r: c.r, raw: nm });
+      else if (c.k === 'util') o.util.push({ l: c.l, n: n, raw: nm });
+      else if (c.k === 'heal') o.heal[c.l] = (o.heal[c.l] || 0) + n;
+    });
+    return o;
+  };
   CFT.posAt = posAt;
   CFT.flagsAt = flagsAt;
   CFT.started = function (p, t) { return p.pts.length > 0 && t >= p.pts[0][0] - 0.5; };
@@ -135,7 +181,9 @@
       return {
         id: p.id, name: p.name || ('Spieler ' + p.id), bot: !!p.bot, owner: !!p.owner, epic: p.epic || '',
         team: num(p.team, -1), place: num(p.placement, -1), kills: num(p.kills, 0),
-        dead: num(p.deathT), pts: (tr[String(p.id)] || []).filter(function (a) { return a && a.length >= 3; })
+        dead: num(p.deathT), pts: (tr[String(p.id)] || []).filter(function (a) { return a && a.length >= 3; }),
+        vit: ((d.vitals || {})[String(p.id)] || []).filter(function (a) { return a && a.length >= 3; }),
+        inv: (((d.inv || {}).p || {})[String(p.id)] || []).filter(function (a) { return a && a.length >= 2; })
       };
     });
 
@@ -155,6 +203,8 @@
       P.forEach(function (p) {
         p.pts = p.pts.map(function (a) { return [a[0] - shift, a[1], a[2], a[3] || 0, a[4] || 0]; });
         if (p.dead != null) p.dead -= shift;
+        p.vit = p.vit.map(function (a) { return [a[0] - shift, a[1], a[2]]; });
+        p.inv = p.inv.map(function (a) { return [a[0] - shift, a[1]]; });
       });
     } else {
       P.forEach(function (p) { p.pts = p.pts.map(function (a) { return [a[0], a[1], a[2], a[3] || 0, a[4] || 0]; }); });
@@ -256,10 +306,10 @@
         else if (!(a[4] & F_DBNO) && st != null) { dbno.push([st, a[0]]); st = null; }
       });
       if (st != null) dbno.push([st, p.dead != null ? p.dead : dur]);
-      return { id: p.id, name: p.name, team: p.team, bot: p.bot, pts: p.pts, dead: p.dead, dbno: dbno, mate: i < tn };
+      return { id: p.id, name: p.name, team: p.team, bot: p.bot, pts: p.pts, dead: p.dead, dbno: dbno, mate: i < tn, vit: p.vit, inv: p.inv };
     });
 
-    var R = { dur: dur, tn: tn, nPlayers: P.length, players: players, zones: Zs, z0: z0, drops: drops, deadTimes: deadTimes, feed: [], cal: null };
+    var R = { dur: dur, tn: tn, nPlayers: P.length, players: players, zones: Zs, z0: z0, drops: drops, deadTimes: deadTimes, feed: [], cal: null, invNames: ((d.inv || {}).names || []) };
     var mp = players[0];
 
     /* --- Platzierung --- */

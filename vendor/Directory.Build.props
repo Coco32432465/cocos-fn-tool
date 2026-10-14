@@ -1,0 +1,11 @@
+<Project>
+  <!-- Vereinfachte Build-Einstellungen fuer die mitgelieferte Replay-Bibliothek (FortniteReplayDecompressor, MIT) -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CS8618;CS8601;CS8602;CS8603;CS8604;CS8625;CS8600;CS8620;CS8767;CS8765;CS1591;CS0108;CS0618</NoWarn>
+  </PropertyGroup>
+</Project>

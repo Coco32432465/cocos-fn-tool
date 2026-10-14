@@ -327,6 +327,38 @@ body.vw #sbar,body.rp #sbar{display:none}
 .vc>.status{display:none}
 @media (max-height:800px){.pc .slots{display:none}.pc{padding:8px 10px}}
 @media (max-width:1180px){.vgrid{grid-template-columns:1fr;overflow-y:auto;display:flex;flex-direction:column}.vl,.vr{overflow:visible}#viewer .stage{flex:none;height:min(100vw,56vh)}#viewer .feed{flex:none}.vgl{max-height:none}.vl{order:2}.vr{order:1}}
+
+/* ===== v0.8.6 Review-Layout: 2 Spalten, Tabs rechts ===== */
+.vgrid{grid-template-columns:minmax(0,1fr) 400px;gap:16px;padding:14px 18px}
+.vr{overflow:hidden;gap:10px}
+.rtabs{display:flex;gap:4px;padding:3px;border-radius:11px;background:#ffffff06;border:1px solid var(--line);flex:none}
+.rtabs button{flex:1;padding:9px 6px;border-radius:8px;font:700 12px 'Orbitron',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);transition:.2s}
+.rtabs button:hover{color:var(--txt)}.rtabs button.on{background:rgba(var(--rgb),.16);color:var(--acc-light,var(--acc));box-shadow:0 0 14px rgba(var(--rgb),.25) inset}
+.rpane{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:2px}
+.rpane[hidden]{display:none}
+.rpane::-webkit-scrollbar{width:6px}.rpane::-webkit-scrollbar-thumb{background:#ffffff1f;border-radius:6px}
+.vr .panel{padding:14px 16px}
+#viewer .feed{flex:1 1 auto;min-height:0}
+#viewer .feed .evl{max-height:none}
+.vgl{max-height:none}
+.vds{max-height:none}
+.vc{overflow:hidden;gap:12px}
+#viewer .stage{min-height:300px}
+.pcards{gap:10px}
+.pc{padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pc .bar{margin-top:0;height:16px}
+.pc .bar span{font-size:10px}
+.pc .nod{font-size:12px;color:var(--mute);line-height:1.3;padding:4px 0}
+.pc .pm{margin-top:0;flex-wrap:wrap;gap:4px 10px}
+.pc .mats{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px;color:#cfcfda}
+.pc .mats i{font:800 9px 'Orbitron',sans-serif;color:var(--acc);margin-right:3px;font-style:normal}
+.pc .mats b{margin-left:auto;font:700 11px 'Orbitron',sans-serif;color:var(--txt)}
+.pc .slots{display:flex;flex-wrap:wrap;gap:4px;margin-top:0}
+.pc .slots span{padding:3px 7px;font-size:10px}
+.pc .slots sup{font-size:8px;margin-left:2px;opacity:.8}
+.pc .heal{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:12px;color:#cfcfda}.pc .heal b{color:var(--acc-light,var(--acc))}.pc .heal .dim{color:var(--mute)}
+@media (max-height:800px){.pc .slots{display:flex}.pc{padding:8px 10px;gap:5px}}
+@media (max-width:1180px){.vgrid{grid-template-columns:1fr;overflow-y:auto;display:flex;flex-direction:column}.vr{overflow:visible;order:2}.rpane{overflow:visible}.vc{overflow:visible}#viewer .stage{flex:none;height:min(100vw,56vh)}}
 @media (max-width:760px){.vtab{padding:6px 9px;font-size:10px}.rtop .brand b{display:none}.imp{display:none}}
 
 .status.real{display:block}.status.real .bars,.status.real .cn,.status.real .load{display:none}.status:not(.real) .rhud{display:none}
@@ -710,11 +742,6 @@ header .mbtn{margin-right:14px}
     <button class="go imp" id="vimp">⤓ Import</button>
   </div>
   <div class="vgrid">
-    <aside class="vl">
-      <section class="panel"><h2 class="disp">Games</h2><ul class="vgl" id="vg"></ul></section>
-      <section class="panel"><h2 class="disp">Where Games Break</h2><div class="vmx" id="vmx"></div></section>
-      <section class="panel"><h2 class="disp">Daten-Status</h2><ul class="vds" id="vds"></ul></section>
-    </aside>
     <section class="vc">
       <div class="vhead"><h1 class="disp" id="vt">Replay</h1><small id="vs"></small></div>
       <div class="stage" id="stage"><canvas id="cv"></canvas>
@@ -761,9 +788,19 @@ header .mbtn{margin-right:14px}
 
     </section>
     <aside class="vr">
-      <section class="panel la"><h2 class="disp">Live Analysis</h2><div id="la"></div></section>
-      <section class="panel"><h2 class="disp">Phasen-Bewertung</h2><div class="phs" id="phs"></div></section>
-      <section class="panel feed"><h2 class="disp">Event Feed</h2><ul class="evl" id="evl"></ul></section>
+      <div class="rtabs" id="rtabs" role="tablist"><button class="on" data-p="an" role="tab">Analyse</button><button data-p="fd" role="tab">Feed</button><button data-p="gm" role="tab">Games</button></div>
+      <div class="rpane" data-p="an">
+        <section class="panel la"><h2 class="disp">Live Analysis</h2><div id="la"></div></section>
+        <section class="panel"><h2 class="disp">Phasen-Bewertung</h2><div class="phs" id="phs"></div></section>
+      </div>
+      <div class="rpane" data-p="fd" hidden>
+        <section class="panel feed"><h2 class="disp">Event Feed</h2><ul class="evl" id="evl"></ul></section>
+      </div>
+      <div class="rpane" data-p="gm" hidden>
+        <section class="panel"><h2 class="disp">Games</h2><ul class="vgl" id="vg"></ul></section>
+        <section class="panel"><h2 class="disp">Where Games Break</h2><div class="vmx" id="vmx"></div></section>
+        <section class="panel"><h2 class="disp">Daten-Status</h2><ul class="vds" id="vds"></ul></section>
+      </div>
     </aside>
   </div>
 </div>
@@ -1145,8 +1182,9 @@ function fl(p,t){return CF.started(p.real,t)?CF.flagsAt(p.real,Math.min(t,p.dead
 function updCards(t){
  var n=R?R.tn:3,h='',i;
  var zs=R?zoneAt(t).st:null,mp=R&&V.P[0].real.pts.length?CF.posAt(V.P[0].real,Math.min(t,V.P[0].dead!=null?V.P[0].dead:t)):null;
+ function bar(cl,lb,v,mx){var w=Math.max(0,Math.min(100,v/mx*100));return '<div class="bar '+cl+'"><i style="width:'+w+'%"></i><span><em>'+lb+'</em><em>'+Math.round(v)+'</em></span></div>'}
  for(i=0;i<n&&V.P[i];i++){
-  var p=V.P[i],dead=p.dead!=null&&t>=p.dead,c=TC[i],nm=esc(p.n),dn=false,st='LEBEND',sub='',air=false,hp,sh,mats,pm,slots,kills=0;
+  var p=V.P[i],dead=p.dead!=null&&t>=p.dead,c=TC[i],nm=esc(p.n),dn=false,st='LEBEND',sub='',air=false,bars,pm,inv='',kills=0;
   if(R){
    p.real.dbno.forEach(function(w){if(t>=w[0]&&t<w[1])dn=true});
    var f=fl(p,t),started=CF.started(p.real,t);air=!!(f&(1|2|64));
@@ -1155,16 +1193,26 @@ function updCards(t){
    sub=(f&4&&!dead)?'sprintet':(f&8&&!dead)?'geduckt':'';
    V.F.forEach(function(x){if(x.e&&x.e.k===i&&x.t<=t)kills++});
    var dz=(q&&zs)?Math.hypot(q[0]-zs.c[0],q[1]-zs.c[1])/100-zs.c[2]/100:null,dm=(q&&mp&&i>0)?Math.round(Math.hypot(q[0]-mp[0],q[1]-mp[1])/100):null;
-   hp='<div class="bar hp na"><span><em>HP</em><em>n/v</em></span></div>';sh='<div class="bar sh na"><span><em>SCHILD</em><em>n/v</em></span></div>';
-   pm='<div class="pm"><span>Kills <b>'+kills+'</b></span><span>'+(i>0&&dm!=null?'Abstand <b>'+dm+' m</b>':'')+'</span><span>'+(dz==null?'':dz>0?'<b style="color:#fb923c">'+Math.round(dz)+' m außen</b>':'Zone <b>−'+Math.round(-dz)+' m</b>')+'</span></div>';
-   slots=['AIR','SG','SMG','HEAL','UTIL'].map(function(x,k){return '<span'+(k===0&&air?' class="on"':'')+(k?' title="Inventar steht nicht in den Replay-Daten"':'')+'>'+x+'</span>'}).join('');
+   var vt=CF.vitAt(p.real,t);
+   if(vt){var hv=dead?0:vt.hp,sv=dead?0:vt.sh;bars=bar('hp','LEBEN',hv,100)+bar('sh','SCHILD',sv,100)}
+   else bars='<div class="nod">'+(i===0?'Keine Leben-Daten in dieser Datei – Replay mit Parser 0.8.6 neu einlesen.':'Leben &amp; Schild von Mitspielern stehen nicht im Replay.')+'</div>';
+   var iv=CF.invAt(p.real,t,R.invNames||[]);
+   if(iv){
+    var mt=iv.wood+iv.stone+iv.metal;
+    inv='<div class="mats" title="Holz '+iv.wood+' · Stein '+iv.stone+' · Metall '+iv.metal+(iv.gold?' · Gold '+iv.gold:'')+'"><span><i>H</i>'+iv.wood+'</span><span><i>S</i>'+iv.stone+'</span><span><i>M</i>'+iv.metal+'</span><b>'+mt+' Mats</b>'+(iv.gold?'<span class="gd"><i>G</i>'+iv.gold+'</span>':'')+'</div>';
+    var RL=['','C','U','R','E','L'];
+    inv+='<div class="slots">'+(iv.wpn.slice(0,5).map(function(w){return '<span class="on" title="'+esc(w.raw)+'">'+w.l+'<sup>'+RL[w.r||1]+'</sup></span>'}).join('')||'<span>keine Waffen</span>')+iv.util.slice(0,2).map(function(u){return '<span title="'+esc(u.raw)+'">'+esc(u.l)+(u.n>1?' ×'+u.n:'')+'</span>'}).join('')+'</div>';
+    var hk=Object.keys(iv.heal);
+    inv+='<div class="heal">'+(hk.length?hk.map(function(k){return '<span><b>'+iv.heal[k]+'×</b> '+k+'</span>'}).join(''):'<span class="dim">keine Heilung</span>')+'</div>';
+   }
+   pm='<div class="pm"><span>Kills <b>'+kills+'</b></span>'+(i>0&&dm!=null?'<span>Abstand <b>'+dm+' m</b></span>':'')+(dz==null?'':dz>0?'<span><b style="color:#fb923c">'+Math.round(dz)+' m außen</b></span>':'<span>Zone <b>−'+Math.round(-dz)+' m</b></span>')+'</div>';
   }else{
-   var hv=dead?0:Math.round(55+45*Math.abs(Math.cos(t/83+i))),sv=dead?0:Math.round(100*Math.abs(Math.sin(t/121+1+i))),mt=dead?0:Math.round(80+281*Math.abs(Math.sin(t/190+i)));
+   var hv2=dead?0:Math.round(55+45*Math.abs(Math.cos(t/83+i))),sv2=dead?0:Math.round(100*Math.abs(Math.sin(t/121+1+i))),mt2=dead?0:Math.round(80+281*Math.abs(Math.sin(t/190+i)));
    st=dead?'ELIMINIERT':'LEBEND';
-   hp='<div class="bar hp"><i style="width:'+hv+'%"></i><span><em>HP</em><em>'+hv+'</em></span></div>';sh='<div class="bar sh"><i style="width:'+sv+'%"></i><span><em>SCHILD</em><em>'+sv+'</em></span></div>';
-   pm='<div class="pm"><span>Mats <b>'+mt+'</b></span><span>Demo-Daten</span></div>';
-   var act=Math.floor(t/12+i)%5;slots=['AIR','SG','SMG','HEAL','UTIL'].map(function(x,k){return '<span'+(k===act&&!dead?' class="on"':'')+'>'+x+'</span>'}).join('')}
-  h+='<div class="pc'+(dead?' dead':dn?' dn':'')+'" style="--c:'+c+'"><div class="ph"><i class="av">'+esc(String(p.n).charAt(0).toUpperCase())+'</i><div><b>'+nm+'</b><small>'+(i===0?'DU':'MATE')+(sub?' · '+sub:'')+'</small></div><em class="st">'+st+'</em></div>'+hp+sh+pm+'<div class="slots">'+slots+'</div></div>'}
+   bars=bar('hp','LEBEN',hv2,100)+bar('sh','SCHILD',sv2,100);
+   pm='<div class="pm"><span>Mats <b>'+mt2+'</b></span><span>Demo-Daten</span></div>';
+  }
+  h+='<div class="pc'+(dead?' dead':dn?' dn':'')+'" style="--c:'+c+'"><div class="ph"><i class="av">'+esc(String(p.n).charAt(0).toUpperCase())+'</i><div><b>'+nm+'</b><small>'+(i===0?'DU':'MATE')+(sub?' · '+sub:'')+'</small></div><em class="st">'+st+'</em></div>'+bars+pm+inv+'</div>'}
  if(HUDC.pc!==h){HUDC.pc=h;var pe=$('pcards');pe.style.gridTemplateColumns='repeat('+Math.max(1,Math.min(n,4))+',minmax(0,1fr))';pe.innerHTML=h}}
 var KL={rot:'POSITIONING',storm:'STORM DAMAGE',early:'HOT DROP / EARLY DEATH',alone:'ALONE · TEAM SPACING',death:'CRITICAL MISTAKE',team:'TEAM SPACING',spread:'TEAM SPACING',edge:'ZONE POSITION',height:'HIGH GROUND',outnum:'OUTNUMBERED',lowground:'HIGH GROUND LOST',range:'LONG RANGE',aftermate:'AFTER TEAM LOSS'};
 function factsH(m){return m.facts&&m.facts.length?'<div class="facts">'+m.facts.map(function(f){return '<span>'+esc(f)+'</span>'}).join('')+'</div>':''}
@@ -1185,6 +1233,9 @@ $('la').onclick=function(e){var b=e.target.closest('button');if(!b)return;var L=
  if(a==='mom'){seek(m.t-8);m.done=false;setPlay(true)}
  else if(a==='cont'){hideMis();if(V.t<DUR)setPlay(true)}
  else{var k=(V.li+(a==='next'?1:L.length-1))%L.length;hideMis();seek(L[k].t-3);V.cm=null;V.laK=null;updLA(true)}};
+/* rechte Tabs */
+(function(){var rt=$('rtabs');rt.onclick=function(e){var b=e.target.closest('button');if(!b)return;[].forEach.call(rt.children,function(x){x.classList.toggle('on',x===b)});[].forEach.call(document.querySelectorAll('#viewer .rpane'),function(p){p.hidden=p.dataset.p!==b.dataset.p})};
+ window.cftTab=function(k){var b=rt.querySelector('[data-p="'+k+'"]');if(b)b.click()}})();
 /* linke Spalte */
 var GR={A:'g-a',B:'g-b',C:'g-c',D:'g-d'};
 function curGames(){return window.cftGames?window.cftGames():[]}

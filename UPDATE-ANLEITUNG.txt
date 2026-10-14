@@ -71,3 +71,12 @@ v0.8.4:
 
 v0.8.5:
 - Viewer: Zoom (Mausrad / Buttons), Verschieben (Ziehen), Mir folgen, Doppelklick = Reset, Spur ein/aus (wird gemerkt).
+
+v0.8.6:
+- Parser (parser/Program.cs) liest jetzt Leben, Schild und Inventar (Holz/Stein/Metall, Waffen, Heilung) aus dem Replay.
+  WICHTIG: Replays enthalten diese Werte nur fuer den Replay-Besitzer (dich), nicht fuer Mates/Gegner.
+- Der Parser nutzt jetzt die mitgelieferte Bibliothek in vendor/ (FortniteReplayReader, MIT-Lizenz, siehe vendor/LICENSE-...).
+  Release wie gewohnt per Tag v0.8.6 -> GitHub Actions baut ReplayDump.exe neu.
+- Alte Replays muessen einmal neu eingelesen werden, damit Leben/Inventar in der JSON stehen (bei alten JSONs zeigt die Karte einen Hinweis).
+- Viewer-Layout: 2 Spalten, rechts Tabs Analyse / Feed / Games; Spielerkarten mit Leben, Schild, Mats, Waffen, Heilung.
+- Falls der Schildbalken falsch aussieht: neue JSON schicken ("vitalsInfo" in der Datei zeigt den erkannten Wert).

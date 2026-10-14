@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FortniteReplayReader" Version="*" />
+    <ProjectReference Include="..\vendor\FortniteReplayReader\FortniteReplayReader.csproj" />
   </ItemGroup>
 
 </Project>
