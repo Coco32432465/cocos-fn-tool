@@ -64,3 +64,7 @@ v0.8.3 / v0.8.3:
 - Hauptmenue: VOD Review in der Mitte, alle Kacheln gleich gross (Hover vergroessert), Bilder pro Kachel.
 - Neue Farbschemata in den Einstellungen: Schwarz+Gruen/Gold, Zwei Farben: Blau-Lila, Gruen-Blau. Neues Schema: in app/dashboard.html im Theme-Block mk(name,gruppe,farbe1,farbe2) ergaenzen.
 - Karten-Kalibrierung: Skalierung H=153000 (vorher 131072), gespeicherte alte Kalibrierung wird ignoriert (Key cft_cal4).
+
+v0.8.4:
+- Analyse stark erweitert (app/cft-import.js): Zonenrand vs. deep (Zone 4-7), Hoehe ab Zone 7, Hot-Drop-Landung, Team-Abstand, Todesursachen (Sturm, allein, in Unterzahl, nach Mate-Verlust, Hoehe, Distanz).
+- Jeder Tipp zeigt Fakten-Chips (Distanz, Gegner in 100 m, Abstand zum Mate ...) und ein konkretes "Besser".

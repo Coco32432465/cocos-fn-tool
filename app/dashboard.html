@@ -395,6 +395,7 @@ body.vw #sbar,body.rp #sbar{display:none}
 .mtag{background:var(--acc);color:#fff;padding:4px 10px;border-radius:7px;font-weight:800;box-shadow:0 0 14px rgba(var(--rgb),.53)}
 .mh span+span{padding:3px 8px;border-radius:99px;border:1px solid #ffffff1f}
 .mis p{margin:10px 0;font-size:16px;line-height:1.3}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.facts span{font:700 12px 'Rajdhani',sans-serif;letter-spacing:.06em;padding:3px 9px;border-radius:99px;border:1px solid rgba(var(--rgb),.4);background:rgba(var(--rgb),.1);color:var(--acc-pale)}
 .better{padding:10px 12px;border-radius:10px;background:linear-gradient(135deg,#3b0a10,#3a1a05);border:1px solid #fb923c55;border-left:3px solid #fb923c;color:#ffd9b8;font-size:15px;line-height:1.3}
 .better b{color:#fb923c}
 .mact{display:flex;gap:8px;margin-top:12px}
@@ -1145,7 +1146,8 @@ function updCards(t){
    var act=Math.floor(t/12+i)%5;slots=['AIR','SG','SMG','HEAL','UTIL'].map(function(x,k){return '<span'+(k===act&&!dead?' class="on"':'')+'>'+x+'</span>'}).join('')}
   h+='<div class="pc'+(dead?' dead':dn?' dn':'')+'" style="--c:'+c+'"><div class="ph"><i class="av">'+esc(String(p.n).charAt(0).toUpperCase())+'</i><div><b>'+nm+'</b><small>'+(i===0?'DU':'MATE')+(sub?' · '+sub:'')+'</small></div><em class="st">'+st+'</em></div>'+hp+sh+pm+'<div class="slots">'+slots+'</div></div>'}
  if(HUDC.pc!==h){HUDC.pc=h;var pe=$('pcards');pe.style.gridTemplateColumns='repeat('+Math.max(1,Math.min(n,4))+',minmax(0,1fr))';pe.innerHTML=h}}
-var KL={rot:'POSITIONING',storm:'STORM DAMAGE',early:'CRITICAL MISTAKE',alone:'CRITICAL MISTAKE',death:'CRITICAL MISTAKE',team:'TEAM SPACING'};
+var KL={rot:'POSITIONING',storm:'STORM DAMAGE',early:'HOT DROP / EARLY DEATH',alone:'ALONE · TEAM SPACING',death:'CRITICAL MISTAKE',team:'TEAM SPACING',spread:'TEAM SPACING',edge:'ZONE POSITION',height:'HIGH GROUND',outnum:'OUTNUMBERED',lowground:'HIGH GROUND LOST',range:'LONG RANGE',aftermate:'AFTER TEAM LOSS'};
+function factsH(m){return m.facts&&m.facts.length?'<div class="facts">'+m.facts.map(function(f){return '<span>'+esc(f)+'</span>'}).join('')+'</div>':''}
 function updLA(force){
  var L=V.mis||[],idx=-1,q,key;
  if(L.length){idx=0;for(q=0;q<L.length;q++)if(L[q].t<=V.t+.5)idx=q}
@@ -1156,7 +1158,7 @@ function updLA(force){
  if(idx<0){el.innerHTML='<div class="lac ok"><div class="lah"><span class="crit">ALLES SAUBER</span></div><p class="lat">Keine kritischen Fehler erkannt.</p><div class="better"><b>Weiter so:</b> Halte Position und Rotation wie in diesem Game.</div></div>';return}
  var m=L[idx],zn=m.zone||(m.zoneN)||zoneNo(m.t),svg=(m.snap&&window.cftMM)?window.cftMM(m.snap,m.val||'',m.unit||''):'';
  el.innerHTML='<div class="lac'+(V.laHit?' hit':'')+'"><div class="lah"><span class="crit">⚠ '+(KL[m.kind]||'CRITICAL MISTAKE')+'</span><time>'+fmt(m.t)+'</time><em>Zone '+zn+'</em><span class="cnt">'+(idx+1)+' / '+L.length+'</span></div>'+svg+
-  '<p class="lat">'+esc(m.txt)+'</p><div class="better"><b>Besser:</b> '+esc(m.better||'')+'</div>'+
+  '<p class="lat">'+esc(m.txt)+'</p>'+factsH(m)+'<div class="better"><b>Besser:</b> '+esc(m.better||'')+'</div>'+
   '<div class="lab"><button class="go" data-a="mom">▶ Replay Moment</button>'+(V.cm?'<button class="gh" data-a="cont">Weiter</button>':'')+(L.length>1?'<button class="gh" data-a="prev" aria-label="Vorheriger Fehler">‹</button><button class="gh" data-a="next" aria-label="Nächster Fehler">›</button>':'')+'</div></div>';
  V.laHit=false}
 $('la').onclick=function(e){var b=e.target.closest('button');if(!b)return;var L=V.mis||[],m=L[V.li];if(!m)return;var a=b.dataset.a;
@@ -1220,6 +1222,7 @@ var TPL=[
  ['Game over','In der Endzone ohne Höhe und ohne Cover gestanden.','Ab Zone 8 früh High Layer sichern und die Mobility für die letzte Rotation aufheben.']];
 var G=[],DEMO=[],sel=7,CF=window.CFT;
 function esc(x){return String(x).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function factsH(m){return m.facts&&m.facts.length?'<div class="facts">'+m.facts.map(function(f){return '<span>'+esc(f)+'</span>'}).join('')+'</div>':''}
 function gamesNow(){if(CF.games.length)return CF.games;if(!DEMO.length){var o=G;G=DEMO;gen();G=o}return DEMO}
 window.cftGames=function(){return gamesNow()};window.cftRows=function(g){return g.rows||STEPS};
 function sc(v){return v>=70?'#e8e8ee':v>=45?'#fb923c':'#FF003C'}
@@ -1290,7 +1293,7 @@ function render(){
  // Top-3 Fehler
  if(REAL){var TR=topReal();
   $('wg').innerHTML=TR.length?TR.map(function(x,n){var m=x.m,t=Math.round(m.t);
-   return '<div class="wcard">'+mmReal(m.snap,m.val,m.unit)+'<div class="wh"><span class="rk">'+(n+1)+'</span><small>Game '+(x.g.i+1)+' · Zone '+m.zone+' · '+CF.fmt(t)+'</small><b class="met">'+esc(m.val)+'<small>'+esc(m.unit||'')+'</small></b></div><p>'+esc(m.txt)+'</p><div class="better"><b>Besser:</b> '+esc(m.better)+'</div><button class="go" data-g="'+x.g.i+'" data-t="'+t+'">Im Replay ansehen</button></div>'}).join(''):'<div class="panel"><p>Keine auffälligen Fehler gefunden – starke Runde!</p></div>';
+   return '<div class="wcard">'+mmReal(m.snap,m.val,m.unit)+'<div class="wh"><span class="rk">'+(n+1)+'</span><small>Game '+(x.g.i+1)+' · Zone '+m.zone+' · '+CF.fmt(t)+'</small><b class="met">'+esc(m.val)+'<small>'+esc(m.unit||'')+'</small></b></div><p>'+esc(m.txt)+'</p>'+factsH(m)+'<div class="better"><b>Besser:</b> '+esc(m.better)+'</div><button class="go" data-g="'+x.g.i+'" data-t="'+t+'">Im Replay ansehen</button></div>'}).join(''):'<div class="panel"><p>Keine auffälligen Fehler gefunden – starke Runde!</p></div>';
   [].forEach.call($('wg').querySelectorAll('.go'),function(b){b.onclick=function(){var g=G[+b.dataset.g],t=+b.dataset.t;openViewer(g.m);setTimeout(function(){window.vSeek&&vSeek(t-4)},700)}})}
  else{
  var all=G.filter(function(g){return !g.win}).sort(function(a,b){return a.tot-b.tot}),W=[],seen={},r=rng(5);all.forEach(function(g){if(W.length<3&&!seen[g.ds]){seen[g.ds]=1;W.push(g)}});all.forEach(function(g){if(W.length<3&&W.indexOf(g)<0)W.push(g)});

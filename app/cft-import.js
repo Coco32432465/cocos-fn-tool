@@ -292,6 +292,35 @@
       return best;
     }
 
+    /* --- Hilfen für die Analyse --- */
+    function present(p, t) { return p.pts.length && alive(p, t) && CFT.started(p, t) && t <= p.pts[p.pts.length - 1][0] + 6; }
+    var foesAll = players.slice(tn).filter(function (p) { return !p.bot; });
+    function foes(t, pos, rad) {
+      var out = [];
+      if (!pos) return out;
+      foesAll.forEach(function (p) {
+        if (!present(p, t)) return;
+        var q = posAt(p, t);
+        if (!q) return;
+        var dd = dist(pos, q);
+        if (dd <= rad) out.push({ p: p, d: dd, q: q });
+      });
+      return out;
+    }
+    function zAt(p, t) { return p.pts.length ? p.pts[idxAt(p.pts, t)][3] : 0; }
+    function speedMe(t) {
+      var a = posAt(mp, t - 8), b = posAt(mp, t), v = a && b ? dist(a, b) / 8 : 0;
+      return Math.max(550, Math.min(900, v || 700));
+    }
+    function teamsOf(list) {
+      var s = {}, n = 0;
+      list.forEach(function (f) { var k = f.p.team >= 0 ? 't' + f.p.team : 'p' + f.p.id; if (!s[k]) { s[k] = 1; n++; } });
+      return n;
+    }
+    function inZone(pt, N) { return dist(pt, [N.x, N.y]) <= N.r; }
+    function meters(cm) { return Math.round(cm / 100); }
+    function plural(n, a, b) { return n + ' ' + (n === 1 ? a : b); }
+
     /* --- Analyse: Rotation je Zonenzug --- */
     var mis = [], good = [], rot = [];
     Zs.forEach(function (z, idx) {
@@ -309,11 +338,22 @@
         }
         rec.team = allIn && cnt >= 2 && rec.ok;
         if (!rec.ok && gap > Math.max(2500, 0.04 * z.N.r)) {
-          mis.push({ t: z.s, kind: 'rot', sev: gap / 100, val: Math.round(gap / 100) + ' m', unit: 'außerhalb', zone: k + 1,
-            txt: 'Zone ' + (k + 1) + ' zog zu und du standest noch ' + Math.round(gap / 100) + ' m außerhalb der nächsten Zone.',
-            better: 'Rotiere schon beim Ping los und sei vor dem Zonenzug im neuen Kreis – so musst du nicht durch den Sturm laufen.' });
+          var pres = 0, inn = 0;
+          foesAll.forEach(function (p) { if (!present(p, z.s)) return; var q2 = posAt(p, z.s); if (!q2) return; pres++; if (inZone(q2, z.N)) inn++; });
+          var pct = pres >= 6 ? Math.round(100 * inn / pres) : null;
+          var lead = Math.round(gap / speedMe(z.s)), stS = 0, gm = meters(gap);
+          mp.pts.forEach(function (a) { if (a[0] >= z.s && a[0] <= z.f + 15 && (a[4] & F_STORM)) stS++; });
+          var facts = [gm + ' m außerhalb'];
+          if (pct != null) facts.push(pct + ' % der Gegner schon drin');
+          if (stS >= 3) facts.push(stS + ' s im Sturm');
+          facts.push('~' + lead + ' s Vorlauf nötig');
+          mis.push({ t: z.s, kind: 'rot', sev: Math.min(480, gap / 100 + 25 * k), val: gm + ' m', unit: 'außerhalb', zone: k + 1, facts: facts,
+            txt: 'Zone ' + (k + 1) + ' zog zu und du standest noch ' + gm + ' m außerhalb der nächsten Zone' + (pct != null && pct >= 50 ? ' – ' + pct + ' % der Gegner waren schon drin.' : '.'),
+            better: gap > 30000
+              ? 'Du hast den Zonen-Ping verpasst: bei ' + gm + ' m Abstand musst du etwa ' + lead + ' s VOR dem Zonenzug losgehen. Rotiere, sobald die nächste Zone angezeigt wird, und sag es deinem Team an.'
+              : 'Starte rund ' + Math.max(5, lead) + ' s früher' + (stS >= 3 ? ' und nimm die Kante der neuen Zone, statt quer durch den Sturm zu laufen.' : ', damit du vor dem Zug im neuen Kreis stehst.') + ' Wer zu spät kommt, trifft auf Gegner, die schon Position haben.' });
         } else if (rec.team) {
-          good.push({ t: z.s, txt: 'Das ganze Team war schon in der nächsten Zone (Zone ' + (k + 1) + ')' });
+          good.push({ t: z.s, txt: 'Das ganze Team war schon in der nächsten Zone (Zone ' + (k + 1) + ') – saubere Rotation.' });
         }
       }
       rot.push(rec);
@@ -332,13 +372,72 @@
     });
     if (cu) runs.push(cu);
     runs.filter(function (r) { return r.e - r.s >= 8; }).sort(function (a, b) { return (b.e - b.s) - (a.e - a.s); }).slice(0, 2).forEach(function (r) {
-      var secs = Math.round(r.e - r.s);
-      mis.push({ t: r.s, kind: 'storm', sev: secs, val: secs + ' s', unit: 'im Sturm', zone: zoneNo(R, r.s),
-        txt: 'Du hast ' + secs + ' s im Sturm gestanden (Zone ' + zoneNo(R, r.s) + ').',
-        better: 'Plane die Rotation früher und nutze Mobility, bevor der Sturm dich erreicht.' });
+      var secs = Math.round(r.e - r.s), zz = zoneNo(R, r.s), p0 = posAt(mp, r.s), p1 = posAt(mp, r.e), run = p0 && p1 ? meters(dist(p0, p1)) : null;
+      var facts = [secs + ' s im Sturm', 'Zone ' + zz];
+      if (run != null) facts.push(run + ' m Strecke');
+      mis.push({ t: r.s, kind: 'storm', sev: Math.min(420, secs * 2 + 15 * zz), val: secs + ' s', unit: 'im Sturm', zone: zz, facts: facts,
+        txt: 'Du hast ' + secs + ' s im Sturm gestanden (Zone ' + zz + ')' + (run != null && run > 60 ? ' und dabei ' + run + ' m zurückgelegt.' : '.'),
+        better: 'Der Sturm kostet dich Leben und Heilung. Verlasse deinen Spot schon beim Zonen-Ping und laufe an der Kante entlang – ' + (zz >= 5 ? 'ab Zone ' + zz + ' tickt er so stark, dass jede Sekunde zählt.' : 'plane die Rotation so, dass du den Kreis vor dem Zug erreichst.') });
     });
 
-    /* --- Analyse: Tod / Knockdown / Team getrennt --- */
+    /* --- Analyse: Position in den Zonen 4-7 (Rand vs. deep) und Höhe ab Zone 7 --- */
+    var bestEdge = null, deepGood = null;
+    Zs.forEach(function (z, idx) {
+      var n = idx + 2;
+      if (n < 4) return;
+      var nextS = Zs[idx + 1] ? Zs[idx + 1].s : z.f + 60;
+      var th = z.f + Math.min(25, Math.max(5, (nextS - z.f) * 0.5));
+      if (!alive(mp, th) || !present(mp, th)) return;
+      var pme = posAt(mp, th);
+      if (!pme) return;
+      var relMe = dist(pme, [z.N.x, z.N.y]) / z.N.r, inside = [];
+      foesAll.forEach(function (p) {
+        if (!present(p, th)) return;
+        var q = posAt(p, th);
+        if (q && inZone(q, z.N)) inside.push(dist(q, [z.N.x, z.N.y]) / z.N.r);
+      });
+      if (n <= 7 && relMe <= 1.0 && inside.length >= 6) {
+        var outer = inside.filter(function (r) { return r > relMe; }).length, pOut = outer / inside.length;
+        if (relMe > 0.65 && pOut < 0.35) {
+          var central = Math.round(100 * (1 - pOut));
+          if (!bestEdge || pOut < bestEdge.p) bestEdge = { p: pOut, item: {
+            t: th, kind: 'edge', sev: 330 + n * 12 + (0.35 - pOut) * 120, val: Math.round(relMe * 100) + ' %', unit: 'Zonenrand', zone: n,
+            facts: [Math.round(relMe * 100) + ' % des Zonenradius', central + ' % der Gegner zentraler', plural(inside.length, 'Gegner', 'Gegner') + ' in der Zone'],
+            txt: 'Zone ' + n + ': Du standest am Zonenrand (' + Math.round(relMe * 100) + ' % des Radius) – ' + central + ' % der ' + inside.length + ' Gegner in der Zone waren zentraler als du.',
+            better: n <= 5
+              ? 'Ab Zone 4 zählt Position: gehe deep in die Zone und box dort up – oder spiele Outstorm und komme über die Deadside von außen rein. Am Rand wirst du von innen UND von außen gepusht.'
+              : 'In Zone ' + n + ' entscheidet die Mitte: je kleiner der Kreis, desto mehr Fights kommen von innen auf dich zu. Nimm früh einen zentralen Spot oder bleibe konsequent hinter der Deadside-Linie.' } };
+        } else if (relMe < 0.4 && pOut > 0.6 && !deepGood) {
+          deepGood = { t: th, txt: 'Zone ' + n + ': Du hast dich zentral positioniert (' + Math.round(relMe * 100) + ' % des Radius) – so kommen die Fights zu dir.' };
+        }
+      }
+      if (n >= 7) {
+        var near = foes(th, pme, 15000);
+        if (near.length >= 3) {
+          var avgZ = near.reduce(function (s, f) { return s + zAt(f.p, th); }, 0) / near.length, dzc = avgZ - zAt(mp, th);
+          if (dzc > 800) {
+            mis.push({ t: th, kind: 'height', sev: 300 + Math.min(80, dzc / 100), val: meters(dzc) + ' m', unit: 'tiefer', zone: n,
+              facts: [meters(dzc) + ' m unter dem Schnitt', plural(near.length, 'Gegner', 'Gegner') + ' in 150 m', 'Zone ' + n],
+              txt: 'Zone ' + n + ': Du standest ' + meters(dzc) + ' m tiefer als der Durchschnitt der ' + near.length + ' Gegner um dich.',
+              better: 'In der Endgame-Phase gewinnt der hohe Layer: wer oben steht, sieht Edits und Pushes zuerst. Nimm vor Zone 7 Höhe (Hügel, Gebäude, hohe Rampen), bevor der Kreis klein wird.' });
+          } else if (dzc < -800 && !good.some(function (g) { return g.h; })) {
+            good.push({ t: th, h: 1, txt: 'Zone ' + n + ': Du hattest den hohen Layer (' + meters(-dzc) + ' m über den Gegnern) – starke Endgame-Position.' });
+          }
+        }
+      }
+    });
+    if (bestEdge) mis.push(bestEdge.item);
+    if (deepGood) good.push(deepGood);
+
+    /* --- Analyse: Landung (Hot Drop) --- */
+    var hotLand = null;
+    if (landT != null && landPos) {
+      var nearL = foes(landT + 8, landPos, 15000), teamsL = teamsOf(nearL);
+      hotLand = { n: nearL.length, teams: teamsL };
+      if (nearL.length <= 3) good.push({ t: landT, txt: 'Ruhige Landung' + (landPoi ? ' ' + landPoi.label : '') + ': nur ' + plural(nearL.length, 'Gegner', 'Gegner') + ' in 150 m – du hattest Zeit zu looten.' });
+    }
+
+    /* --- Analyse: Tod / Knockdown --- */
     var myDown = null, myDeathEv = null;
     ev.forEach(function (e) {
       if (e.vid !== me.id) return;
@@ -347,39 +446,101 @@
     });
     var tEnd = (me.dead != null) ? me.dead : null;
     if (tEnd != null) {
-      var tk = myDown && myDown.t <= tEnd ? myDown.t : tEnd, nm = nearestMate(tk - 1), zn = zoneNo(R, tk);
-      var by = myDeathEv && myDeathEv.kn ? ' von ' + myDeathEv.kn : '';
-      var dd = myDeathEv && myDeathEv.dist > 0 ? ' (' + Math.round(myDeathEv.dist) + ' m)' : '';
-      if (landT != null && tEnd - landT < 150) {
-        mis.push({ t: tk, kind: 'early', sev: 900, val: 'Game over', unit: '', zone: zn,
-          txt: 'Du wurdest nur ' + Math.round(tEnd - landT) + ' s nach der Landung eliminiert' + by + dd + '.',
-          better: 'Landet mit weniger Gegnern oder hol dir erst Waffe und Schild, bevor du den ersten Kampf annimmst.' });
-      } else if (nm != null && nm > 8000) {
-        mis.push({ t: tk, kind: 'alone', sev: 700 + nm / 200, val: 'Game over', unit: '', zone: zn,
-          txt: 'Du bist in Zone ' + zn + ' ausgeschieden' + by + dd + ' – dein nächster Mate war ' + Math.round(nm / 100) + ' m entfernt.',
-          better: 'Bleibt in Reichweite (unter ca. 40 m), damit ihr Fights gemeinsam nehmt und euch wiederbeleben könnt.' });
+      var ke = (myDown && myDown.t <= tEnd) ? myDown : myDeathEv;
+      var tk = ke ? ke.t : tEnd, zsK = zoneState(R, tk), zn = zsK.n, pK = posAt(mp, tk - 1) || posAt(mp, tk);
+      var verb = ke && ke.down ? 'niedergeschossen' : 'eliminiert';
+      var by = ke && ke.kn ? ' von ' + ke.kn : '', dm = ke && ke.dist > 0 ? Math.round(ke.dist) : null;
+      var fl = foes(tk - 1, pK, 10000), nF = fl.length, nm = nearestMate(tk - 1), mAlive = 0;
+      for (var jm = 1; jm < tn; jm++) if (alive(players[jm], tk)) mAlive++;
+      var rel = zsK.c[2] > 0 && pK ? dist(pK, [zsK.c[0], zsK.c[1]]) / zsK.c[2] : 0;
+      var inStorm = !!(flagsAt(mp, tk - 1) & F_STORM) || rel > 1.04;
+      var kP = ke && ke.kid != null ? byId[ke.kid] : null, dzK = (kP && present(kP, tk - 1)) ? zAt(kP, tk - 1) - zAt(mp, tk - 1) : null;
+      var loss = null;
+      ev.forEach(function (e) { if (e.v != null && e.v >= 1 && e.v < tn && !e.down && e.t < tk && tk - e.t <= 30) loss = e; });
+      var sprint = !!(flagsAt(mp, tk - 2) & 4), sinceLand = landT != null ? Math.round(tk - landT) : null;
+      var bf = [];
+      if (dm != null) bf.push(dm + ' m Distanz');
+      if (nF >= 2) bf.push(plural(nF, 'Gegner', 'Gegner') + ' in 100 m');
+      if (nm != null && tn > 1) bf.push('Mate ' + meters(nm) + ' m entfernt');
+      var item = null;
+      if (sinceLand != null && sinceLand < 150) {
+        var heavy = nF >= 3 || (hotLand && hotLand.n >= 5);
+        item = { kind: 'early', sev: 900, val: 'Game over', unit: '', facts: ['' + sinceLand + ' s nach Landung'].concat(hotLand && hotLand.n ? [plural(hotLand.n, 'Gegner', 'Gegner') + ' am Landeplatz'] : [], bf),
+          txt: 'Du wurdest nur ' + sinceLand + ' s nach der Landung ' + verb + by + (dm != null ? ' (' + dm + ' m)' : '') + '.' + (heavy ? ' Am Landeplatz waren ' + Math.max(nF, hotLand ? hotLand.n : 0) + ' Gegner in der Nähe.' : ''),
+          better: heavy
+            ? 'Der Landeplatz war zu heiß: lande dort, wo höchstens 1–2 Teams hinfallen, und hol dir erst Waffe, Schild und Mats. Den ersten Fight nimmst du nur mit Ausrüstung.'
+            : (dm != null && dm > 50 ? 'Auf Distanz (' + dm + ' m) ohne Deckung verlierst du den Schlagabtausch. Nach der Landung zuerst Cover suchen und Waffe looten, statt offen über das Feld zu laufen.'
+              : 'Prüfe nach der Landung zuerst, wer in der Nähe ist. Erst Waffe und Heilung looten, dann den Fight annehmen – nicht sofort pushen.') };
+      } else if (inStorm) {
+        item = { kind: 'storm', sev: 780, val: 'Game over', unit: '', facts: ['Zone ' + zn, rel > 1 ? Math.round((rel - 1) * 100) + ' % außerhalb des Kreises' : 'im Sturm'].concat(bf),
+          txt: 'Du bist in Zone ' + zn + ' im bzw. am Sturm ' + verb + by + (dm != null ? ' (' + dm + ' m)' : '') + ' – du hast die Zone zu spät erreicht und warst dadurch geschwächt.',
+          better: 'Wer im Sturm kämpft, hat schon Leben verloren. Gehe früher los und komm gesund in der Zone an – dort kannst du Fights aus der Position heraus annehmen.' };
+      } else if (tn > 1 && nm != null && nm > 8000 && mAlive > 0) {
+        item = { kind: 'alone', sev: 700 + Math.min(100, nm / 200), val: 'Game over', unit: '', facts: ['Zone ' + zn].concat(bf),
+          txt: 'Du bist in Zone ' + zn + ' ' + verb + by + (dm != null ? ' (' + dm + ' m)' : '') + ' – dein nächster Mate war ' + meters(nm) + ' m entfernt.',
+          better: 'Bleibt in Reichweite (unter ca. 40 m): so könnt ihr Fights zu zweit nehmen und euch wiederbeleben. Wer allein steht, verliert den Fight, bevor Hilfe da ist.' };
+      } else if (loss && tEnd - loss.t < 30) {
+        item = { kind: 'aftermate', sev: 760, val: 'Game over', unit: '', facts: ['Zone ' + zn, 'nur ' + Math.round(tk - loss.t) + ' s nach Mate-Verlust'].concat(bf),
+          txt: 'Nur ' + Math.round(tk - loss.t) + ' s nachdem ' + loss.vn + ' gefallen war, wurdest du in Zone ' + zn + ' ' + verb + by + '.',
+          better: 'Nach einem Mate-Verlust nicht sofort nachpushen: erst Cover, Heilung und Überblick (Wo steht der Gegner? Wie viele sind es?), dann entscheiden. Ein 1vs2 ohne Position verlierst du fast immer.' };
+      } else if (nF >= 3) {
+        item = { kind: 'outnum', sev: 740, val: 'Game over', unit: '', facts: ['Zone ' + zn].concat(bf),
+          txt: 'In Zone ' + zn + ' wurdest du ' + verb + by + ' – ' + nF + ' Gegner standen in 100 m um dich' + (mAlive > 0 && (nm == null || nm > 4000) ? ', dein Team war nicht in der Nähe.' : '.'),
+          better: (nm != null && nm <= 4000 ? 'Ihr wart zusammen, aber bei ' : 'Bei ') + 'so vielen Gegnern im Umkreis ist jeder Fight ein Third-Party-Risiko. Weiche aus, bevor es eng wird, oder nimm den Kampf nur, wenn ihr ihn schnell entscheiden könnt und Cover habt.' };
+      } else if (dzK != null && dzK > 700) {
+        item = { kind: 'lowground', sev: 720, val: 'Game over', unit: '', facts: ['Gegner ' + meters(dzK) + ' m höher', 'Zone ' + zn].concat(bf),
+          txt: 'In Zone ' + zn + ' wurdest du ' + verb + by + (dm != null ? ' (' + dm + ' m)' : '') + ' – der Gegner stand ' + meters(dzK) + ' m höher als du.',
+          better: 'Wer oben steht, gewinnt den Schlagabtausch. Nimm Höhe oder Deckung, bevor du in einen Fight gehst – und lauf nicht frontal gegen einen höheren Gegner an.' };
+      } else if (dm != null && dm >= 60) {
+        item = { kind: 'range', sev: 650, val: 'Game over', unit: '', facts: ['Zone ' + zn].concat(bf).concat(sprint ? ['beim Sprint erwischt'] : []),
+          txt: 'In Zone ' + zn + ' wurdest du auf ' + dm + ' m ' + verb + by + (sprint ? ' – du bist dabei offen gerannt.' : '.'),
+          better: 'Auf große Distanz verlierst du gegen jeden, der dich sieht. Laufe nicht ungedeckt über offenes Gelände: bewege dich von Deckung zu Deckung oder bau dir eine Wand, bevor du kreuzt.' };
       } else {
-        mis.push({ t: tk, kind: 'death', sev: 600, val: 'Game over', unit: '', zone: zn,
-          txt: 'Du bist in Zone ' + zn + ' ausgeschieden' + by + dd + '.',
-          better: 'Prüfe vor dem Fight Zone, Heilung und Deckung – und nimm nur Fights, in denen du die bessere Position hast.' });
+        item = { kind: 'death', sev: 600, val: 'Game over', unit: '', facts: ['Zone ' + zn].concat(bf),
+          txt: 'Du bist in Zone ' + zn + ' ' + verb + by + (dm != null ? ' (' + dm + ' m)' : '') + '.',
+          better: 'Prüfe vor jedem Fight Zone, Heilung und Deckung – und nimm nur Fights, in denen du die bessere Position hast. Wenn du unsicher bist, resette erst.' };
       }
+      item.t = tk; item.zone = zn;
+      mis.push(item);
     }
-    /* Mates, die weit weg von dir gestorben sind, solange du lebtest */
+
+    /* --- Analyse: Mates, die weit weg von dir fielen --- */
     var far = null;
     ev.forEach(function (e) {
-      if (e.down || e.v == null || e.v < 1 || e.v >= tn || !alive(mp, e.t)) return;
+      if (e.v == null || e.v < 1 || e.v >= tn || !alive(mp, e.t)) return;
       var a = posAt(players[e.v], e.t), b = posAt(mp, e.t);
       if (!a || !b) return;
       var dd2 = dist(a, b);
-      if (dd2 > 10000 && (!far || dd2 > far.d)) far = { t: e.t, d: dd2, n: e.vn, kn: e.kn };
+      if (dd2 > 10000 && (!far || dd2 > far.d)) far = { t: e.t, d: dd2, n: e.vn, kn: e.kn, down: e.down };
     });
-    if (far) mis.push({ t: far.t, kind: 'team', sev: 500 + far.d / 200, val: Math.round(far.d / 100) + ' m', unit: 'getrennt', zone: zoneNo(R, far.t),
-      txt: far.n + ' wurde' + (far.kn ? ' von ' + far.kn : '') + ' eliminiert, während du ' + Math.round(far.d / 100) + ' m entfernt warst.',
-      better: 'Haltet als Team engen Kontakt – wer allein steht, verliert den Fight, bevor Hilfe da ist.' });
+    if (far) mis.push({ t: far.t, kind: 'team', sev: 500 + Math.min(100, far.d / 200), val: meters(far.d) + ' m', unit: 'getrennt', zone: zoneNo(R, far.t),
+      facts: [meters(far.d) + ' m Abstand', 'Zone ' + zoneNo(R, far.t)],
+      txt: far.n + ' wurde' + (far.kn ? ' von ' + far.kn : '') + (far.down ? ' niedergeschossen' : ' eliminiert') + ', während du ' + meters(far.d) + ' m entfernt warst.',
+      better: 'Haltet engen Kontakt: wenn ein Mate down geht, musst du in wenigen Sekunden bei ihm sein können. Bleibt unter ca. 40 m zusammen und gebt euch Cover beim Wiederbeleben.' });
 
-    /* --- Auswahl: maximal 8, nach Zeit sortiert --- */
+    /* --- Analyse: Team-Abstand über das ganze Game --- */
+    if (tn > 1 && landT != null) {
+      var sp = [], endS = tEnd != null ? tEnd : dur, worst = null;
+      for (var ts = landT + 20; ts < endS - 5; ts += 10) {
+        var dn = nearestMate(ts);
+        if (dn == null) continue;
+        sp.push(dn);
+        if (!worst || dn > worst.d) worst = { t: ts, d: dn };
+      }
+      if (sp.length >= 6) {
+        var avg = sp.reduce(function (s, v) { return s + v; }, 0) / sp.length, wide = Math.round(100 * sp.filter(function (v) { return v > 10000; }).length / sp.length);
+        if (avg > 7000) mis.push({ t: worst.t, kind: 'spread', sev: 420 + Math.min(60, avg / 300), val: meters(avg) + ' m', unit: 'Ø Abstand', zone: zoneNo(R, worst.t),
+          facts: ['Ø ' + meters(avg) + ' m zum nächsten Mate', wide + ' % der Zeit über 100 m', 'Max. ' + meters(worst.d) + ' m'],
+          txt: 'Du warst im Schnitt ' + meters(avg) + ' m von deinem nächsten Mate entfernt (' + wide + ' % der Zeit über 100 m) – hier waren es ' + meters(worst.d) + ' m.',
+          better: 'Ein Team funktioniert nur zusammen: bleibt im Schnitt unter 40 m. Sprecht Rotationen und Landespots vorher ab und lauft gemeinsam los – so gewinnt ihr 2v1-Fights statt einzeln zu sterben.' });
+        else if (avg < 4500) good.push({ t: worst.t, txt: 'Starkes Team-Spacing: im Schnitt nur ' + meters(avg) + ' m zum nächsten Mate.' });
+      }
+    }
+
+    /* --- Auswahl: maximal 8 (je Art höchstens 2), nach Zeit sortiert --- */
     mis.sort(function (a, b) { return b.sev - a.sev; });
-    mis = mis.slice(0, 8).sort(function (a, b) { return a.t - b.t; });
+    var cntK = {};
+    mis = mis.filter(function (m) { cntK[m.kind] = (cntK[m.kind] || 0) + 1; return cntK[m.kind] <= 2; }).slice(0, 8).sort(function (a, b) { return a.t - b.t; });
     mis.forEach(function (m) { m.snap = snapshot(R, m.t); });
 
     /* --- Feed --- */
@@ -407,8 +568,8 @@
       ev.forEach(function (e) { if (!first && ((e.v != null && e.v < tn) || (e.k != null && e.k < tn))) first = e; });
       if (first && first.t > landT) feed.push({ t: first.t, mk: true, c: '#d4d4d8', tip: true, txt: 'Erster Kampf deines Teams ' + Math.round(first.t - landT) + ' s nach der Landung' });
     }
-    mis.forEach(function (m) { feed.push({ t: m.t, mk: true, c: '#fb923c', tip: true, mis: true, txt: m.txt, better: m.better, kind: m.kind, val: m.val, unit: m.unit, zone: m.zone, snap: m.snap }); });
-    good.slice(0, 2).forEach(function (g) { feed.push({ t: g.t, mk: true, c: '#4ade80', tip: true, txt: g.txt }); });
+    mis.forEach(function (m) { feed.push({ t: m.t, mk: true, c: '#fb923c', tip: true, mis: true, txt: m.txt, better: m.better, kind: m.kind, val: m.val, unit: m.unit, zone: m.zone, facts: m.facts, snap: m.snap }); });
+    good.slice(0, 3).forEach(function (g) { feed.push({ t: g.t, mk: true, c: '#4ade80', tip: true, txt: g.txt }); });
     feed.sort(function (a, b) { return a.t - b.t; });
     R.feed = feed;
 
