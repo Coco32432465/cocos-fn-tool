@@ -22,7 +22,8 @@ BEI JEDEM UPDATE
    laden es im Hintergrund und zeigen unten rechts "Jetzt neu starten".
 
 
-VERSION 0.8.0 - NEU
+VERSION 0.8.1 - NEU
+- Eigenes App-Icon: build/icon.ico ersetzen (256x256 .ico) und app/icon.ico ebenfalls.
 ===================
 - Neues 3-Spalten-Layout (Top-Bar mit Tabs, Score, Import; Games, Matrix, Daten-Status; Spieler-Cards; Live Analysis).
 - Viewer, Zonen, Spuren, Kill-Feed und Cup-Report laufen mit echten Replay-Daten.
@@ -51,3 +52,8 @@ Bei jedem Update:
    Danach hängen .exe, .blockmap und latest.yml automatisch am Release.
    Die installierten Apps laden das Update beim nächsten Start.
 Die Versionsnummer kommt aus dem Tag, package.json muss dafür nicht geändert werden.
+- Landeorte werden erkannt (Event Feed, Games-Liste, Report "Wo du landest").
+- Neue Replays im Fortnite-Ordner werden automatisch im Hintergrund analysiert.
+- Schriften liegen lokal in app/fonts (App sieht auch offline gleich aus).
+- Discord-Link, Social-Links und Auto-Analyse einstellen: app/config.js bearbeiten.
+- Epic-Feld ist nur noch ein Spielername (zum Erkennen der Figur im Replay).

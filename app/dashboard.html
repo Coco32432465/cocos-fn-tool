@@ -25,7 +25,7 @@
 })();
 </script>
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="fonts.css">
 <style>
 :root{--bg:#0A0A0C;--panel:#121218;--acc:#FF003C;--acc2:#EF4444;--rgb:255,0,60;--rgb2:239,68,68;--acc-dark:#B0002A;--acc-light:#FF6B88;--acc-pale:#FFB3C0;--rgb-deep:110,0,25;--bad:#EF4444;--t1:#3a0813;--t2:#240510;--t3:#55091b;--t4:#330714;--t5:#2a0a14;--acc-pale2:#ffd5dc;--txt:#E8E8EE;--mute:#7C7C8A;--line:rgba(var(--rgb2),.2);
   color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -256,7 +256,7 @@ body.vw #sbar,body.rp #sbar{display:none}
 .vgi{display:grid;grid-template-columns:34px minmax(0,1fr) 30px;gap:10px;align-items:center;padding:7px 10px;border-radius:9px;background:#ffffff05;border:1px solid transparent;cursor:pointer;transition:.15s}
 .vgi:hover{background:rgba(var(--rgb),.06)}.vgi.on{border-color:rgba(var(--rgb),.55);background:rgba(var(--rgb),.1);box-shadow:0 0 14px rgba(var(--rgb),.18)}
 .vgi .n{font:800 11px 'Orbitron',sans-serif;color:var(--mute)}.vgi.on .n{color:var(--acc)}
-.vgi b{display:block;font-size:14px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vgi small{color:var(--mute);font-size:12px}
+.vgi b{display:block;font-size:14px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vgi small{color:var(--mute);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vgi .grade{width:28px;height:28px;font-size:13px;border-radius:8px}
 /* kompakte Matrix */
 .vmx{overflow-x:auto}.vmx .vr1{display:grid;gap:4px;align-items:center;padding:3px 4px;border-radius:7px;border:1px solid transparent;min-width:max-content}
@@ -502,6 +502,14 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
 #stg .row button{margin-left:auto;padding:7px 14px;border-radius:9px;border:1px solid var(--acc);background:rgba(var(--rgb),.12);color:var(--txt);font:inherit;cursor:pointer}
 #stg .row button:hover{box-shadow:0 0 14px rgba(var(--rgb),.5)}
 #stg .um{min-height:20px;margin-top:8px;font-size:14px;color:var(--mute)}
+.poil{display:flex;flex-direction:column;gap:8px}
+.poir{display:grid;grid-template-columns:minmax(150px,1.4fr) 70px 80px 80px minmax(80px,1fr);gap:12px;align-items:center;padding:9px 12px;border-radius:11px;background:#ffffff05;border-left:3px solid #ffffff22}
+.poir.top{border-left-color:#4ade80}.poir.low{border-left-color:var(--acc)}
+.poir b{font-size:16px}.poir small{display:block;color:var(--mute);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.poir .bar2{height:6px;border-radius:4px;background:#ffffff12;overflow:hidden}.poir .bar2 i{display:block;height:100%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+.poir em{font-style:normal;font-size:10px;padding:1px 7px;border-radius:6px;margin-left:8px;font-family:'Orbitron',sans-serif;letter-spacing:.08em}
+.poir.top em{background:#4ade8022;color:#4ade80}.poir.low em{background:rgba(var(--rgb),.18);color:var(--acc)}
+@media (max-width:700px){.poir{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -512,11 +520,11 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
     <b class="disp">Coco's <span>Fn</span> Tool</b>
   </div>
   <div class="sp"></div>
-  <button class="discord" id="dc" aria-label="Discord verknüpfen">
+  <button class="discord" id="dc" aria-label="Discord-Server beitreten">
     <svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.2a18.3 18.3 0 0 0-5.6 0L8.6 3a19.7 19.7 0 0 0-4.9 1.4C.6 9 0 13.5.3 18a19.9 19.9 0 0 0 6 3l1.3-2.1c-.7-.3-1.4-.6-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.9 19.9 0 0 0 6-3c.4-5.200-.7-9.700-3.800-13.600ZM8.500 15.300c-1.200 0-2.100-1.100-2.100-2.400s.9-2.400 2.100-2.400 2.100 1.100 2.100 2.400-.9 2.400-2.100 2.400Zm7 0c-1.200 0-2.100-1.100-2.100-2.400s.9-2.400 2.100-2.400 2.100 1.100 2.100 2.400-.9 2.400-2.100 2.400Z"/></svg>
-    <span><small>Discord</small><strong id="dcs">Verknüpfen</strong></span>
+    <span><small>Discord</small><strong id="dcs">Server beitreten</strong></span>
   </button>
-  <button class="epic" id="ep" aria-label="Epic Games Account verknüpfen"><i>EPIC</i><span><small>Epic Games</small><strong id="eps">Account verknüpfen</strong></span></button>
+  <button class="epic" id="ep" aria-label="Spielername ändern"><i>EPIC</i><span><small>Spielername</small><strong id="eps">Name eintragen</strong></span></button>
   <button class="icon-btn" id="set" aria-label="Einstellungen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.400 15a1.700 1.700 0 0 0 .3 1.800l.1.1a2 2 0 1 1-2.800 2.800l-.1-.1a1.700 1.700 0 0 0-1.800-.3 1.700 1.700 0 0 0-1 1.500V21a2 2 0 1 1-4 0v-.1a1.700 1.700 0 0 0-1.100-1.500 1.700 1.700 0 0 0-1.800.3l-.1.1a2 2 0 1 1-2.800-2.800l.1-.1a1.700 1.700 0 0 0 .3-1.800 1.700 1.700 0 0 0-1.500-1H3a2 2 0 1 1 0-4h.1a1.700 1.700 0 0 0 1.500-1.100 1.700 1.700 0 0 0-.3-1.800l-.1-.1a2 2 0 1 1 2.800-2.800l.1.1a1.700 1.700 0 0 0 1.800.3h0a1.700 1.700 0 0 0 1-1.500V3a2 2 0 1 1 4 0v.1a1.700 1.700 0 0 0 1 1.500h0a1.700 1.700 0 0 0 1.800-.3l.1-.1a2 2 0 1 1 2.800 2.800l-.1.1a1.700 1.700 0 0 0-.3 1.800v0a1.700 1.700 0 0 0 1.500 1H21a2 2 0 1 1 0 4h-.1a1.700 1.700 0 0 0-1.500 1Z"/></svg></button>
 </header>
 
@@ -615,17 +623,17 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
   <aside class="right">
     <section class="panel">
       <h2 class="disp">Profil &amp; Stats</h2>
-      <div class="profile"><div class="avatar disp">C</div><div><b>Coco</b><small>Nicht verknüpft</small></div></div>
+      <div class="profile"><div class="avatar disp" id="pfa">C</div><div><b id="pfn">Coco</b><small id="pfs">Spielername nicht gesetzt</small></div></div>
       <div class="stats">
-        <div class="stat"><small>Reviews</small><b>24</b></div>
-        <div class="stat"><small>Ø Note</small><b class="r">B</b></div>
-        <div class="stat"><small>Win-Rate</small><b>11%</b></div>
-        <div class="stat"><small>Ø Platz</small><b>12.4</b></div>
+        <div class="stat"><small>Reviews</small><b id="pf1">24</b></div>
+        <div class="stat"><small>Ø Note</small><b class="r" id="pf2">B</b></div>
+        <div class="stat"><small>Win-Rate</small><b id="pf3">11%</b></div>
+        <div class="stat"><small>Ø Platz</small><b id="pf4">12.4</b></div>
       </div>
     </section>
     <section class="panel">
       <h2 class="disp">Zuletzt analysiert</h2>
-      <ul class="games">
+      <ul class="games" id="lastg">
         <li><div class="grade g-a">A</div><div><b>Cash Cup – Runde 3</b><small>vor 2 Std.</small></div><span class="pl">#3</span></li>
         <li><div class="grade g-b">B</div><div><b>Ranked Duos</b><small>Gestern</small></div><span class="pl">#8</span></li>
         <li><div class="grade g-c">C</div><div><b>Zero Build Trios</b><small>vor 2 Tagen</small></div><span class="pl">#17</span></li>
@@ -714,7 +722,8 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
     <section class="panel"><h2 class="disp">Games &amp; Phasen-Noten</h2><div class="gstrip" id="gs"></div><div class="rsel"><div class="phs" id="rph"></div><div class="tot" id="rtot"></div></div></section>
     <section><h2 class="disp sec">Woran du arbeiten solltest</h2><div class="wgrid" id="wg"></div></section>
     <section class="panel"><h2 class="disp">Wo deine Games brechen</h2><p class="sub">Jede Zeile ist ein Schritt, jedes Kästchen ein Game.</p><div class="mxw"><div id="mx"></div></div>
-      <div class="lgd"><span><i class="cell ok"></i>hat geklappt</span><span><i class="cell bad"></i>hat nicht geklappt</span><span><i class="cell end"></i>Game endete hier</span><span><i class="cell none"></i>nicht so weit gekommen</span></div></section>
+      <div class="lgd" id="lgd0"><span><i class="cell ok"></i>hat geklappt</span><span><i class="cell bad"></i>hat nicht geklappt</span><span><i class="cell end"></i>Game endete hier</span><span><i class="cell none"></i>nicht so weit gekommen</span></div></section>
+    <section class="panel" id="poip" hidden><h2 class="disp">Wo du landest</h2><p class="sub">Deine Landeorte im Vergleich – wo du stark startest und wo nicht.</p><div class="poil" id="poil"></div></section>
   </div>
 </div>
 <div id="onb" role="dialog" aria-modal="true" aria-label="Einrichtung">
@@ -727,25 +736,25 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
     <div class="steps" id="obst"></div>
     <div class="glass">
       <div class="pane" data-p="1">
-        <h3 class="disp">Epic Games Account verknüpfen</h3>
-        <p>Gib deinen Epic-Spielernamen oder deine Account-ID ein, damit wir deine Games finden.</p>
+        <h3 class="disp">Dein Spielername</h3>
+        <p>Gib deinen Epic-Spielernamen ein. So erkennt das Tool deine Figur im Replay.</p>
         <div id="ob1a">
-          <label class="lbl" for="obn">Spielername oder Account-ID</label>
-          <div class="row2"><input class="inp" id="obn" placeholder="z. B. CocoFN oder 32-stellige ID" autocomplete="off" spellcheck="false"><button class="nbtn" id="obl">Verknüpfen</button></div>
+          <label class="lbl" for="obn">Epic-Spielername</label>
+          <div class="row2"><input class="inp" id="obn" placeholder="z. B. CocoFN" autocomplete="off" spellcheck="false"><button class="nbtn" id="obl">Speichern</button></div>
           <div class="msg" id="obm"></div>
         </div>
-        <div id="ob1b" hidden><div class="acc"><div class="av" id="oba">C</div><div><b id="obnm">Name</b><small>Epic-Account verknüpft</small></div><button id="obx">Ändern</button></div></div>
-        <div class="note"><span>ⓘ</span><span>Wir brauchen nur <b>Spielername oder Account-ID</b>, um deine Games zu finden. Es wird kein Passwort abgefragt.</span></div>
+        <div id="ob1b" hidden><div class="acc"><div class="av" id="oba">C</div><div><b id="obnm">Name</b><small>Spielername gespeichert</small></div><button id="obx">Ändern</button></div></div>
+        <div class="note"><span>ⓘ</span><span>Der Name wird nur lokal gespeichert und dient dazu, deine Figur im Replay zu erkennen. Es wird kein Passwort abgefragt und nichts mit Epic verbunden.</span></div>
       </div>
       <div class="pane" data-p="2">
-        <h3 class="disp">Cup oder Match auswählen</h3>
-        <p>Wähle die Runde, die du analysieren willst.</p>
+        <h3 class="disp">Replay auswählen</h3>
+        <p>Wähle das Match, das du analysieren willst.</p>
         <div class="oc" id="obc"></div>
       </div>
       <div class="pane" data-p="3">
         <h3 class="disp">Bereit für deine VOD Review</h3>
         <p>Alles eingerichtet – dein Replay wird geladen und analysiert.</p>
-        <div class="sum"><div><span>Account</span><b id="s1">-</b></div><div><span>Cup / Match</span><b id="s2">-</b></div><div><span>Ergebnis</span><b id="s3">-</b></div></div>
+        <div class="sum"><div><span>Spieler</span><b id="s1">-</b></div><div><span>Replay</span><b id="s2">-</b></div><div><span>Ergebnis</span><b id="s3">-</b></div></div>
         <button class="lnk" id="obr">Stattdessen den Cup-Report öffnen</button>
       </div>
       <div class="obn"><button class="gbtn" id="obb">Zurück</button><button class="nbtn" id="obf">Weiter</button></div>
@@ -756,6 +765,7 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
 <div id="toast" role="status"></div>
 <script src="cft-import.js"></script>
 <script src="patchnotes.js"></script>
+<script src="config.js"></script>
 
 <script>
 (function(){
@@ -779,9 +789,10 @@ body.rp #report{display:flex;animation:fade .5s}body.rp header,body.rp main,body
   function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){toastEl.classList.remove('show')},2200)}
   $('start').onclick=function(){window.openViewer(0)};
   $('set').onclick=function(){if(window.openSettings)window.openSettings();else toast('Einstellungen nicht verfügbar')};
-  var linked=false;
-  $('dc').onclick=function(){linked=!linked;this.classList.toggle('on',linked);$('dcs').textContent=linked?'Verknüpft':'Verknüpfen';toast(linked?'Discord verknüpft (Demo)':'Discord getrennt')};
-  [].forEach.call(document.querySelectorAll('.soc a'),function(a){a.onclick=function(e){e.preventDefault();toast(a.dataset.n+'-Link hier hinterlegen')}});
+  var CC=window.CFT_CONFIG||{};
+  function openLink(u,name){if(u)window.open(u,'_blank','noopener');else toast(name+'-Link fehlt – in app/config.js eintragen')}
+  $('dc').onclick=function(){openLink(CC.discordInvite,'Discord')};
+  [].forEach.call(document.querySelectorAll('.soc a'),function(a){a.onclick=function(e){e.preventDefault();openLink((CC.social||{})[a.dataset.n],a.dataset.n)}});
   [].forEach.call(document.querySelectorAll('.games li'),function(l){l.onclick=function(){toast('Review öffnen …')}});
 })();
 </script>
@@ -802,7 +813,7 @@ function rname(r){return typeof r==='string'?r.replace(/^.*[\\/]/,''):r.name}
 function rpath(r){return typeof r==='string'?r:r.path}
 function gameCard(g,i){var m=g.m;return '<li><div class="grade '+gc[m.g]+'">'+m.g+'</div><div class="info"><b>'+esc(m.n)+'</b><small>'+(m.pl>0?'Platz #'+m.pl+' · ':'')+m.k+' Elims · Total '+g.tot+'</small></div><div class="pts"><b>'+(m.pl>0?'#'+m.pl:'–')+'</b>Note '+m.g+'</div><button class="go" data-o="'+i+'">Analyse starten</button></li>'}
 function renderCups(){
- var h='';if(window.sbarUpd)window.sbarUpd();if(window.renderLeft&&document.body.classList.contains('vw'))window.renderLeft();
+ var h='';if(window.profUpd)window.profUpd();if(window.sbarUpd)window.sbarUpd();if(window.renderLeft&&document.body.classList.contains('vw'))window.renderLeft();
  if(CFG.games.length){h+=CFG.games.map(gameCard).join('')}
  if(window.fn){
   var open={};CFG.games.forEach(function(g){if(g.path)open[g.path]=1});
@@ -815,25 +826,42 @@ function renderCups(){
  $('cups').innerHTML=h;
  [].forEach.call($('cups').querySelectorAll('.go[data-i]'),function(b){b.onclick=function(){openViewer(+b.dataset.i)}});
  [].forEach.call($('cups').querySelectorAll('.go[data-o]'),function(b){b.onclick=function(){openViewer(CFG.games[+b.dataset.o].m)}});
- [].forEach.call($('cups').querySelectorAll('.go[data-p]'),function(b){b.onclick=function(){analyze([decodeURIComponent(b.dataset.p)],true)}})}
+ [].forEach.call($('cups').querySelectorAll('.go[data-p]'),function(b){b.onclick=function(){analyze([decodeURIComponent(b.dataset.p)],true,false)}})}
+function profUpd(){
+ var G=CFG.games,nm='';try{nm=(JSON.parse(localStorage.getItem('cft_onb')||'null')||{}).n||''}catch(e){}
+ $('pfn').textContent=nm||'Spieler';$('pfa').textContent=(nm||'S').charAt(0).toUpperCase();$('pfs').textContent=nm?'Spielername gespeichert':'Spielername nicht gesetzt';
+ if(!G.length&&!window.fn)return; /* Browser-Demo: Beispielwerte stehen lassen */
+ var n=G.length,avg=n?G.reduce(function(a,g){return a+g.tot},0)/n:0,pl=G.filter(function(g){return g.m.pl>0}),wins=G.filter(function(g){return g.m.pl===1}).length;
+ $('pf1').textContent=n||'–';$('pf2').textContent=n?(avg>=75?'A':avg>=55?'B':avg>=40?'C':'D'):'–';$('pf3').textContent=n?Math.round(100*wins/n)+'%':'–';
+ $('pf4').textContent=pl.length?(pl.reduce(function(a,g){return a+g.m.pl},0)/pl.length).toFixed(1):'–';
+ $('lastg').innerHTML=n?G.slice(-4).reverse().map(function(g){var m=g.m;return '<li><div class="grade '+(gc[m.g]||'g-c')+'">'+m.g+'</div><div><b>'+esc(g.real.meta.landPoi?'Landung: '+g.real.meta.landPoi:m.n)+'</b><small>'+esc(m.n)+'</small></div><span class="pl">'+(m.pl>0?'#'+m.pl:'–')+'</span></li>'}).join(''):'<li><div><b>Noch nichts analysiert</b><small>Replay wählen oder ablegen</small></div></li>'}
+window.profUpd=profUpd;
 window.renderCups=renderCups;
 function refreshList(){if(!window.fn||!window.fn.listReplays){renderCups();return Promise.resolve()}
- return window.fn.listReplays().then(function(l){RL=l||[];window.REPLAYS=RL;renderCups();sbarUpd()}).catch(function(){renderCups()})}
-/* Replays im Hintergrund analysieren (nacheinander) */
-function analyze(paths,openFirst){
- var done=[],chain=Promise.resolve();
- paths.forEach(function(p){chain=chain.then(function(){
-  if(byPath[p]){done.push(byPath[p]);return}
-  busy[p]=1;renderCups();toast('Lese '+p.replace(/^.*[\\/]/,'')+' … (beim ersten Mal 1–2 Minuten)');
-  return window.fn.parseReplay(p).then(function(res){var g=CFG.add(res.data,p.replace(/^.*[\\/]/,''));g.path=p;byPath[p]=g;done.push(g)})
-   .catch(function(e){toast('Fehler: '+String(e&&e.message||e).split('\n')[0].slice(0,140))})
-   .then(function(){delete busy[p];renderCups()})})});
- return chain.then(function(){
+ return window.fn.listReplays().then(function(l){RL=l||[];window.REPLAYS=RL;renderCups();sbarUpd();autoRun()}).catch(function(){renderCups()})}
+/* Replays analysieren – immer nacheinander (eine Warteschlange), damit der Parser den Rechner nicht überlastet */
+var AQ=Promise.resolve(),failed={};
+function analyze(paths,openFirst,quiet){
+ var done=[],run=AQ.then(function(){var chain=Promise.resolve();
+  paths.forEach(function(p){chain=chain.then(function(){
+   if(byPath[p]){done.push(byPath[p]);return}
+   busy[p]=1;renderCups();if(!quiet)toast('Lese '+p.replace(/^.*[\\/]/,'')+' … (beim ersten Mal 1–2 Minuten)');
+   return window.fn.parseReplay(p).then(function(res){var g=CFG.add(res.data,p.replace(/^.*[\\/]/,''));g.path=p;g.mtime=(RL.filter(function(r){return rpath(r)===p})[0]||{}).mtime||Date.now();byPath[p]=g;CFG.sortGames();done.push(g)})
+    .catch(function(e){failed[p]=1;if(!quiet)toast('Fehler: '+String(e&&e.message||e).split('\n')[0].slice(0,140))})
+    .then(function(){delete busy[p];renderCups()})})});
+  return chain});
+ AQ=run.catch(function(){});
+ return run.then(function(){
   if(!done.length)return;
   var g=done[done.length-1];
+  if(quiet){toast(done.length+' neue'+(done.length===1?'s Replay':' Replays')+' analysiert');return g}
   if(done.length>1)toast(done.length+' Replays analysiert – Cup-Report ist bereit');
   else toast('Fertig: '+(g.m.pl>0?'Platz #'+g.m.pl+' · ':'')+g.m.k+' Elims · Note '+g.m.g);
   if(openFirst)openViewer(g.m);return g})}
+/* neue Replays im Ordner automatisch im Hintergrund analysieren (Einstellung: config.js) */
+function autoRun(){var C=window.CFT_CONFIG||{};if(!window.fn||C.autoAnalyze===false||!$('sw').classList.contains('on'))return;
+ var todo=RL.slice(0,C.autoAnalyzeMax||5).map(rpath).filter(function(p){return !byPath[p]&&!failed[p]&&!busy[p]});
+ if(todo.length)analyze(todo,false,true)}
 window.analyzeReplay=function(p,o){return analyze([p],o!==false)};
 function addJson(list){
  var chain=Promise.resolve(),added=[];
@@ -875,7 +903,6 @@ sbarUpd();
 refreshList();
 setInterval(function(){if(window.fn&&$('sw').classList.contains('on')&&!document.body.classList.contains('vw'))refreshList()},60000);
 // Epic
-var el=false;$('ep').onclick=function(){el=!el;this.classList.toggle('on',el);$('eps').textContent=el?'Verknüpft':'Account verknüpfen';toast(el?'Epic Games verknüpft (Demo)':'Epic Games getrennt')};
 
 // ===== Viewer =====
 var CFG0=window.CFT;
@@ -1016,7 +1043,7 @@ window.openViewer=function(i){
   V.t=0;V.sp=1;cur=-2;build(m);feed();grades(m);hideMis();HUDC={};if(!GEN)GEN=genMap();if(MAP_SRC&&!MAPIMG)setImg(MAP_SRC);
   [].forEach.call($('spds').children,function(b){b.classList.toggle('on',b.dataset.s==='1')});
   $('vt').textContent=m.n;V.m=m;window.__lastM=m;V.laK=null;renderLeft();scoreUpd();
-  $('vs').textContent=m.real?(m.pl>0?'Platz #'+m.pl+' · ':'')+m.k+' Elims · '+m.real.nPlayers+' Spieler':'Platz #'+m.pl+' · '+m.pts+' Pkt · '+m.k+' Elims';
+  $('vs').textContent=m.real?(m.pl>0?'Platz #'+m.pl+' · ':'')+m.k+' Elims · '+m.real.nPlayers+' Spieler'+(m.real.meta.landPoi?' · gelandet: '+m.real.meta.landPoi:''):'Platz #'+m.pl+' · '+m.pts+' Pkt · '+m.k+' Elims';
   $('status').classList.toggle('real',!!m.real);$('mc').hidden=!m.real;$('cal').hidden=true;$('mg').textContent=m.g;$('mg').className=gc[m.g];
   $('sc').max=DUR;document.body.classList.remove('rp');document.body.classList.add('vw');size();setPlay(true);last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
   v.classList.remove('on')},400)};
@@ -1084,7 +1111,7 @@ window.scoreUpd=scoreUpd;
 function renderLeft(){
  var G=curGames(),real=!!CFG0.games.length,rows=G.length?(window.cftRows?window.cftRows(G[0]):[]):[],i,h='';
  /* Games */
- $('vg').innerHTML=G.map(function(g,i){var m=g.m;return '<li class="vgi'+(V.m===m?' on':'')+'" data-i="'+i+'"><span class="n">M'+(i+1)+'</span><div><b>'+(m.pl>0?'Platz #'+m.pl:'Platz –')+(real?'':' · '+m.pts+' Pkt')+'</b><small>'+m.k+' Elims · Total '+g.tot+'</small></div><div class="grade '+(GR[m.g]||'g-c')+'">'+m.g+'</div></li>'}).join('')||'<li class="vgi"><div><b>Keine Games</b><small>Replay importieren</small></div></li>';
+ $('vg').innerHTML=G.map(function(g,i){var m=g.m;return '<li class="vgi'+(V.m===m?' on':'')+'" data-i="'+i+'"><span class="n">M'+(i+1)+'</span><div><b>'+(m.pl>0?'Platz #'+m.pl:'Platz –')+' · '+m.k+' Elims'+(real?'':' · '+m.pts+' Pkt')+'</b><small>'+(real&&g.real.meta.landName?esc(g.real.meta.landPoi)+' · ':'')+'Total '+g.tot+'</small></div><div class="grade '+(GR[m.g]||'g-c')+'">'+m.g+'</div></li>'}).join('')||'<li class="vgi"><div><b>Keine Games</b><small>Replay importieren</small></div></li>';
  [].forEach.call($('vg').querySelectorAll('li[data-i]'),function(li){li.onclick=function(){var g=curGames()[+li.dataset.i];if(g)openViewer(g.m)}});
  var on=$('vg').querySelector('.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});
  /* Matrix */
@@ -1185,10 +1212,18 @@ function topReal(){
  var out=[],kinds={};all.forEach(function(x){if(out.length<3&&!kinds[x.m.kind]){kinds[x.m.kind]=1;out.push(x)}});
  all.forEach(function(x){if(out.length<3&&out.indexOf(x)<0)out.push(x)});return out}
 window.cftMM=function(sn,v,u){return mmReal(sn,v,u)};
+function renderPoi(real){
+ var P=$('poip');P.hidden=!real;if(!real)return;
+ var M={};G.forEach(function(g){var n=g.real.meta.landName;if(!n)return;(M[n]=M[n]||{n:n,t:0,c:0,pl:0,pc:0}).c++;M[n].t+=g.tot;if(g.m.pl>0){M[n].pl+=g.m.pl;M[n].pc++}});
+ var L=Object.keys(M).map(function(k){return M[k]}).sort(function(a,b){return b.c-a.c||b.t/b.c-a.t/a.c});
+ if(!L.length){P.hidden=true;return}
+ var hi=-1,lo=-1,best=-1,worst=999;L.forEach(function(x,i){var a=x.t/x.c;if(a>best){best=a;hi=i}if(a<worst){worst=a;lo=i}});
+ $('poil').innerHTML=L.map(function(x,i){var a=Math.round(x.t/x.c),tag=L.length>1&&i===hi?' top':L.length>1&&i===lo?' low':'';
+  return '<div class="poir'+tag+'"><div><b>'+esc(x.n)+'</b>'+(tag===' top'?'<em>STARK</em>':tag===' low'?'<em>SCHWACH</em>':'')+'</div><div><small>Games</small><b>'+x.c+'</b></div><div><small>Ø Note</small><b>'+a+'</b></div><div><small>Ø Platz</small><b>'+(x.pc?'#'+Math.round(x.pl/x.pc):'–')+'</b></div><div class="bar2"><i style="width:'+a+'%"></i></div></div>'}).join('')}
 function render(){
  G=gamesNow();window.scoreUpd&&scoreUpd();if(sel>=G.length||sel<0)sel=Math.max(0,G.length-1);var REAL=!!CF.games.length;
  $('rs').textContent=REAL?'Deine Replays · '+G.length+' Game'+(G.length>1?'s':''):'Cash Cup · 11 Games (Demo)';
- if(false)gen();
+ if(false)gen();renderPoi(REAL);
  $('gs').innerHTML=G.map(function(g){var c=sc(g.tot);return '<button class="gb" data-i="'+g.i+'"><small>'+(g.i+1)+'</small><b style="color:'+c+'">'+g.tot+'</b><i style="background:'+c+'"></i></button>'}).join('');
  [].forEach.call($('gs').children,function(b){b.onclick=function(){pick(+b.dataset.i)}});
  // Top-3 Fehler
@@ -1229,10 +1264,10 @@ var st={step:1,name:'',cup:-1},REALC=[];
 function loadReal(){if(!window.fn||!window.fn.listReplays)return Promise.resolve();return window.fn.listReplays().then(function(l){REALC=(l||[]).slice(0,8)}).catch(function(){})}
 try{var sv=JSON.parse(localStorage.getItem('cft_onb')||'null');if(sv&&sv.n)st.name=sv.n}catch(e){}
 var onb=$('onb');
-function save(){try{localStorage.setItem('cft_onb',JSON.stringify({n:st.name}))}catch(e){}}
-function epic(){var ep=$('ep');if(!ep)return;ep.classList.toggle('on',!!st.name);$('eps').textContent=st.name?(st.name.length>14?st.name.slice(0,13)+'…':st.name):'Account verknüpfen'}
+function save(){try{localStorage.setItem('cft_onb',JSON.stringify({n:st.name}))}catch(e){}if(window.profUpd)window.profUpd()}
+function epic(){var ep=$('ep');if(!ep)return;ep.classList.toggle('on',!!st.name);$('eps').textContent=st.name?(st.name.length>14?st.name.slice(0,13)+'…':st.name):'Name eintragen'}
 function view(){
- var S=['Epic-Account','Cup wählen','Review starten'],h='';
+ var S=['Spielername','Replay wählen','Review starten'],h='';
  S.forEach(function(n,i){var k=i+1;h+=(i?'<div class="sl'+(st.step>k-0&&st.step>i?' done':'')+'"></div>':'')+'<div class="sn'+(st.step===k?' on':st.step>k?' done':'')+'"><i>'+(st.step>k?'✓':k)+'</i><span>'+n+'</span></div>'});
  $('obst').innerHTML=h;
  [].forEach.call(document.querySelectorAll('#onb .pane'),function(p){p.classList.toggle('on',+p.dataset.p===st.step)});
@@ -1252,9 +1287,7 @@ function cups(){
 function link(){
  var v=$('obn').value.trim(),m=$('obm'),i=$('obn');
  if(v.length<3){i.classList.add('err');m.className='msg bad';m.textContent='Bitte mindestens 3 Zeichen eingeben.';return}
- i.classList.remove('err');m.className='msg';m.innerHTML='<span class="spin"></span>Account wird verknüpft …';$('obl').disabled=true;
- /* Demo: hier später echte Account-Suche anbinden */
- setTimeout(function(){st.name=v;save();$('obl').disabled=false;m.textContent='';view()},900)}
+ i.classList.remove('err');m.className='msg';m.textContent='';st.name=v;save();view()}
 $('obl').onclick=link;$('obn').onkeydown=function(e){if(e.key==='Enter')link()};
 $('obx').onclick=function(){st.name='';st.cup=-1;save();view();$('obn').value='';$('obn').focus()};
 $('obb').onclick=function(){if(st.step>1){st.step--;view()}};

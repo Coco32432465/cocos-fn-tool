@@ -40,6 +40,23 @@
   /** Länge in Weltkoordinaten -> Länge im Kartenbild (0..1) */
   CFT.len = function (l) { return l / (2 * (CFT.cal.H || DEFAULT_H)); };
 
+  /* ------------------------------------------------------------------ POIs (Position auf dem Kartenbild, 0..1) */
+  CFT.POIS = [
+    ['Lifty Lodge', 0.333, 0.150], ['Freaky Fields', 0.600, 0.235], ['Wonkeeland', 0.745, 0.305], ['Chopped Shop', 0.172, 0.330],
+    ['Nightmare Neighborhood', 0.428, 0.372], ['Green Hill Zone', 0.317, 0.483], ["Reality's Reign", 0.545, 0.490],
+    ['Golden Grove', 0.789, 0.539], ['Stone Sanctum', 0.456, 0.631], ['Shaken Sanctuary', 0.667, 0.676],
+    ['Heatwave Harbor', 0.222, 0.683], ['Sunken Shores', 0.433, 0.794], ['Cluster Coast', 0.733, 0.813]
+  ];
+  /** nächster Ort zu einer Weltposition; innerhalb ~9 % der Kartenbreite = "in", sonst "bei" */
+  CFT.poiAt = function (wx, wy) {
+    var p = CFT.proj(wx, wy), best = null;
+    CFT.POIS.forEach(function (q) { var d = Math.hypot(p[0] - q[1], p[1] - q[2]); if (!best || d < best.d) best = { name: q[0], d: d }; });
+    if (!best) return null;
+    best.near = best.d <= 0.09;
+    best.label = (best.near ? '' : 'bei ') + best.name;
+    return best;
+  };
+
   /* ------------------------------------------------------------------ Helfer */
   function num(v, d) { return (typeof v === 'number' && isFinite(v)) ? v : (d === undefined ? null : d); }
   function fmt(t) {
@@ -262,6 +279,7 @@
         if (high ? (mp.pts[i][3] < 4000 && !(mp.pts[i][4] & (F_BUS | F_SKY))) : (i > iSky && !(mp.pts[i][4] & F_AIR))) { landT = mp.pts[i][0]; break; }
       }
     }
+    var landPos = landT != null ? posAt(mp, landT + 3) : null, landPoi = landPos ? CFT.poiAt(landPos[0], landPos[1]) : null;
     function nearestMate(t) {
       var best = null, me0 = posAt(mp, t);
       if (!me0) return null;
@@ -384,7 +402,7 @@
       if (s.lt != null) feed.push({ t: s.lt, mk: false, c: '#ffffff22', txt: 'Supply Drop geplündert' });
     });
     if (landT != null) {
-      feed.push({ t: landT, mk: true, c: '#d4d4d8', txt: 'Du bist gelandet' });
+      feed.push({ t: landT, mk: true, c: '#d4d4d8', txt: landPoi ? 'Du bist gelandet: ' + landPoi.label : 'Du bist gelandet' });
       var first = null;
       ev.forEach(function (e) { if (!first && ((e.v != null && e.v < tn) || (e.k != null && e.k < tn))) first = e; });
       if (first && first.t > landT) feed.push({ t: first.t, mk: true, c: '#d4d4d8', tip: true, txt: 'Erster Kampf deines Teams ' + Math.round(first.t - landT) + ' s nach der Landung' });
@@ -443,7 +461,7 @@
     var title = (when ? when : base) + (pls ? ' · ' + pls : '') + (num(meta.round, 0) > 0 ? ' · Runde ' + meta.round : '');
 
     R.meta = { me: me.name, teamSize: tn, players: P.length, positions: O.reduce(function (s, p) { return s + p.pts.length; }, 0), kills: ev.length, zones: Zs.length,
-      place: place > 0 ? place : null, mis: mis.length, landT: landT, stormSec: Math.round(stormSec), playlist: pls };
+      place: place > 0 ? place : null, mis: mis.length, landT: landT, landPoi: landPoi ? landPoi.label : null, landName: landPoi ? landPoi.name : null, stormSec: Math.round(stormSec), playlist: pls };
     var kills = num(me.kills, 0);
     var m = { n: title, pl: place > 0 ? place : 0, pts: 0, k: kills, g: L, s: 7, real: R, ph: ph, mis: mis };
     return { i: 0, c: res, rows: rows, ds: ds, win: win, ph: ph, tot: tot, m: m, real: R, mis: mis, rot: rot, fname: base };
@@ -466,6 +484,7 @@
     return file.text().then(function (txt) { return CFT.add(JSON.parse(txt), file.name); });
   };
 
+  CFT.sortGames = function () { CFT.games.sort(function (a, b) { return (a.mtime || 0) - (b.mtime || 0); }); CFT.games.forEach(function (g, i) { g.i = i; }); };
   CFT.clear = function () { CFT.games.length = 0; };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = CFT;
