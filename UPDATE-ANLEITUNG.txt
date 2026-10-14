@@ -68,3 +68,6 @@ v0.8.3 / v0.8.3:
 v0.8.4:
 - Analyse stark erweitert (app/cft-import.js): Zonenrand vs. deep (Zone 4-7), Hoehe ab Zone 7, Hot-Drop-Landung, Team-Abstand, Todesursachen (Sturm, allein, in Unterzahl, nach Mate-Verlust, Hoehe, Distanz).
 - Jeder Tipp zeigt Fakten-Chips (Distanz, Gegner in 100 m, Abstand zum Mate ...) und ein konkretes "Besser".
+
+v0.8.5:
+- Viewer: Zoom (Mausrad / Buttons), Verschieben (Ziehen), Mir folgen, Doppelklick = Reset, Spur ein/aus (wird gemerkt).
