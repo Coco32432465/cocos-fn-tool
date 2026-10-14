@@ -632,6 +632,16 @@
     var cntK = {};
     mis = mis.filter(function (m) { cntK[m.kind] = (cntK[m.kind] || 0) + 1; return cntK[m.kind] <= 2; }).slice(0, 8).sort(function (a, b) { return a.t - b.t; });
     mis.forEach(function (m) { m.snap = snapshot(R, m.t); });
+    /* --- Auswirkung: HP+Schild-Verlust im Fehlerfenster (nur mit Leben-Daten) --- */
+    if (mp.vit && mp.vit.length >= 5) {
+      mis.forEach(function (m) {
+        var go = m.val === 'Game over', a0 = go ? m.t - 12 : m.t, a1 = go ? m.t : m.t + 15;
+        var s0 = CFT.vitAt(mp, a0); if (!s0) return;
+        var st = s0.hp + s0.sh, mn = st;
+        mp.vit.forEach(function (e) { if (e[0] >= a0 && e[0] <= a1) mn = Math.min(mn, e[1] + e[2]); });
+        if (st - mn >= 20) { m.hpLoss = Math.round(st - mn); m.facts = (m.facts || []).concat(['−' + m.hpLoss + ' HP in ' + Math.round(a1 - a0) + ' s']); }
+      });
+    }
 
     /* --- Feed --- */
     var A = (typeof root.THEME === 'object' && root.THEME && root.THEME.acc) ? root.THEME.acc : '#FF003C';
