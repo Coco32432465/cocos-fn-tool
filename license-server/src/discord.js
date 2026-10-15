@@ -55,7 +55,7 @@ export async function verifyDiscord(request, env, raw) {
 }
 
 /* ---------- Konfiguration: Werte aus /setup (Datenbank) ueberschreiben die Variablen ---------- */
-const MAP = { customer_role: 'CUSTOMER_ROLE_ID', member_role: 'MEMBER_ROLE_ID', admin_role: 'ADMIN_ROLE_ID', tester_role: 'TESTER_ROLE_ID', log_channel: 'LOG_CHANNEL_ID', key_channel: 'PANEL_CHANNEL_ID', support_channel: 'SUPPORT_CHANNEL_ID' };
+const MAP = { customer_role: 'CUSTOMER_ROLE_ID', member_role: 'MEMBER_ROLE_ID', admin_role: 'ADMIN_ROLE_ID', tester_role: 'TESTER_ROLE_ID', user_role: 'USER_ROLE_ID', log_channel: 'LOG_CHANNEL_ID', key_channel: 'PANEL_CHANNEL_ID', support_channel: 'SUPPORT_CHANNEL_ID' };
 export async function withCfg(env) {
   let rows = [];
   try { rows = (await env.DB.prepare('SELECT k,v FROM config').all()).results || []; } catch (e) { /* Tabelle fehlt noch */ }

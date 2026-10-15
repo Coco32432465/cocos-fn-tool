@@ -7,16 +7,24 @@ const VIEW = 1024, HIST = 65536, SEND = 2048;
 const ROLES = [
   { name: 'Admin', key: 'admin_role', color: 0x1e6bff, hoist: true, perms: String(BigInt(16 + 2 + 4 + 8192) + (1n << 40n)) },
   { name: 'Customer', key: 'customer_role', color: 0x2ecc71, hoist: true, perms: '0' },
+  { name: 'Tester', key: 'tester_role', color: 0xf1c40f, hoist: false, perms: '0' },
   { name: 'Member', key: 'member_role', color: 0x8ea0c0, hoist: false, perms: '0' },
-  { name: 'Tester', key: 'tester_role', color: 0xf1c40f, hoist: false, perms: '0' }
+  { name: 'User', key: 'user_role', color: 0x5c97ff, hoist: false, perms: '0' } // Zugangs-Rolle: ohne sie sieht man keine Kanaele
 ];
-// [name, Beschreibung, nurAdminSchreibt]
+// Mit diesen Rollen sind die Kanaele sichtbar. Alle anderen (z. B. Freunde ohne Rolle) sehen nichts.
+const ACCESS = ['admin_role', 'customer_role', 'tester_role', 'member_role', 'user_role'];
+// [name, Emoji, Beschreibung, nurAdminSchreibt]
 const STRUCT = [
-  { cat: 'START', ch: [['welcome', 'Willkommen und erste Schritte', 1], ['rules', 'Server-Regeln', 1], ['announcements', 'Ankündigungen', 1], ['patchnotes', "Patchnotes zu Coco's Fn Tool", 1], ['download', 'Download der App', 1], ['free-tips', 'Kostenlose Fortnite-Tipps', 0]] },
-  { cat: 'COMMUNITY', ch: [['general', 'Allgemeiner Austausch', 0], ['placements', 'Eure Platzierungen und Ergebnisse', 0], ['lfg', 'Mitspieler suchen', 0], ['questions', 'Fragen zu Fortnite und zum Tool', 0]] },
-  { cat: 'TOOL', ch: [['how-to-use', 'So nutzt du das Tool', 1], ['feedback', 'Dein Feedback zum Tool', 0], ['bug-reports', 'Fehler melden', 0], ['support', 'Hilfe per Ticket', 1], ['key-kaufen', 'Lizenz erwerben', 1], ['impressum', 'Impressum', 1]] },
-  { cat: 'INTERN', priv: true, ch: [['ticket-logs', 'Ticket-Transkripte (nur Team)', 1]] }
+  { cat: 'START', emoji: '🚀', ch: [['welcome', '👋', 'Willkommen und erste Schritte', 1], ['rules', '📜', 'Server-Regeln', 1], ['announcements', '📢', 'Ankündigungen', 1], ['patchnotes', '🧩', "Patchnotes zu Coco's Fn Tool", 1], ['download', '📥', 'Download der App', 1], ['free-tips', '💡', 'Kostenlose Fortnite-Tipps', 0]] },
+  { cat: 'COMMUNITY', emoji: '💬', ch: [['general', '💬', 'Allgemeiner Austausch', 0], ['placements', '🏆', 'Eure Platzierungen und Ergebnisse', 0], ['lfg', '🎮', 'Mitspieler suchen', 0], ['questions', '❓', 'Fragen zu Fortnite und zum Tool', 0]] },
+  { cat: 'TOOL', emoji: '🛠️', ch: [['how-to-use', '📖', 'So nutzt du das Tool', 1], ['feedback', '💌', 'Dein Feedback zum Tool', 0], ['bug-reports', '🐛', 'Fehler melden', 0], ['support', '🎫', 'Hilfe per Ticket', 1], ['key-kaufen', '🔑', 'Lizenz erwerben', 1], ['impressum', '⚖️', 'Impressum', 1]] },
+  { cat: 'INTERN', emoji: '🔒', priv: true, ch: [['ticket-logs', '🗂️', 'Ticket-Transkripte (nur Team)', 1]] }
 ];
+const chName = (emoji, name) => `${emoji}│${name}`;
+const catName = (emoji, name) => `${emoji} ${name}`;
+const baseCh = n => String(n).toLowerCase().replace(/^[^a-z0-9]+/, '');       // "📜│rules" -> "rules"
+const baseCat = n => String(n).toLowerCase().replace(/[^a-z]/g, '');           // "🚀 START" -> "start"
+const normOv = a => (a || []).map(o => `${o.id}:${o.type}:${o.allow || '0'}:${o.deny || '0'}`).sort().join('|');
 
 export async function runSetup(env, renew) {
   const lines = [];
@@ -39,29 +47,39 @@ export async function runSetup(env, renew) {
       rid[R.key] = r.id; await setCfg(env, R.key, r.id);
     }
     const adminRole = rid.admin_role;
-    const lockOv = adminRole => [
-      { id: gid, type: 0, allow: String(VIEW + HIST), deny: String(SEND) },
-      ...(adminRole ? [{ id: adminRole, type: 0, allow: String(SEND) }] : []),
-      { id: env.DISCORD_APP_ID, type: 1, allow: String(SEND + VIEW) }
-    ];
+    const accessAllow = ACCESS.filter(k => rid[k]).map(k => ({ id: rid[k], type: 0, allow: String(VIEW + HIST) }));
+    const adminUsers = String(env.ADMIN_USER_IDS || '').split(',').map(x => x.trim()).filter(Boolean);
+    const bot = (extra) => ({ id: env.DISCORD_APP_ID, type: 1, allow: String(VIEW + HIST + SEND + extra) });
+    const adminWrite = [...(adminRole ? [{ id: adminRole, type: 0, allow: String(VIEW + HIST + SEND) }] : []), ...adminUsers.map(u => ({ id: u, type: 1, allow: String(VIEW + HIST + SEND) }))];
+    // sichtbar nur mit Zugangsrolle; offen = alle mit Zugang duerfen schreiben
+    const ovOpen = () => [{ id: gid, type: 0, deny: String(VIEW) }, ...accessAllow, bot(0)];
+    // gesperrt = alle mit Zugang lesen nur, Admin schreibt
+    const ovLocked = () => [{ id: gid, type: 0, deny: String(VIEW + SEND) }, ...accessAllow, ...adminWrite, bot(0)];
+    const ovPriv = () => [{ id: gid, type: 0, deny: String(VIEW) }, ...adminWrite, bot(0)];
     const ids = {};
     for (const S of STRUCT) {
-      let cat = chans.find(c => c.type === 4 && c.name.toLowerCase() === S.cat.toLowerCase());
-      if (cat) L(`Kategorie ${S.cat}: vorhanden`);
-      else {
-        const ov = S.priv
-          ? [{ id: gid, type: 0, deny: String(VIEW) }, ...(adminRole ? [{ id: adminRole, type: 0, allow: String(VIEW + HIST + SEND) }] : []), { id: env.DISCORD_APP_ID, type: 1, allow: String(VIEW + SEND) }]
-          : [{ id: gid, type: 0, allow: String(VIEW + HIST) }];
-        const c = await dapi(env, 'POST', `/guilds/${gid}/channels`, { name: S.cat, type: 4, permission_overwrites: ov });
+      const wantName = catName(S.emoji, S.cat), wantOv = S.priv ? ovPriv() : ovOpen();
+      let cat = chans.find(c => c.type === 4 && baseCat(c.name) === S.cat.toLowerCase());
+      if (!cat) {
+        const c = await dapi(env, 'POST', `/guilds/${gid}/channels`, { name: wantName, type: 4, permission_overwrites: wantOv });
         if (!c.ok) { L(`Kategorie ${S.cat}: Fehler (${c.status})`); continue; }
         cat = c.data; L(`Kategorie ${S.cat}: erstellt`);
-      }
-      for (const [name, topic, locked] of S.ch) {
-        const ex = chans.find(c => c.type === 0 && c.name === name);
-        if (ex) { ids[name] = ex.id; L(`#${name}: vorhanden`); continue; }
-        const body = { name, type: 0, parent_id: cat.id, topic };
-        if (locked && !S.priv) body.permission_overwrites = lockOv(adminRole);
-        const c = await dapi(env, 'POST', `/guilds/${gid}/channels`, body);
+      } else if (cat.name !== wantName || normOv(cat.permission_overwrites) !== normOv(wantOv)) {
+        const c = await dapi(env, 'PATCH', `/channels/${cat.id}`, { name: wantName, permission_overwrites: wantOv });
+        L(`Kategorie ${S.cat}: ${c.ok ? 'aktualisiert' : 'Fehler (' + c.status + ')'}`);
+      } else L(`Kategorie ${S.cat}: ok`);
+      for (const [name, emoji, topic, locked] of S.ch) {
+        const want = chName(emoji, name), ov = S.priv ? ovPriv() : locked ? ovLocked() : ovOpen();
+        const ex = chans.find(c => c.type === 0 && baseCh(c.name) === name);
+        if (ex) {
+          ids[name] = ex.id;
+          if (ex.name !== want || ex.parent_id !== cat.id || normOv(ex.permission_overwrites) !== normOv(ov)) {
+            const c = await dapi(env, 'PATCH', `/channels/${ex.id}`, { name: want, parent_id: cat.id, permission_overwrites: ov });
+            L(`#${name}: ${c.ok ? 'aktualisiert' : 'Fehler (' + c.status + ')'}`);
+          } else L(`#${name}: ok`);
+          continue;
+        }
+        const c = await dapi(env, 'POST', `/guilds/${gid}/channels`, { name: want, type: 0, parent_id: cat.id, topic, permission_overwrites: ov });
         if (!c.ok) { L(`#${name}: Fehler (${c.status})`); continue; }
         ids[name] = c.data.id; L(`#${name}: erstellt`);
       }

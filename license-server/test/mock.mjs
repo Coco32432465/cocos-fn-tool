@@ -32,6 +32,7 @@ export function makeDiscord() {
     if (m === 'POST' && p === '/guilds/G/roles') { const b = JSON.parse(opt.body); const r = { id: 'R' + (++S.n), ...b }; S.roles.push(r); return R(r); }
     if (m === 'GET' && p === '/guilds/G/channels') return R(S.channels);
     if (m === 'POST' && p === '/guilds/G/channels') { const b = JSON.parse(opt.body); const c = { id: 'C' + (++S.n), ...b }; S.channels.push(c); return R(c); }
+    if (m === 'PATCH' && (x = p.match(/^\/channels\/(\w+)$/))) { const c = S.channels.find(c => c.id === x[1]); Object.assign(c, JSON.parse(opt.body)); S.chPatched = (S.chPatched || 0) + 1; return R(c); }
     if (m === 'DELETE' && (x = p.match(/^\/channels\/(\w+)$/))) { S.deleted.push(x[1]); S.channels = S.channels.filter(c => c.id !== x[1]); return R({}); }
     if ((x = p.match(/^\/channels\/(\w+)\/messages(\?.*)?$/))) {
       const id = x[1];

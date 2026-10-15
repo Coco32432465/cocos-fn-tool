@@ -8,7 +8,7 @@
 //   POST /license/refresh     Ticket erneuern {session, device}
 //   POST /api/verify          {key, deviceId} -> {valid, expiresAt}
 import { json, now, emb, eph, bad, noPerm, COL, PLANS, fmtDate, normKey, KEY_RE } from './util.js';
-import { dapi, addRole, tryDM, verifyDiscord, withCfg, isAdmin } from './discord.js';
+import { dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin } from './discord.js';
 import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statusOf, expireSweep } from './keys.js';
 import { openTicket, selectPlan, closeTicket } from './tickets.js';
 import { runSetup, setupEmbed } from './setup.js';
@@ -16,6 +16,9 @@ import { authStart, authCallback, authPoll, licenseActivate, licenseRefresh, api
 
 const COMMANDS = [
   { name: 'setup', description: 'Server automatisch aufbauen (Admin)', options: [{ type: 5, name: 'erneuern', description: 'Start-Embeds und Panels neu posten', required: false }] },
+  { name: 'zugang', description: 'Serverzugang (Rolle User) vergeben oder entziehen (Admin)', options: [
+    { type: 6, name: 'user', description: 'Nutzer', required: true },
+    { type: 5, name: 'entfernen', description: 'Zugang entziehen statt vergeben', required: false }] },
   { name: 'key', description: 'Lizenz-Keys', options: [
     { type: 1, name: 'erstellen', description: 'Keys erzeugen (Admin)', options: [
       { type: 3, name: 'dauer', description: 'Laufzeit', required: true, choices: [{ name: '1 Woche', value: 'week' }, { name: '1 Monat', value: 'month' }] },
@@ -124,6 +127,15 @@ async function handleInteraction(i, env, ctx) {
         await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}/messages/@original`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ embeds: [setupEmbed(env, res)] }) });
       })());
       return { type: 5, data: { flags: 64 } };
+    }
+    if (name === 'zugang') {
+      if (!isAdmin(env, i)) return noPerm(env);
+      const o = n => ((i.data.options || []).find(x => x.name === n) || {}).value;
+      if (!env.USER_ROLE_ID) return bad(env, 'Rolle „User“ fehlt', 'Bitte zuerst `/setup` ausführen.');
+      const target = o('user'), rem = !!o('entfernen');
+      const r = rem ? await delRole(env, target, env.USER_ROLE_ID) : await addRole(env, target, env.USER_ROLE_ID);
+      if (!r.ok) return bad(env, 'Rolle konnte nicht geändert werden', 'Die Bot-Rolle muss in den Servereinstellungen über der Rolle „User“ stehen.');
+      return { type: 4, data: { embeds: [emb(env, { title: rem ? 'Zugang entzogen' : 'Zugang erteilt', color: rem ? COL.neutral : COL.ok, desc: `<@${target}> ${rem ? 'sieht den Server nicht mehr.' : 'hat jetzt Zugriff auf die Kanäle.'}` })], flags: 64 } };
     }
     if (name === 'key') return handleKey(i, env, ctx, uid);
   }

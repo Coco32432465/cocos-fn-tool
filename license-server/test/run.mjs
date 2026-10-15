@@ -125,20 +125,24 @@ await T('Täglicher Job: abgelaufen -> Rolle entzogen + DM, nur einmal', async (
 await T('/setup: baut Struktur, überspringt Vorhandenes, 2. Lauf ändert nichts', async () => {
   assert.match(J(await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('U1') })), /Keine Berechtigung/);
   const r = await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); assert.equal(r.type, 5); await flush();
-  const names = S.channels.map(c => c.name);
-  for (const n of ['START', 'COMMUNITY', 'TOOL', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs']) assert.ok(names.includes(n), n);
+  const names = S.channels.map(c => c.name.replace(/^[^a-z0-9]+/i, '').toLowerCase());
+  for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs']) assert.ok(names.includes(n), n);
   assert.equal(names.filter(n => n === 'key-kaufen').length, 1); // vorhanden, nicht doppelt
-  for (const n of ['Admin', 'Customer', 'Member', 'Tester']) assert.equal(S.roles.filter(x => x.name === n).length, 1, n);
-  const ann = S.channels.find(c => c.name === 'announcements'); assert.ok(ann.permission_overwrites.some(o => o.id === 'G' && o.deny === '2048')); // nur Admin schreibt
-  const gen = S.channels.find(c => c.name === 'general'); assert.equal(gen.permission_overwrites, undefined); // offen
-  const dl = S.msgs[S.channels.find(c => c.name === 'download').id][0]; assert.equal(dl.components[0].components[0].style, 5); assert.match(dl.components[0].components[0].url, /^https:/);
-  assert.ok(S.msgs[S.channels.find(c => c.name === 'welcome').id][0].embeds[0].color === 0x1e6bff);
-  assert.ok(S.msgs[S.channels.find(c => c.name === 'rules').id][0].components[0].components[0].custom_id === 'rules_accept');
+  for (const n of ['Admin', 'Customer', 'Member', 'Tester', 'User']) assert.equal(S.roles.filter(x => x.name === n).length, 1, n);
+  globalThis.byBase = b => S.channels.find(c => c.name.replace(/^[^a-z0-9]+/i, '') === b);
+  assert.equal(byBase('rules').name, '📜│rules'); assert.equal(S.channels.find(c => c.name === '🚀 START').type, 4);
+  const ann = byBase('announcements'); assert.ok(ann.permission_overwrites.some(o => o.id === 'G' && (BigInt(o.deny) & 2048n))); // nur Admin schreibt
+  const userId = S.roles.find(r => r.name === 'User').id; const gen = byBase('general');
+  assert.ok(gen.permission_overwrites.some(o => o.id === 'G' && o.deny === '1024')); assert.ok(gen.permission_overwrites.some(o => o.id === userId && (BigInt(o.allow) & 1024n))); // nur mit User-Rolle sichtbar
+  assert.ok(!byBase('ticket-logs').permission_overwrites.some(o => o.id === userId)); // intern
+  const dl = S.msgs[byBase('download').id][0]; assert.equal(dl.components[0].components[0].style, 5); assert.match(dl.components[0].components[0].url, /^https:/);
+  assert.ok(S.msgs[byBase('welcome').id][0].embeds[0].color === 0x1e6bff);
+  assert.ok(S.msgs[byBase('rules').id][0].components[0].components[0].custom_id === 'rules_accept');
   assert.ok(S.msgs['KEYCH'][0].components[0].components[0].label === 'Key kaufen');
   const before = S.channels.length, msgsBefore = Object.values(S.msgs).flat().length;
   await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); await flush();
-  assert.equal(S.channels.length, before); assert.equal(Object.values(S.msgs).flat().length, msgsBefore);
-  assert.match(JSON.stringify(S.patched.at(-1)), /vorhanden/);
+  assert.equal(S.channels.length, before); const pc = S.chPatched || 0; assert.equal(Object.values(S.msgs).flat().length, msgsBefore);
+  assert.equal(S.chPatched || 0, pc); assert.match(JSON.stringify(S.patched.at(-1)), /vorhanden/);
 });
 await T('/setup: Rollen-Beitritt per Regel-Button + Limit-Fortsetzung', async () => {
   assert.match(J(await inter({ type: 3, data: { custom_id: 'rules_accept' }, member: mem('U1') })), /Member/);
@@ -147,15 +151,23 @@ await T('/setup: Rollen-Beitritt per Regel-Button + Limit-Fortsetzung', async ()
   const S2 = makeDiscord(); const { D1: D2 } = makeDb(['schema.sql']); const { env: e2 } = makeEnv(D2);
   const r1 = await runSetup({ ...e2, _budget: { n: 0, max: 12 } }, false); assert.equal(r1.partial, true);
   let r = r1, guard = 0; while (r.partial && guard++ < 10) r = await runSetup({ ...e2, _budget: { n: 0, max: 12 } }, false);
-  assert.equal(r.partial, false); assert.equal(S2.channels.filter(c => c.name === 'welcome').length, 1);
+  assert.equal(r.partial, false); assert.equal(S2.channels.filter(c => c.name === '👋│welcome').length, 1);
   S2.restore();
 });
 await T('Ticket schließen: Transkript im Log-Kanal, Kanal gelöscht, Fremde nicht', async () => {
-  const ch = S.channels.find(c => c.name === 'kauf-useru1'); const logId = S.channels.find(c => c.name === 'ticket-logs').id;
+  const ch = S.channels.find(c => c.name === 'kauf-useru1'); const logId = S.channels.find(c => c.name.endsWith('ticket-logs')).id;
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_close' }, member: mem('U9') })), /Keine Berechtigung/);
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_close' }, member: mem('U1') })), /geschlossen/);
   await flush();
   const f = S.files.find(x => x.ch === logId); assert.ok(f, 'Transkript fehlt'); assert.match(f.text, /Transkript/); assert.match(f.text, /Lizenzbestellung/); assert.match(f.name, /\.txt$/);
   assert.ok(S.deleted.includes(ch.id));
+});
+await T('/zugang: User-Rolle vergeben und entziehen', async () => {
+  assert.match(J(await inter({ type: 2, data: { name: 'zugang', options: [{ name: 'user', value: 'U1' }] }, member: mem('U1') })), /Keine Berechtigung/);
+  const userId = S.roles.find(r => r.name === 'User').id; env.USER_ROLE_ID = userId;
+  assert.match(J(await inter({ type: 2, data: { name: 'zugang', options: [{ name: 'user', value: 'U1' }] }, member: mem('ADMIN') })), /Zugang erteilt/);
+  assert.ok(S.members.U1.roles.includes(userId));
+  assert.match(J(await inter({ type: 2, data: { name: 'zugang', options: [{ name: 'user', value: 'U1' }, { name: 'entfernen', value: true }] }, member: mem('ADMIN') })), /Zugang entzogen/);
+  assert.ok(!S.members.U1.roles.includes(userId));
 });
 console.log(`\n${ok} Tests bestanden`); S.restore();
