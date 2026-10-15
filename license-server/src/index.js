@@ -18,6 +18,7 @@ import { rankSubmit, rankLeave, handleRank, syncRank } from './rank.js';
 import { openForm, submitForm, setBugStatus } from './forms.js';
 import { adminStats, handleTeam } from './admin.js';
 import { syncStatus } from './panels.js';
+import { Gateway, pingGateway } from './gateway.js';
 import { runSetup, setupEmbed } from './setup.js';
 import { syncPatchnotes } from './patchnotes.js';
 import { authStart, authCallback, authPoll, licenseActivate, licenseRefresh, apiVerify, hit, blocked, cleanup, corsHeaders } from './auth.js';
@@ -239,6 +240,7 @@ export default {
     const safe = f => f().catch(() => { /* Discord/GitHub gerade nicht erreichbar */ });
     ctx.waitUntil((async () => {
       await ensureSchema(env0);
+      await safe(() => pingGateway(env0));
       const env = await withCfg(env0), cron = String(event.cron || '');
       if (cron === '15,45 * * * *') { await safe(() => syncPatchnotes(env)); await safe(() => syncStatus(env)); }
       else if (cron === '30 * * * *') await safe(() => syncRank(env));
@@ -247,4 +249,4 @@ export default {
   }
 };
 
-export { expireSweep, COMMANDS };
+export { expireSweep, COMMANDS, Gateway };
