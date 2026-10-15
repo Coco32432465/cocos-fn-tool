@@ -706,6 +706,8 @@
     good.slice(0, 3).forEach(function (g) { feed.push({ t: g.t, mk: true, c: '#4ade80', tip: true, txt: g.txt }); });
     feed.sort(function (a, b) { return a.t - b.t; });
     R.feed = feed;
+    R.ev = ev.map(function (e) { return { t: e.t, v: e.v, k: e.k, down: !!e.down }; });
+    try { R.fights = CFT.fights ? CFT.fights(R) : []; } catch (err) { R.fights = []; }
 
     /* --- Reihen für die Matrix "Wo deine Games brechen" --- */
     var starts = Zs.map(function (z) { return z.s; });

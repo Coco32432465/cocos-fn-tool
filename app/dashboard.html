@@ -330,6 +330,32 @@ body.vw #sbar,body.rp #sbar{display:none}
 @media (max-width:1180px){.vgrid{grid-template-columns:1fr;overflow-y:auto;display:flex;flex-direction:column}.vl,.vr{overflow:visible}#viewer .stage{flex:none;height:min(100vw,56vh)}#viewer .feed{flex:none}.vgl{max-height:none}.vl{order:2}.vr{order:1}}
 
 
+
+/* ===== v0.9.7 Fight-Analyse ===== */
+.fsum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.fsum div{padding:10px;border-radius:10px;background:#ffffff06;border:1px solid var(--line);text-align:center}
+.fsum small{display:block;color:var(--mute);font:700 10px 'Orbitron',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.fsum b{display:block;font:900 22px 'Orbitron',sans-serif;margin-top:4px}
+.fl{list-style:none;display:flex;flex-direction:column;gap:10px}
+.fc{padding:12px 14px;border-radius:12px;background:#ffffff05;border:1px solid var(--line);border-left:3px solid var(--c,#888);cursor:pointer;transition:.2s}
+.fc:hover{background:rgba(var(--rgb),.07)}
+.fc .fh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fc .fh time{font:700 12px 'Orbitron',sans-serif;color:var(--mute)}
+.fc .fh b.pl{font-size:15px}
+.fc .fres{margin-left:auto;font:800 11px 'Orbitron',sans-serif;letter-spacing:.08em;padding:4px 9px;border-radius:99px;color:var(--c);background:#ffffff0d;border:1px solid var(--c)}
+.fc .fgr{font:900 13px 'Orbitron',sans-serif;width:28px;height:28px;display:grid;place-items:center;border-radius:8px;color:#0A0A0C;background:var(--c)}
+.fc .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.fc .chip{font-size:13px;padding:3px 9px;border-radius:7px;background:#ffffff0a;color:#cfcfda}
+.fc .chip.g{color:#6ee7a0;background:rgba(46,204,113,.12)}.fc .chip.b{color:#ff8a94;background:rgba(255,59,74,.12)}
+.fc .why{margin-top:9px;font-size:14px;color:#dcdce6}
+.fc .bet{margin-top:6px;font-size:14px;color:var(--acc-pale)}.fc .bet b{color:var(--acc)}
+.fc[data-r=won]{--c:#4ade80}.fc[data-r=trade]{--c:#facc15}.fc[data-r=survived]{--c:#9ca3af}.fc[data-r=lost],.fc[data-r=lostmate]{--c:#ff5a67}
+.fnone{padding:14px;color:var(--mute);text-align:center}
+.fgtop{display:flex;flex-direction:column;gap:8px;margin:10px 0 14px}
+.fgtop .row{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:#ffffff06;border:1px solid var(--line)}
+.fgtop .row i{font:900 16px 'Orbitron',sans-serif;color:var(--acc)}
+.fgtop .row b{display:block}.fgtop .row small{color:var(--mute);font-size:14px}
+
 /* ===== v0.8.9 Dashboard: kein Seiten-Scrollen, Spalten scrollen einzeln ===== */
 html,body{height:100%}
 body{height:100vh;height:100dvh;min-height:0;overflow:hidden}
@@ -885,13 +911,16 @@ header .mbtn{margin-right:14px}
 
     </section>
     <aside class="vr">
-      <div class="rtabs" id="rtabs" role="tablist"><button class="on" data-p="an" role="tab">Analyse</button><button data-p="fd" role="tab">Feed</button><button data-p="gm" role="tab">Games</button></div>
+      <div class="rtabs" id="rtabs" role="tablist"><button class="on" data-p="an" role="tab">Analyse</button><button data-p="fd" role="tab">Feed</button><button data-p="fi" role="tab">Fights</button><button data-p="gm" role="tab">Games</button></div>
       <div class="rpane" data-p="an">
         <section class="panel la"><h2 class="disp">Live Analysis</h2><div id="la"></div></section>
         <section class="panel"><h2 class="disp">Phasen-Bewertung</h2><div class="phs" id="phs"></div></section>
       </div>
       <div class="rpane" data-p="fd" hidden>
         <section class="panel feed"><h2 class="disp">Event Feed</h2><ul class="evl" id="evl"></ul></section>
+      </div>
+      <div class="rpane" data-p="fi" hidden>
+        <section class="panel"><h2 class="disp">Fight-Analyse</h2><div class="fsum" id="fsum"></div><ul class="fl" id="fl"></ul></section>
       </div>
       <div class="rpane" data-p="gm" hidden>
         <section class="panel"><h2 class="disp">Games</h2><ul class="vgl" id="vg"></ul></section>
@@ -912,6 +941,7 @@ header .mbtn{margin-right:14px}
     <section><h2 class="disp sec">Woran du arbeiten solltest</h2><div class="wgrid" id="wg"></div></section>
     <section class="panel"><h2 class="disp">Wo deine Games brechen</h2><p class="sub">Jede Zeile ist ein Schritt, jedes Kästchen ein Game.</p><div class="mxw"><div id="mx"></div></div>
       <div class="lgd" id="lgd0"><span><i class="cell ok"></i>hat geklappt</span><span><i class="cell bad"></i>hat nicht geklappt</span><span><i class="cell end"></i>Game endete hier</span><span><i class="cell none"></i>nicht so weit gekommen</span></div></section>
+    <section class="panel" id="fightp" hidden><h2 class="disp">Fight-Analyse</h2><p class="sub">Alle Kämpfe deines Teams über alle Games – was dich Fights kostet und was du ändern kannst.</p><div class="fsum" id="fgs"></div><div class="fgtop" id="fgt"></div><h2 class="disp sec">Schwächste Fights</h2><ul class="fl" id="fgw"></ul></section>
     <section class="panel" id="poip" hidden><h2 class="disp">Wo du landest</h2><p class="sub">Deine Landeorte im Vergleich – wo du stark startest und wo nicht.</p><div class="poil" id="poil"></div></section>
   </div>
 </div>
@@ -973,6 +1003,7 @@ header .mbtn{margin-right:14px}
 <div id="veil"></div>
 <div id="toast" role="status"></div>
 <script src="cft-import.js"></script>
+<script src="cft-fights.js"></script>
 <script src="patchnotes.js"></script>
 <script src="config.js"></script>
 
@@ -1256,6 +1287,13 @@ function grades(m){
   return'<div class="phc" data-t="'+T[i]+'"><small>'+n+'</small><b>'+v+'</b><span class="gr">'+g+' · '+l+'</span><div class="pb2"><i style="width:'+v+'%"></i></div></div>'}).join('');
  [].forEach.call($('phs').children,function(c){c.onclick=function(){seek(+c.dataset.t)}})}
 function jump(f){if(f.mis){seek(f.t);setPlay(false);showMis(f)}else seek(f.t-3)}
+function fightsUI(m){
+ var F=(m&&m.real&&m.real.fights)||[],el=$('fl'),sm=$('fsum');if(!el)return;
+ if(!F.length){sm.innerHTML='';el.innerHTML='<li class="fnone">Keine Kämpfe erkannt.</li>';return}
+ var S=CFT.fightSummary([F]);
+ sm.innerHTML='<div><small>Fights</small><b>'+S.n+'</b></div><div><small>Gewonnen</small><b style="color:#4ade80">'+(S.won+S.trade)+'</b></div><div><small>Ø Note</small><b>'+S.avg+'</b></div>';
+ el.innerHTML=F.map(function(f){return window.fightCard(f)}).join('');
+ [].forEach.call(el.children,function(li){li.onclick=function(){if(li.dataset.t)seek(+li.dataset.t-4)}})}
 function feed(){
  $('evl').innerHTML=V.F.map(function(f,i){return'<li class="'+(f.mk?'':'dim')+'" style="--c:'+f.c+'" data-i="'+i+'"><time>'+fmt(f.t)+'</time><span>'+(f.mis?'<em>✕ Mistake</em>':f.tip?'<em>KI-Tipp</em>':'')+f.txt+'</span></li>'}).join('');
  [].forEach.call($('evl').children,function(li){li.onclick=function(){jump(V.F[+li.dataset.i])}});
@@ -1264,7 +1302,7 @@ function feed(){
 window.openViewer=function(i){
  var m=(typeof i==='object'?i:M[i])||M[0],v=$('veil');v.classList.add('on');
  setTimeout(function(){
-  V.pin=null;V.t=0;V.sp=1;V.zoom=1;V.cx=V.cy=.5;V.follow=false;zUI();cur=-2;build(m);feed();grades(m);hideMis();HUDC={};if(!GEN)GEN=genMap();if(MAP_SRC&&!MAPIMG)setImg(MAP_SRC);
+  V.pin=null;V.t=0;V.sp=1;V.zoom=1;V.cx=V.cy=.5;V.follow=false;zUI();cur=-2;build(m);feed();fightsUI(m);grades(m);hideMis();HUDC={};if(!GEN)GEN=genMap();if(MAP_SRC&&!MAPIMG)setImg(MAP_SRC);
   [].forEach.call($('spds').children,function(b){b.classList.toggle('on',b.dataset.s==='1')});
   $('vt').textContent=m.n;V.m=m;window.__lastM=m;V.laK=null;renderLeft();scoreUpd();
   $('vs').textContent=m.real?(m.pl>0?'Platz #'+m.pl+' · ':'')+m.k+' Elims · '+m.real.nPlayers+' Spieler'+(m.real.meta.landPoi?' · gelandet: '+m.real.meta.landPoi:''):'Platz #'+m.pl+' · '+m.pts+' Pkt · '+m.k+' Elims';
@@ -1514,6 +1552,34 @@ function topReal(){
  var out=[],kinds={};all.forEach(function(x){if(out.length<3&&!kinds[x.m.kind]){kinds[x.m.kind]=1;out.push(x)}});
  all.forEach(function(x){if(out.length<3&&out.indexOf(x)<0)out.push(x)});return out}
 window.cftMM=function(sn,v,u){return mmReal(sn,v,u)};
+
+/* ===== v0.9.7 Fight-Analyse ===== */
+function fmt(t){var m=Math.floor(t/60),s=Math.floor(t%60);return(m<10?'0':'')+m+':'+(s<10?'0':'')+s}
+var FRES={won:'GEWONNEN',trade:'TRADE',lost:'VERLOREN',lostmate:'MATE VERLOREN',survived:'ÜBERLEBT'};
+function fightCard(f,gi){
+ var chips=[];
+ if(f.hp!=null)chips.push('<span class="chip '+(f.hp>=150?'g':f.hp<100?'b':'')+'">'+f.hp+' HP+Schild</span>');
+ chips.push('<span class="chip">'+f.enemies+' Gegner'+(f.dist!=null?' · '+f.dist+' m':'')+'</span>');
+ if(f.matesNear)chips.push('<span class="chip g">'+f.matesNear+' Mate'+(f.matesNear>1?'s':'')+' nah</span>');
+ if(f.mats!=null)chips.push('<span class="chip '+(f.mats<150?'b':'')+'">'+f.mats+' Mats</span>');
+ f.tags.filter(function(t){return t.k!=='result'&&['hp','team'].indexOf(t.k)<0}).slice(0,3).forEach(function(t){chips.push('<span class="chip '+(t.good?'g':'b')+'">'+esc(t.txt)+'</span>')});
+ var win=f.result==='won';
+ return '<li class="fc" data-r="'+f.result+'" data-g="'+(gi==null?'':gi)+'" data-t="'+f.t0+'"><div class="fh"><span class="fgr">'+f.grade+'</span><time>'+fmt(f.t0)+'</time><b class="pl">'+esc(f.poi||'Unterwegs')+'</b><span class="fres">'+FRES[f.result]+'</span></div>'
+  +'<div class="chips">'+chips.join('')+'</div>'
+  +(win&&f.why?'<div class="why">'+esc(f.why.txt)+'</div>':'')
+  +(!win&&f.better?'<div class="bet"><b>Besser:</b> '+esc(f.better)+'</div>':'')+'</li>'}
+window.fightCard=fightCard;
+function renderFights(real){
+ var P=$('fightp');if(!P)return;
+ var lists=[];if(real)G.forEach(function(g,gi){(g.real.fights||[]).forEach(function(f){lists.push({f:f,gi:gi})})});
+ if(!real||!lists.length){P.hidden=true;return}
+ P.hidden=false;
+ var S=CFT.fightSummary([lists.map(function(x){return x.f})]);
+ $('fgs').innerHTML='<div><small>Fights</small><b>'+S.n+'</b></div><div><small>Siegquote</small><b style="color:'+(S.winRate>=55?'#4ade80':S.winRate>=40?'#facc15':'#ff5a67')+'">'+S.winRate+'%</b></div><div><small>Ø Note</small><b>'+S.avg+'</b></div>';
+ $('fgt').innerHTML=S.top.length?'<small style="color:var(--mute)">Das kostet dich am häufigsten Fights:</small>'+S.top.map(function(t,i){return '<div class="row"><i>'+(i+1)+'</i><div><b>'+esc(t.txt)+' <span style="color:var(--mute);font-weight:500">· '+t.n+'×</span></b><small>'+esc(t.better||'')+'</small></div></div>'}).join(''):'<small style="color:var(--mute)">Keine wiederkehrenden Fight-Fehler – stark!</small>';
+ var W=lists.filter(function(x){return x.f.result!=='won'}).sort(function(a,b){return a.f.score-b.f.score}).slice(0,4);
+ $('fgw').innerHTML=W.map(function(x){return fightCard(x.f,x.gi).replace('</li>','<button class="go" style="margin-top:10px">Im Replay ansehen</button></li>')}).join('');
+ [].forEach.call($('fgw').children,function(li){li.onclick=function(){jumpTo(+li.dataset.g,+li.dataset.t)}})}
 function renderPoi(real){
  var P=$('poip');P.hidden=!real;if(!real)return;
  var M={};G.forEach(function(g){var n=g.real.meta.landName;if(!n)return;(M[n]=M[n]||{n:n,t:0,c:0,pl:0,pc:0}).c++;M[n].t+=g.tot;if(g.m.pl>0){M[n].pl+=g.m.pl;M[n].pc++}});
@@ -1525,7 +1591,7 @@ function renderPoi(real){
 function render(){
  window.cftApplyNames();G=gamesNow();window.scoreUpd&&scoreUpd();if(sel>=G.length||sel<0)sel=Math.max(0,G.length-1);var REAL=!!CF.games.length;
  $('rs').textContent=REAL?'Deine Replays · '+G.length+' Game'+(G.length>1?'s':''):'Cash Cup · 11 Games (Demo)';
- if(false)gen();renderPoi(REAL);
+ if(false)gen();renderPoi(REAL);renderFights(REAL);
  $('gs').innerHTML=G.map(function(g){var c=sc(g.tot);return '<button class="gb" data-i="'+g.i+'"><small>'+(g.i+1)+'</small><b style="color:'+c+'">'+g.tot+'</b><i style="background:'+c+'"></i></button>'}).join('');
  [].forEach.call($('gs').children,function(b){b.onclick=function(){pick(+b.dataset.i)}});
  // Top-3 Fehler
