@@ -2,14 +2,14 @@ name = "cft-license"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
-# Stuendlich: abgelaufene Keys -> Customer-Rolle entziehen
+# Taeglich 04:00 UTC: abgelaufene Keys -> Customer-Rolle entziehen + DM
 [triggers]
-crons = ["0 * * * *"]
+crons = ["0 4 * * *"]
 
 [[d1_databases]]
 binding = "DB"
 database_name = "cft-license"
-database_id = "HIER_DIE_DATABASE_ID_EINTRAGEN"
+database_id = "9087d397-0bd3-49ab-91e4-48f060e33a9c"
 
 # Oeffentliche IDs (keine Geheimnisse)
 [vars]
@@ -23,6 +23,10 @@ ADMIN_USER_IDS = "802638794348167229"
 # Preise (nur Anzeige im Ticket-Text)
 PRICE_WEEK = "5 €"
 PRICE_MONTH = "15 €"
+# Link fuer den Download-Button (Platzhalter, bitte deine Website eintragen)
+DOWNLOAD_URL = "https://example.com/download"
+# Erlaubte Website-Adressen fuer Login/API aus dem Browser (kommagetrennt, leer = keine)
+ALLOWED_ORIGINS = ""
 PAYMENT_TEXT = "Zahlungsart klaerst du im Ticket mit dem Team (z. B. PayPal)."
 
 # Geheimnisse NICHT hier eintragen, sondern mit `wrangler secret put`:

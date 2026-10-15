@@ -48,30 +48,55 @@ Anwendung öffnen:
 1. **Allgemeine Informationen → Interactions Endpoint URL**: `https://cft-license.DEINNAME.workers.dev/interactions` einfügen und speichern. Discord prüft sofort. Wenn „Gespeichert" kommt, passt alles. Kommt ein Fehler, stimmt Public Key oder Adresse nicht.
 2. **OAuth2 → Redirects → Add Redirect**: `https://cft-license.DEINNAME.workers.dev/auth/callback` einfügen und speichern.
 
-## 7. Commands und Ticket-Panel anlegen (einmalig)
+## 7. Commands registrieren (einmalig)
 Im Browser öffnen (mit deinem Setup-Passwort):
 ```
-https://cft-license.DEINNAME.workers.dev/setup?secret=DEIN_SETUP_PASSWORT
+https://cft-license.DEINNAME.workers.dev/register?secret=DEIN_SETUP_PASSWORT
 ```
-Es sollte `{"commands":"ok","panel":"ok"}` erscheinen. In #key-kaufen steht jetzt die Nachricht mit dem Button **Key kaufen**, und die Slash-Commands sind da.
-Rufe diese Adresse **nicht nochmal** auf, sonst steht das Panel doppelt da.
+Es sollte `{"commands":"ok"}` erscheinen. Danach im Discord als Admin `/setup` ausführen: das legt Kanäle, Rollen und die Panels (Key kaufen, Support) an.
 
 ## 8. Testen
-1. Klick auf **Key kaufen** → ein privates Ticket entsteht.
-2. Im Ticket: `/key plan:1 Woche` → der Bot postet den Key, vergibt die Rolle Customer und schickt eine DM.
-3. Ticket mit dem Button schließen.
+1. Klick auf **Key kaufen** in #key-kaufen → privates Ticket, im Dropdown die Laufzeit wählen (Preis und Zahlungshinweis erscheinen).
+2. Im Ticket: `/key erstellen dauer:1 Woche` → der Key erscheint im Ticket.
+3. `/key einlösen` mit dem Key (oder direkt in der App) → Rolle Customer, `/key info` zeigt den Ablauf.
+4. Ticket mit dem Button schließen → Transkript landet in #ticket-logs.
 
-## Befehle (nur für dich)
-| Befehl | Wirkung |
-|---|---|
-| `/key plan:… [user:…]` | Key erzeugen (im Ticket ohne `user`). Hat der Nutzer schon einen, wird dieser verlängert. |
-| `/revoke key:…` | Key sperren, Rolle entziehen |
-| `/reset-device key:…` | Gerätebindung lösen (neuer PC) |
-| `/keys [user:…]` | Keys und Status anzeigen |
+## Befehle
+| Befehl | Wer | Wirkung |
+|---|---|---|
+| `/setup [erneuern]` | Admin | Baut Kategorien, Kanäle, Rollen und Start-Embeds auf. Vorhandenes wird übersprungen. |
+| `/key erstellen dauer anzahl` | Admin | Erzeugt 1–25 Keys (`XXXX-XXXX-XXXX`). Im Ticket-Kanal sieht der Kunde sie sofort. Die Laufzeit startet erst beim Einlösen. |
+| `/key einlösen key` | alle | Bindet den Key an das eigene Konto, startet die Laufzeit, vergibt die Rolle Customer. |
+| `/key info` | alle | Zeigt Laufzeit, Ablauf, Gerätebindung. |
+| `/key reset-gerät key` | Admin | Gerätebindung lösen (neuer PC). |
+| `/key sperren key` | Admin | Key sperren, Rolle entziehen. |
+| `/key liste [user]` | Admin | Übersicht der letzten Keys. |
 
-Stündlich entzieht der Server automatisch die Rolle bei abgelaufenen Keys.
+Täglich um 04:00 UTC entzieht der Server abgelaufenen Nutzern die Rolle Customer und schickt eine DM.
+
+## Update von v1 auf v2 einspielen (bestehende Installation)
+1. Ordner `license-server` mit dem neuen überschreiben. Die `wrangler.toml` enthält deine `database_id` bereits.
+2. Datenbank umstellen (**nur einmal**): `npm run db:migrate`
+3. `npx wrangler deploy`
+4. Neue Commands registrieren: `https://cft-license.cocotool.workers.dev/register?secret=DEIN_SETUP_PASSWORT` im Browser öffnen. Es erscheint `{"commands":"ok"}`. Die alten Commands (`/revoke`, `/keys` …) verschwinden dabei.
+5. Im Discord als Admin: `/setup`. Läuft das Limit voll (Hinweis „teilweise"), den Befehl einfach noch einmal ausführen.
+6. Die neue Rolle **Admin** dir selbst geben und prüfen, dass die Bot-Rolle in der Rollenliste **über** Customer, Member und Tester steht.
+7. Download-Link: in `wrangler.toml` bei `DOWNLOAD_URL` deine Website eintragen, `npx wrangler deploy`, danach `/setup erneuern:true` (die alte Download-Nachricht vorher löschen).
+8. Impressum und Anleitung (#how-to-use) schreibst du selbst, die Kanäle sind angelegt und nur für Admins beschreibbar.
+
+## Die API für Website oder andere Programme
+`POST https://cft-license.cocotool.workers.dev/api/verify` mit `{"key":"XXXX-XXXX-XXXX","deviceId":"..."}` antwortet `{"valid":true,"expiresAt":"2026-11-01T12:00:00.000Z"}` oder `{"valid":false,"reason":"expired|revoked|device|invalid|not_redeemed|format"}`.
+Das Gerät wird beim ersten gültigen Aufruf gebunden. Je IP gilt 40 Anfragen pro Minute, nach 10 Fehlversuchen in 30 Minuten wird die IP bis zum Ablauf gesperrt (HTTP 429).
+Die App selbst nutzt `/license/activate` mit signiertem Ticket, das ist fälschungssicherer als `/api/verify`.
+
+Discord-Login für deine Website: `…/auth/start?cid=ZUFALLSTEXT&next=https://deine-seite.de/fertig` öffnen. Die Adresse muss in `wrangler.toml` bei `ALLOWED_ORIGINS` stehen (z. B. `"https://deine-seite.de"`). Danach holt die Seite die Sitzung mit `POST …/auth/poll {"cid":"ZUFALLSTEXT"}` ab.
+
+## Grenzen (ehrlich)
+- **Member automatisch beim Beitritt** geht ohne dauerhaft laufenden Bot nicht. Stattdessen bekommt man die Rolle Member über den Button „Regeln akzeptieren".
+- Cloudflare Free erlaubt ca. 50 Discord-Aufrufe je Ausführung. Der Täglich-Job bearbeitet deshalb höchstens 14 abgelaufene Nutzer je Lauf, der Rest folgt am nächsten Tag (der Zugang in der App endet unabhängig davon pünktlich).
+- Transkripte erfassen die letzten 300 Nachrichten.
 
 ## Wenn etwas hakt
 - Fehler anzeigen: `npx wrangler tail`, dann die Aktion im Discord wiederholen.
-- Bot kann Rolle nicht vergeben: Bot-Rolle muss in der Rollenliste **über** Customer stehen.
-- Ticket lässt sich nicht erstellen: Bot braucht „Kanäle verwalten" und Zugriff auf die Kategorie Tickets.
+- Bot kann Rolle nicht vergeben: Bot-Rolle muss in der Rollenliste **über** der Zielrolle stehen.
+- Ticket/Kanal lässt sich nicht erstellen: Bot braucht „Kanäle verwalten" und „Rollen verwalten".
