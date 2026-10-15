@@ -12,6 +12,8 @@ export async function sha256hex(s) {
 }
 
 export const PLANS = { week: { days: 7, label: '1 Woche' }, month: { days: 30, label: '1 Monat' } };
+export const TEST_PLAN = { days: 10 / 1440, label: '10 Minuten (Test)' }; // nur Admin, nicht im Shop
+export const PLAN_ALL = { ...PLANS, test: TEST_PLAN };
 export const KEY_RE = /^[A-Z0-9]{4}(-[A-Z0-9]{4}){2,3}$/; // neu: XXXX-XXXX-XXXX, aeltere 4er-Keys bleiben gueltig
 const KEY_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 Zeichen, ohne 0/O/1/I
 export function newKey() {

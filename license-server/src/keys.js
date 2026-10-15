@@ -1,10 +1,10 @@
 // Key-Verwaltung: erstellen, einloesen, sperren, Geraet zuruecksetzen, Abfragen.
 // Status: unused (erstellt, noch nicht eingeloest) | active (eingeloest, Ablauf laeuft) | revoked
-import { now, newKey, PLANS } from './util.js';
+import { now, newKey, PLANS, PLAN_ALL } from './util.js';
 import { addRole, delRole } from './discord.js';
 
 export async function createKeys(env, planId, count, by) {
-  const plan = PLANS[planId], t = now(), out = [];
+  const plan = PLAN_ALL[planId], t = now(), out = [];
   for (let n = 0; n < count; n++) {
     const key = newKey();
     await env.DB.prepare("INSERT INTO keys (key,plan,days,status,created_at,created_by) VALUES (?,?,?,'unused',?,?)").bind(key, planId, plan.days, t, by || null).run();
@@ -25,7 +25,7 @@ export async function redeemKey(env, uid, key) {
       ? { ok: true, code: 'already', row }
       : { ok: false, code: 'taken', message: 'Dieser Key wurde bereits von einem anderen Konto eingelöst.' };
   }
-  const t = now(), exp = t + row.days * 86400;
+  const t = now(), exp = t + Math.round(row.days * 86400);
   const r = await env.DB.prepare("UPDATE keys SET status='active', discord_id=?, redeemed_at=?, expires_at=?, role_removed=0 WHERE key=? AND status='unused'").bind(uid, t, exp, key).run();
   if (!(r.meta && r.meta.changes)) return { ok: false, code: 'taken', message: 'Dieser Key wurde gerade eingelöst.' };
   await addRole(env, uid);
