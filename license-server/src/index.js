@@ -9,9 +9,15 @@
 //   POST /license/refresh     Ticket erneuern {session, device}
 //   POST /api/verify          {key, deviceId} -> {valid, expiresAt}
 import { json, now, emb, eph, bad, noPerm, COL, PLANS, PLAN_ALL, fmtDate, normKey, KEY_RE } from './util.js';
-import { dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin } from './discord.js';
+import { dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin, isTeam } from './discord.js';
 import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statusOf, expireSweep } from './keys.js';
-import { openTicket, selectPlan, closeTicket } from './tickets.js';
+import { openTicket, selectPlan, closeTicket, confirmTicket } from './tickets.js';
+import { ensureSchema } from './schema.js';
+import { remindSweep, RENEW_BUTTON } from './remind.js';
+import { rankSubmit, rankLeave, handleRank, syncRank } from './rank.js';
+import { openForm, submitForm, setBugStatus } from './forms.js';
+import { adminStats, handleTeam } from './admin.js';
+import { syncStatus } from './panels.js';
 import { runSetup, setupEmbed } from './setup.js';
 import { syncPatchnotes } from './patchnotes.js';
 import { authStart, authCallback, authPoll, licenseActivate, licenseRefresh, apiVerify, hit, blocked, cleanup, corsHeaders } from './auth.js';
@@ -30,7 +36,16 @@ const COMMANDS = [
     { type: 1, name: 'reset-gerät', description: 'Gerätebindung zurücksetzen (Admin)', options: [{ type: 3, name: 'key', description: 'Lizenz-Key', required: true }] },
     { type: 1, name: 'sperren', description: 'Key sperren (Admin)', options: [{ type: 3, name: 'key', description: 'Lizenz-Key', required: true }] },
     { type: 1, name: 'liste', description: 'Keys anzeigen (Admin)', options: [{ type: 6, name: 'user', description: 'Nur Keys dieses Nutzers', required: false }] }
-  ] }
+  ] },
+  { name: 'rank', description: 'Community-Rangliste', options: [
+    { type: 1, name: 'top', description: 'Top 10 anzeigen' },
+    { type: 1, name: 'ich', description: 'Deinen Rang anzeigen' },
+    { type: 1, name: 'austragen', description: 'Dich aus der Rangliste entfernen' }] },
+  { name: 'admin', description: 'Admin-Übersicht', options: [{ type: 1, name: 'stats', description: 'Lizenzen, Umsatz, Nutzer, Support' }] },
+  { name: 'team', description: 'Team-Rollen verwalten (Admin)', options: [
+    { type: 6, name: 'user', description: 'Nutzer', required: true },
+    { type: 3, name: 'rolle', description: 'Rolle', required: true, choices: [{ name: 'Moderator', value: 'moderator' }, { name: 'Supporter', value: 'supporter' }, { name: 'Developer', value: 'developer' }, { name: 'Content Creator', value: 'creator' }, { name: 'Tester', value: 'tester' }] },
+    { type: 5, name: 'entfernen', description: 'Rolle entziehen statt vergeben', required: false }] }
 ];
 
 function keyEmbedList(env, keys, plan) {
@@ -110,12 +125,26 @@ async function handleInteraction(i, env, ctx) {
     if (id === 'ticket_support') return openTicket(i, env, uid, 'support');
     if (id === 'ticket_plan') return selectPlan(i, env, uid);
     if (id === 'ticket_close') return closeTicket(i, env, ctx, uid);
+    if (id === 'ticket_confirm') return confirmTicket(i, env, uid);
+    if (id === 'renew_open') return openTicket(i, env, uid, 'renew');
+    if (id === 'form_feedback') return openForm('feedback');
+    if (id === 'form_bug') return openForm('bug');
+    if (id === 'rep_prog') return setBugStatus(i, env, 'prog');
+    if (id === 'rep_done') return setBugStatus(i, env, 'done');
     if (id === 'rules_accept') {
       if (!env.MEMBER_ROLE_ID) return bad(env, 'Noch nicht eingerichtet', 'Das Team muss zuerst `/setup` ausführen.');
       const r = await addRole(env, uid, env.MEMBER_ROLE_ID);
+      if (r.ok && env.GENERAL_CHANNEL_ID) ctx.waitUntil(dapi(env, 'POST', `/channels/${env.GENERAL_CHANNEL_ID}/messages`, { embeds: [emb(env, { title: '👋 Neues Mitglied', color: COL.ok, desc: `Willkommen auf dem Server, <@${uid}>! Schau in <#${env.PANEL_CHANNEL_ID || env.GENERAL_CHANNEL_ID}> vorbei, wenn du Cocos Tool holen möchtest.` })], allowed_mentions: { users: [uid] } }));
       return r.ok ? eph(env, { title: 'Willkommen', color: COL.ok, desc: 'Du hast die Regeln akzeptiert und die Rolle **Member** erhalten.' }) : bad(env, 'Rolle nicht vergeben', 'Bitte melde dich beim Team.');
     }
     return bad(env, 'Unbekannte Aktion', '');
+  }
+
+  if (i.type === 5) { // Modal-Formulare
+    const id = i.data.custom_id;
+    if (id === 'modal_feedback') return submitForm(i, env, uid, 'feedback');
+    if (id === 'modal_bug') return submitForm(i, env, uid, 'bug');
+    return bad(env, 'Unbekanntes Formular', '');
   }
 
   if (i.type === 2) {
@@ -140,13 +169,19 @@ async function handleInteraction(i, env, ctx) {
       return { type: 4, data: { embeds: [emb(env, { title: rem ? 'Zugang entzogen' : 'Zugang erteilt', color: rem ? COL.neutral : COL.ok, desc: `<@${target}> ${rem ? 'sieht den Server nicht mehr.' : 'hat jetzt Zugriff auf die Kanäle.'}` })], flags: 64 } };
     }
     if (name === 'key') return handleKey(i, env, ctx, uid);
+    if (name === 'rank') return handleRank(i, env, uid);
+    if (name === 'team') return handleTeam(i, env);
+    if (name === 'admin') {
+      if (!isAdmin(env, i)) return noPerm(env);
+      return { type: 4, data: { embeds: [await adminStats(env)], flags: 64 } };
+    }
   }
   return bad(env, 'Nicht unterstützt', '');
 }
 
 const notifyExpired = env => r => tryDM(env, r.discord_id, { embeds: [emb(env, { title: 'Deine Lizenz ist abgelaufen', color: COL.bad,
   desc: `Deine Lizenz (Key \`${r.key.slice(0, 4)}-••••-${r.key.slice(-4)}\`) ist am ${fmtDate(r.expires_at)} abgelaufen. Die Rolle Customer wurde entfernt.`,
-  fields: [{ name: 'Verlängern', value: `Öffne ein Ticket in ${env.PANEL_CHANNEL_ID ? `<#${env.PANEL_CHANNEL_ID}>` : 'key-kaufen'}.` }] })] });
+  fields: [{ name: 'Verlängern', value: 'Klicke auf **Jetzt verlängern**, es öffnet sich ein Ticket mit dem PayPal-Link.' }] })], components: RENEW_BUTTON });
 
 export default {
   async fetch(request, env0, ctx) {
@@ -157,6 +192,7 @@ export default {
       if (url.pathname === '/interactions' && request.method === 'POST') {
         const raw = await request.text();
         if (!(await verifyDiscord(request, env0, raw))) return new Response('bad signature', { status: 401 });
+        await ensureSchema(env0);
         return json(await handleInteraction(JSON.parse(raw), await withCfg(env0), ctx));
       }
       if (url.pathname === '/register' || url.pathname === '/setup') {
@@ -167,6 +203,15 @@ export default {
       if (url.pathname === '/patchnotes') {
         if (!(await hit(env0, 'pn:' + ip, 6, 60))) return json({ ok: false, error: 'rate' }, 429);
         return json(await syncPatchnotes(await withCfg(env0)));
+      }
+      if (url.pathname === '/rank/submit' || url.pathname === '/rank/leave') {
+        if (request.method !== 'POST') return json({ ok: false }, 405, cors);
+        if (!(await hit(env0, 'ip:' + ip, 40, 60))) return json({ ok: false, error: 'rate' }, 429, cors);
+        let body; try { body = await request.json(); } catch (e) { return json({ ok: false, error: 'json' }, 400, cors); }
+        await ensureSchema(env0);
+        const res = url.pathname === '/rank/submit' ? await rankSubmit(body, await withCfg(env0)) : await rankLeave(body, await withCfg(env0));
+        for (const [k, v] of Object.entries(cors)) res.headers.set(k, v);
+        return res;
       }
       if (url.pathname === '/auth/start') return authStart(url, env0);
       if (url.pathname === '/auth/callback') return authCallback(url, env0);
@@ -191,7 +236,14 @@ export default {
     }
   },
   async scheduled(event, env0, ctx) {
-    ctx.waitUntil((async () => { const env = await withCfg(env0); await expireSweep(env, notifyExpired(env)); await cleanup(env0); try { await syncPatchnotes(env); } catch (e) { /* Discord/GitHub gerade nicht erreichbar */ } })());
+    const safe = f => f().catch(() => { /* Discord/GitHub gerade nicht erreichbar */ });
+    ctx.waitUntil((async () => {
+      await ensureSchema(env0);
+      const env = await withCfg(env0), cron = String(event.cron || '');
+      if (cron === '15,45 * * * *') { await safe(() => syncPatchnotes(env)); await safe(() => syncStatus(env)); }
+      else if (cron === '30 * * * *') await safe(() => syncRank(env));
+      else { await expireSweep(env, notifyExpired(env)); await safe(() => remindSweep(env)); await cleanup(env0); }
+    })());
   }
 };
 

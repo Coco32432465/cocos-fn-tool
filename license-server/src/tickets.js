@@ -1,35 +1,54 @@
 // Tickets: Kauf-Ticket (mit Laufzeit-Dropdown) und Hilfe-Ticket, Schliessen mit Transkript.
-import { now, emb, eph, bad, COL, PLANS, price, fmtDateTime } from './util.js';
-import { dapi, dapiFile, adminIds, isAdmin } from './discord.js';
+import { now, emb, eph, bad, COL, PLANS, PLAN_ALL, price, priceNum, paypalUrl, fmtDateTime, fmtDate } from './util.js';
+import { dapi, dapiFile, adminIds, isTeam, tryDM } from './discord.js';
+import { createKeys, extendLicense, bestKey } from './keys.js';
 
 const ALLOW = String(1024 + 2048 + 32768 + 65536); // sehen, schreiben, Dateien, Verlauf
-const TYPES = { buy: { prefix: 'kauf', label: 'Kauf-Ticket' }, support: { prefix: 'hilfe', label: 'Hilfe-Ticket' } };
+const TYPES = { buy: { prefix: 'kauf', label: 'Kauf-Ticket' }, renew: { prefix: 'verlaengern', label: 'Verlängerungs-Ticket' }, support: { prefix: 'hilfe', label: 'Hilfe-Ticket' } };
 
-function components(type, plan) {
+function components(env, type, plan) {
   const rows = [];
-  if (type === 'buy') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: 'Laufzeit wählen', options: Object.entries(PLANS).map(([id, p]) => ({ label: p.label, value: id, description: `${p.days} Tage Zugang`, default: id === plan })) }] });
-  rows.push({ type: 1, components: [{ type: 2, style: 2, label: 'Ticket schließen', custom_id: 'ticket_close' }] });
+  if (type === 'buy' || type === 'renew') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: 'Laufzeit wählen', options: Object.entries(PLANS).map(([id, p]) => ({ label: `${p.label} · ${price(env, id)}`, value: id, description: `${p.days} Tage Zugang`, default: id === plan })) }] });
+  const btns = [];
+  const pp = plan ? paypalUrl(env, plan) : '';
+  if (pp) btns.push({ type: 2, style: 5, label: 'Mit PayPal bezahlen', url: pp, emoji: { name: '💳' } });
+  if ((type === 'buy' || type === 'renew') && plan) btns.push({ type: 2, style: 3, label: 'Zahlung bestätigt (Team)', custom_id: 'ticket_confirm', emoji: { name: '✅' } });
+  btns.push({ type: 2, style: 2, label: 'Ticket schließen', custom_id: 'ticket_close' });
+  rows.push({ type: 1, components: btns });
   return rows;
 }
 
-function ticketEmbed(env, type, uid, plan) {
+function payFields(env, type, plan, uname) {
+  const p = PLAN_ALL[plan];
+  const pay = paypalUrl(env, plan);
+  const how = [
+    pay ? `**1.** Klicke auf **Mit PayPal bezahlen** und sende **${price(env, plan)}**.` : `**1.** Das Team schickt dir gleich hier den PayPal-Link für **${price(env, plan)}**.`,
+    `**2.** Mache einen **Screenshot der Zahlung** (Betrag, Datum und Empfänger müssen sichtbar sein) und sende ihn **hier in dieses Ticket**.`,
+    type === 'renew' ? '**3.** Das Team prüft die Zahlung und **verlängert deine bestehende Lizenz** – du musst nichts neu eingeben.' : '**3.** Das Team prüft die Zahlung und schickt dir hier **deinen Key**. Den gibst du in der App ein.'
+  ].join('\n');
+  return [
+    { name: 'Laufzeit', value: p.label, inline: true },
+    { name: 'Preis', value: `**${price(env, plan)}**`, inline: true },
+    { name: 'Geräte', value: '1 pro Key', inline: true },
+    { name: '💳 So bezahlst du', value: how },
+    { name: 'Verwendungszweck', value: `Dein Discord-Name${uname ? ` (\`${uname}\`)` : ''}`, inline: true },
+    { name: 'Sicherheit', value: 'Zahle nur über den Link in diesem Ticket. Das Team schreibt dich nie zuerst privat an.', inline: true },
+    { name: 'Status', value: '⏳ Zahlung ausstehend' }
+  ];
+}
+
+function ticketEmbed(env, type, uid, plan, uname) {
   if (type === 'support') return emb(env, {
     title: 'Support-Ticket',
     desc: `Hallo <@${uid}>, beschreibe bitte kurz dein Anliegen. Das Team meldet sich hier.`,
     fields: [{ name: 'Hilfreich', value: 'Version der App, was du gemacht hast, Fehlermeldung oder Screenshot.' }, { name: 'Status', value: 'Offen' }]
   });
+  const renew = type === 'renew';
   const p = plan && PLANS[plan];
   return emb(env, {
-    title: 'Lizenzbestellung',
-    desc: `Hallo <@${uid}>, wähle unten die gewünschte Laufzeit. Preis und Zahlungshinweis siehst du danach hier.`,
-    fields: p ? [
-      { name: 'Laufzeit', value: p.label, inline: true },
-      { name: 'Preis', value: `**${price(env, plan)}**`, inline: true },
-      { name: 'Geräte', value: '1 pro Key', inline: true },
-      { name: 'Zahlung', value: env.PAYMENT_TEXT || 'Wird im Ticket mit dem Team geklärt.' },
-      { name: 'Ablauf', value: '1. Zahlung durchführen\n2. Team bestätigt die Zahlung und erstellt deinen Key\n3. Key in der App eingeben oder mit `/key einlösen`' },
-      { name: 'Status', value: 'Zahlung ausstehend' }
-    ] : [
+    title: renew ? 'Lizenz verlängern' : 'Lizenzbestellung',
+    desc: `Hallo <@${uid}>, ${renew ? 'schön, dass du verlängern möchtest! Wähle unten die Laufzeit – sie wird an deine aktuelle Lizenz angehängt.' : 'wähle unten die gewünschte Laufzeit. Preis und Zahlungshinweis siehst du danach hier.'}`,
+    fields: p ? payFields(env, type, plan, uname) : [
       { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` },
       { name: 'Status', value: 'Laufzeit noch nicht gewählt' }
     ]
@@ -40,30 +59,58 @@ export async function openTicket(i, env, uid, type) {
   const T = TYPES[type] || TYPES.buy;
   const ex = await env.DB.prepare('SELECT channel_id FROM tickets WHERE user_id=? AND type=?').bind(uid, type).first();
   if (ex) return eph(env, { title: 'Ticket bereits geöffnet', desc: `Du hast bereits ein offenes Ticket: <#${ex.channel_id}>`, color: COL.neutral });
-  const uname = ((i.member && i.member.user || {}).username || 'user').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'user';
+  const u = (i.member && i.member.user) || i.user || {};
+  const uname = String(u.username || 'user').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'user';
+  let plan = null;
+  if (type === 'renew') { const bk = await bestKey(env, uid); if (bk && PLANS[bk.plan]) plan = bk.plan; }
+  const team = [env.ADMIN_ROLE_ID, env.MOD_ROLE_ID, env.SUPPORTER_ROLE_ID].filter(Boolean);
   const overwrites = [
     { id: env.GUILD_ID, type: 0, deny: '1024' },
     { id: uid, type: 1, allow: ALLOW },
     { id: env.DISCORD_APP_ID, type: 1, allow: String(1024 + 2048 + 16384 + 65536) },
     ...adminIds(env).map(a => ({ id: a, type: 1, allow: ALLOW })),
-    ...(env.ADMIN_ROLE_ID ? [{ id: env.ADMIN_ROLE_ID, type: 0, allow: ALLOW }] : [])
+    ...team.map(r => ({ id: r, type: 0, allow: ALLOW }))
   ];
   const ch = await dapi(env, 'POST', `/guilds/${env.GUILD_ID}/channels`, { name: `${T.prefix}-${uname}`, type: 0, parent_id: env.TICKET_CATEGORY_ID || undefined, topic: `${type}:${uid}`, permission_overwrites: overwrites });
   if (!ch.ok) return bad(env, 'Ticket nicht erstellt', 'Das Ticket konnte nicht angelegt werden. Bitte wende dich an das Team.');
-  await env.DB.prepare('INSERT INTO tickets (channel_id,user_id,created_at,type) VALUES (?,?,?,?)').bind(ch.data.id, uid, now(), type).run();
-  await dapi(env, 'POST', `/channels/${ch.data.id}/messages`, { content: `<@${uid}>`, embeds: [ticketEmbed(env, type, uid, null)], components: components(type, null) });
+  await env.DB.prepare('INSERT INTO tickets (channel_id,user_id,created_at,type,plan) VALUES (?,?,?,?,?)').bind(ch.data.id, uid, now(), type, plan).run();
+  await dapi(env, 'POST', `/channels/${ch.data.id}/messages`, { content: `<@${uid}>`, embeds: [ticketEmbed(env, type, uid, plan, u.username)], components: components(env, type, plan) });
   return eph(env, { title: 'Ticket eröffnet', desc: `Dein Ticket: <#${ch.data.id}>`, color: COL.ok });
 }
 
 // Dropdown "Laufzeit": zeigt Preis + Zahlungshinweis
 export async function selectPlan(i, env, uid) {
   const t = await env.DB.prepare('SELECT * FROM tickets WHERE channel_id=?').bind(i.channel_id).first();
-  if (!t || t.type !== 'buy') return bad(env, 'Kein Kauf-Ticket', 'Die Auswahl gilt nur in Kauf-Tickets.');
-  if (t.user_id !== uid && !isAdmin(env, i)) return bad(env, 'Keine Berechtigung', 'Nur der Ersteller des Tickets kann die Laufzeit wählen.');
+  if (!t || (t.type !== 'buy' && t.type !== 'renew')) return bad(env, 'Kein Kauf-Ticket', 'Die Auswahl gilt nur in Kauf- und Verlängerungs-Tickets.');
+  if (t.user_id !== uid && !isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Nur der Ersteller des Tickets kann die Laufzeit wählen.');
   const plan = (i.data.values || [])[0];
   if (!PLANS[plan]) return bad(env, 'Unbekannte Laufzeit', '');
   await env.DB.prepare('UPDATE tickets SET plan=? WHERE channel_id=?').bind(plan, i.channel_id).run();
-  return { type: 7, data: { embeds: [ticketEmbed(env, 'buy', t.user_id, plan)], components: components('buy', plan) } };
+  return { type: 7, data: { embeds: [ticketEmbed(env, t.type, t.user_id, plan, null)], components: components(env, t.type, plan) } };
+}
+
+// Team: Zahlung geprueft -> Key erstellen bzw. Lizenz verlaengern
+export async function confirmTicket(i, env, uid) {
+  if (!isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Nur das Team kann die Zahlung bestätigen.');
+  const t = await env.DB.prepare('SELECT * FROM tickets WHERE channel_id=?').bind(i.channel_id).first();
+  if (!t || !t.plan || !PLANS[t.plan]) return bad(env, 'Laufzeit fehlt', 'Der Kunde muss zuerst eine Laufzeit wählen.');
+  if (t.paid) return bad(env, 'Schon bestätigt', 'Für dieses Ticket wurde die Zahlung bereits bestätigt.');
+  const claim = await env.DB.prepare('UPDATE tickets SET paid=1 WHERE channel_id=? AND paid=0').bind(i.channel_id).run();
+  if (!(claim.meta && claim.meta.changes)) return bad(env, 'Schon bestätigt', 'Für dieses Ticket wurde die Zahlung bereits bestätigt.');
+  const plan = PLANS[t.plan];
+  let fields, kind;
+  if (t.type === 'renew') {
+    const r = await extendLicense(env, t.user_id, t.plan, uid);
+    kind = r.mode === 'new' ? 'new' : 'renew';
+    fields = r.mode === 'new'
+      ? [{ name: 'Dein Key', value: '```\n' + r.key + '\n```' }, { name: 'Einlösen', value: 'In der App (Mit Discord verbinden → Key eingeben).' }]
+      : [{ name: 'Neues Ablaufdatum', value: `**${fmtDate(r.expires_at)}**`, inline: true }, { name: 'Laufzeit', value: `+ ${plan.label}`, inline: true }, { name: 'Hinweis', value: 'Du musst nichts neu eingeben – die App aktualisiert sich automatisch.' }];
+  } else {
+    const [key] = await createKeys(env, t.plan, 1, uid); kind = 'new';
+    fields = [{ name: 'Dein Key', value: '```\n' + key + '\n```' }, { name: 'Laufzeit', value: plan.label, inline: true }, { name: 'Einlösen', value: 'In der App: **Mit Discord verbinden**, dann den Key eingeben. Die Laufzeit startet erst beim Einlösen.' }];
+  }
+  await env.DB.prepare('INSERT INTO sales (user_id,plan,amount,kind,created_at) VALUES (?,?,?,?,?)').bind(t.user_id, t.plan, priceNum(price(env, t.plan)), kind, now()).run();
+  return { type: 4, data: { content: `<@${t.user_id}>`, embeds: [emb(env, { title: '✅ Zahlung bestätigt', color: COL.ok, desc: 'Vielen Dank! Dein Zugang ist freigeschaltet. Du kannst dieses Ticket jetzt schließen.', fields })] } };
 }
 
 /* ---------- Schliessen mit Transkript ---------- */
@@ -93,7 +140,7 @@ export function buildTranscript(t, msgs, closedBy) {
 export async function closeTicket(i, env, ctx, uid) {
   const t = await env.DB.prepare('SELECT * FROM tickets WHERE channel_id=?').bind(i.channel_id).first();
   if (!t) return bad(env, 'Kein Ticket', 'In diesem Kanal gibt es kein offenes Ticket.');
-  if (t.user_id !== uid && !isAdmin(env, i)) return bad(env, 'Keine Berechtigung', 'Nur der Ersteller des Tickets oder das Team kann es schließen.');
+  if (t.user_id !== uid && !isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Nur der Ersteller des Tickets oder das Team kann es schließen.');
   await env.DB.prepare('DELETE FROM tickets WHERE channel_id=?').bind(i.channel_id).run();
   const closer = (i.member && i.member.user && i.member.user.username) || uid;
   ctx.waitUntil((async () => {

@@ -26,6 +26,7 @@ export function makeDiscord() {
   globalThis.fetch = async (url, opt = {}) => {
     const u = String(url);
     if (u.startsWith('http://127.0.0.1')) return real(url, opt);
+    if (u.startsWith('https://api.github.com/repos/') && u.endsWith('/releases/latest')) return new Response(JSON.stringify({ tag_name: 'v9.9.9', html_url: 'https://github.com/x/y/releases/tag/v9.9.9', published_at: '2026-10-15T10:00:00Z', assets: [{ name: 'Setup.exe', browser_download_url: 'https://github.com/x/y/releases/download/v9.9.9/Setup.exe' }] }), { status: 200 });
     const m = opt.method || 'GET', p = u.replace('https://discord.com/api/v10', ''); S.calls++;
     let x;
     if (m === 'GET' && p === '/guilds/G/roles') return R(S.roles);
@@ -34,13 +35,14 @@ export function makeDiscord() {
     if (m === 'POST' && p === '/guilds/G/channels') { const b = JSON.parse(opt.body); const c = { id: 'C' + (++S.n), ...b }; S.channels.push(c); return R(c); }
     if (m === 'PATCH' && (x = p.match(/^\/channels\/(\w+)$/))) { const c = S.channels.find(c => c.id === x[1]); Object.assign(c, JSON.parse(opt.body)); S.chPatched = (S.chPatched || 0) + 1; return R(c); }
     if (m === 'DELETE' && (x = p.match(/^\/channels\/(\w+)$/))) { S.deleted.push(x[1]); S.channels = S.channels.filter(c => c.id !== x[1]); return R({}); }
+    if (m === 'PATCH' && (x = p.match(/^\/channels\/(\w+)\/messages\/(\w+)$/))) { const msg = (S.msgs[x[1]] || []).find(q => q.id === x[2]); if (!msg) return R({}, 404); const b = JSON.parse(opt.body); if (b.embeds) msg.embeds = b.embeds; if (b.components) msg.components = b.components; S.edited = (S.edited || 0) + 1; return R(msg); }
     if ((x = p.match(/^\/channels\/(\w+)\/messages(\?.*)?$/))) {
       const id = x[1];
       if (m === 'GET') return R([...(S.msgs[id] || [])].reverse());
       let b, file = null;
       if (opt.body instanceof FormData) { b = JSON.parse(opt.body.get('payload_json')); file = await opt.body.get('files[0]').text(); S.files.push({ ch: id, text: file, name: opt.body.get('files[0]').name }); }
       else b = JSON.parse(opt.body);
-      const msg = { id: 'M' + (++S.n), timestamp: new Date().toISOString(), content: b.content || '', embeds: b.embeds || [], components: b.components, attachments: [], author: { id: '111', username: 'Bot', bot: true } };
+      const msg = { id: String(++S.n), timestamp: new Date().toISOString(), content: b.content || '', embeds: b.embeds || [], components: b.components, attachments: [], author: { id: '111', username: 'Bot', bot: true } };
       (S.msgs[id] ||= []).push(msg); return R(msg);
     }
     if ((x = p.match(/^\/guilds\/G\/members\/(\w+)\/roles\/(\w+)$/))) { const mm = S.members[x[1]] ||= { roles: [] }; m === 'PUT' ? (mm.roles.includes(x[2]) || mm.roles.push(x[2])) : (mm.roles = mm.roles.filter(r => r !== x[2])); return new Response(null, { status: 204 }); }

@@ -2,9 +2,9 @@ name = "cft-license"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
-# Stuendlich: abgelaufene Keys -> Customer-Rolle entziehen + DM
+# 0: Ablauf + Erinnerung + Cleanup, 15/45: Patchnotes + Status, 30: Rangliste
 [triggers]
-crons = ["0 * * * *"]
+crons = ["0 * * * *", "15,45 * * * *", "30 * * * *"]
 
 [[d1_databases]]
 binding = "DB"
@@ -23,8 +23,10 @@ ADMIN_USER_IDS = "802638794348167229"
 # Preise (nur Anzeige im Ticket-Text)
 PRICE_WEEK = "5 €"
 PRICE_MONTH = "15 €"
+# PayPal.me-Link (leer = Hinweis im Ticket, Team schickt Link)
+PAYPAL_URL = ""
 # Link fuer den Download-Button (Platzhalter, bitte deine Website eintragen)
-DOWNLOAD_URL = "https://example.com/download"
+DOWNLOAD_URL = "https://github.com/Coco32432465/cocos-fn-tool/releases/latest"
 # Erlaubte Website-Adressen fuer Login/API aus dem Browser (kommagetrennt, leer = keine)
 ALLOWED_ORIGINS = ""
 PAYMENT_TEXT = "Zahlungsart klaerst du im Ticket mit dem Team (z. B. PayPal)."

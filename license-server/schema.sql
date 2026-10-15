@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS keys (
   created_by   TEXT,
   redeemed_at  INTEGER,
   expires_at   INTEGER,
-  role_removed INTEGER NOT NULL DEFAULT 0
+  role_removed INTEGER NOT NULL DEFAULT 0,
+  reminded     INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS keys_user ON keys(discord_id);
 
@@ -19,7 +20,8 @@ CREATE TABLE IF NOT EXISTS tickets (
   user_id    TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   type       TEXT NOT NULL DEFAULT 'buy',
-  plan       TEXT
+  plan       TEXT,
+  paid       INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS tickets_user ON tickets(user_id);
 
@@ -31,3 +33,11 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 CREATE TABLE IF NOT EXISTS config (k TEXT PRIMARY KEY, v TEXT);
 CREATE TABLE IF NOT EXISTS rl (bucket TEXT NOT NULL, w INTEGER NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (bucket, w));
+
+-- v3 (wird sonst automatisch vom Worker angelegt)
+CREATE TABLE IF NOT EXISTS ranks (
+  discord_id TEXT PRIMARY KEY, name TEXT, games INTEGER NOT NULL DEFAULT 0, avg_score REAL NOT NULL DEFAULT 0,
+  wins INTEGER NOT NULL DEFAULT 0, kills INTEGER NOT NULL DEFAULT 0, avg_place REAL, best_place INTEGER, updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS reports (id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, user_id TEXT NOT NULL, title TEXT, created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS sales (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, plan TEXT NOT NULL, amount REAL NOT NULL DEFAULT 0, kind TEXT NOT NULL, created_at INTEGER NOT NULL);

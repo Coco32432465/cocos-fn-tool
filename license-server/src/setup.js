@@ -1,25 +1,37 @@
 // /setup: baut Kategorien, Kanaele, Rollen und Start-Embeds auf. Bereits Vorhandenes wird uebersprungen.
 // Cloudflare Free erlaubt ~50 Discord-Aufrufe je Ausfuehrung: bei grossen Aufbauten einfach /setup noch einmal ausfuehren.
-import { emb, COL, price, eph } from './util.js';
+import { emb, COL, price, eph, bits, PERM } from './util.js';
 import { dapi, setCfg, getCfg } from './discord.js';
+import { boardEmbed } from './rank.js';
+import { downloadComponents } from './panels.js';
 
 const VIEW = 1024, HIST = 65536, SEND = 2048;
 const ROLES = [
   { name: 'Admin', key: 'admin_role', color: 0x1e6bff, hoist: true, perms: String(BigInt(16 + 2 + 4 + 8192) + (1n << 40n)) },
+  // Team-Rollen mit echten Rechten (Timeout, Verschieben, Stummschalten, Nachrichten verwalten ...)
+  { name: 'Moderator', key: 'mod_role', color: 0xe74c3c, hoist: true, perms: bits(PERM.KICK, PERM.AUDIT, PERM.PRIORITY, PERM.MSG_MANAGE, PERM.MUTE, PERM.DEAFEN, PERM.MOVE, PERM.NICK, PERM.THREADS, PERM.TIMEOUT) },
+  { name: 'Supporter', key: 'support_role', color: 0x1abc9c, hoist: true, perms: bits(PERM.MSG_MANAGE, PERM.THREADS, PERM.TIMEOUT, PERM.MOVE) },
+  { name: 'Developer', key: 'dev_role', color: 0x9b59b6, hoist: true, perms: bits(PERM.THREADS, PERM.MOVE, PERM.PRIORITY) },
+  { name: 'Content Creator', key: 'creator_role', color: 0xff6ec7, hoist: true, perms: '0' },
   { name: 'Customer', key: 'customer_role', color: 0x2ecc71, hoist: true, perms: '0' },
+  { name: 'Top 10', key: 'rank_role', color: 0xf1c40f, hoist: true, perms: '0' }, // vergibt der Bot automatisch an die Rangliste
   { name: 'Tester', key: 'tester_role', color: 0xf1c40f, hoist: false, perms: '0' },
   { name: 'Member', key: 'member_role', color: 0x8ea0c0, hoist: false, perms: '0' },
   { name: 'User', key: 'user_role', color: 0x5c97ff, hoist: false, perms: '0' } // Zugangs-Rolle: ohne sie sieht man keine Kanaele
 ];
+const STAFF = ['admin_role', 'mod_role', 'support_role', 'dev_role'];
 // Mit diesen Rollen sind die Kanaele sichtbar. Alle anderen (z. B. Freunde ohne Rolle) sehen nichts.
-const ACCESS = ['admin_role', 'customer_role', 'tester_role', 'member_role', 'user_role'];
-// [name, Emoji, Beschreibung, nurAdminSchreibt]
+const ACCESS = [...STAFF, 'creator_role', 'customer_role', 'rank_role', 'tester_role', 'member_role', 'user_role'];
+// [name, Emoji, Beschreibung, nurTeamSchreibt, Art]   Art: leer = Text | 'voice' | 'forum'
+const FORUM_TAGS = ['💡 Idee', '🐛 Problem', '⏳ In Arbeit', '✅ Umgesetzt', '❌ Abgelehnt'].map(name => ({ name }));
 const STRUCT = [
-  { cat: 'START', emoji: '🚀', ch: [['welcome', '👋', 'Willkommen und erste Schritte', 1], ['rules', '📜', 'Server-Regeln', 1], ['announcements', '📢', 'Ankündigungen', 1], ['patchnotes', '🧩', "Patchnotes zu Cocos Tool", 1], ['download', '📥', 'Download der App', 1], ['free-tips', '💡', 'Kostenlose Fortnite-Tipps', 0]] },
-  { cat: 'COMMUNITY', emoji: '💬', ch: [['general', '💬', 'Allgemeiner Austausch', 0], ['placements', '🏆', 'Eure Platzierungen und Ergebnisse', 0], ['lfg', '🎮', 'Mitspieler suchen', 0], ['questions', '❓', 'Fragen zu Fortnite und zum Tool', 0]] },
-  { cat: 'TOOL', emoji: '🛠️', ch: [['how-to-use', '📖', 'So nutzt du das Tool', 1], ['feedback', '💌', 'Dein Feedback zum Tool', 0], ['bug-reports', '🐛', 'Fehler melden', 0], ['support', '🎫', 'Hilfe per Ticket', 1], ['key-kaufen', '🔑', 'Lizenz erwerben', 1], ['impressum', '⚖️', 'Impressum', 1]] },
-  { cat: 'INTERN', emoji: '🔒', priv: true, ch: [['ticket-logs', '🗂️', 'Ticket-Transkripte (nur Team)', 1]] }
+  { cat: 'START', emoji: '🚀', ch: [['welcome', '👋', 'Willkommen und erste Schritte', 1], ['rules', '📜', 'Server-Regeln', 1], ['announcements', '📢', 'Ankündigungen', 1], ['patchnotes', '🧩', "Patchnotes zu Cocos Tool", 1], ['status', '📊', 'Live-Status: aktuelle Version und Download', 1], ['download', '📥', 'Download der App', 1], ['free-tips', '💡', 'Kostenlose Fortnite-Tipps', 0]] },
+  { cat: 'COMMUNITY', emoji: '💬', ch: [['general', '💬', 'Allgemeiner Austausch', 0], ['placements', '🏆', 'Eure Platzierungen und Ergebnisse', 0], ['rangliste', '🥇', 'Community-Rangliste (per App freiwillig)', 1], ['lfg', '🎮', 'Mitspieler suchen', 0], ['questions', '❓', 'Fragen zu Fortnite und zum Tool', 0]] },
+  { cat: 'TOOL', emoji: '🛠️', ch: [['how-to-use', '📖', 'So nutzt du das Tool', 1], ['feedback', '💌', 'Dein Feedback zum Tool (Button unten)', 1], ['bug-reports', '🐛', 'Fehler melden (Button unten)', 1], ['support', '🎫', 'Hilfe per Ticket', 1], ['key-kaufen', '🔑', 'Lizenz erwerben', 1], ['impressum', '⚖️', 'Impressum', 1]] },
+  { cat: 'WORKSPACE', emoji: '🧰', ch: [['arbeit', '🎧', 'Team-Call – nur für das Team', 0, 'voice'], ['vorschläge', '💡', 'Dein Vorschlag fürs Tool: ein Beitrag pro Idee, mit Tag und Beschreibung. Mit 👍 abstimmen.', 0, 'forum']] },
+  { cat: 'INTERN', emoji: '🔒', priv: 'staff', ch: [['team-chat', '💼', 'Interner Team-Chat', 1, '', 'staff'], ['ticket-logs', '🗂️', 'Ticket-Transkripte (nur Team)', 1, '', 'admin']] }
 ];
+const TYPE = { '': 0, voice: 2, forum: 15 };
 const chName = (emoji, name) => `${emoji}│${name}`;
 const catName = (emoji, name) => `${emoji} ${name}`;
 const baseCh = n => String(n).toLowerCase().replace(/^[^a-z0-9]+/, '');       // "📜│rules" -> "rules"
@@ -46,19 +58,29 @@ export async function runSetup(env, renew) {
       }
       rid[R.key] = r.id; await setCfg(env, R.key, r.id);
     }
-    const adminRole = rid.admin_role;
-    const accessAllow = ACCESS.filter(k => rid[k]).map(k => ({ id: rid[k], type: 0, allow: String(VIEW + HIST) }));
+    const staffIds = STAFF.filter(k => rid[k]).map(k => rid[k]);
     const adminUsers = String(env.ADMIN_USER_IDS || '').split(',').map(x => x.trim()).filter(Boolean);
+    const userIds = ACCESS.filter(k => rid[k] && !STAFF.includes(k)).map(k => rid[k]);
+    const accessAllow = ACCESS.filter(k => rid[k]).map(k => ({ id: rid[k], type: 0, allow: String(VIEW + HIST) }));
     const bot = (extra) => ({ id: env.DISCORD_APP_ID, type: 1, allow: String(VIEW + HIST + SEND + extra) });
-    const adminWrite = [...(adminRole ? [{ id: adminRole, type: 0, allow: String(VIEW + HIST + SEND) }] : []), ...adminUsers.map(u => ({ id: u, type: 1, allow: String(VIEW + HIST + SEND) }))];
+    const writers = (roleIds) => [...roleIds.map(id => ({ id, type: 0, allow: String(VIEW + HIST + SEND) })), ...adminUsers.map(u => ({ id: u, type: 1, allow: String(VIEW + HIST + SEND) }))];
+    const teamWrite = writers(staffIds);
     // sichtbar nur mit Zugangsrolle; offen = alle mit Zugang duerfen schreiben
     const ovOpen = () => [{ id: gid, type: 0, deny: String(VIEW) }, ...accessAllow, bot(0)];
-    // gesperrt = alle mit Zugang lesen nur, Admin schreibt
-    const ovLocked = () => [{ id: gid, type: 0, deny: String(VIEW + SEND) }, ...accessAllow, ...adminWrite, bot(0)];
-    const ovPriv = () => [{ id: gid, type: 0, deny: String(VIEW) }, ...adminWrite, bot(0)];
+    // gesperrt = alle mit Zugang lesen nur, Team schreibt
+    const ovLocked = () => [{ id: gid, type: 0, deny: String(VIEW + SEND) }, ...accessAllow, ...teamWrite, bot(0)];
+    const ovStaff = () => [{ id: gid, type: 0, deny: String(VIEW) }, ...teamWrite, bot(0)];
+    const ovAdmin = () => [{ id: gid, type: 0, deny: String(VIEW) }, ...writers(['admin_role', 'mod_role', 'support_role'].map(k => rid[k]).filter(Boolean)), bot(0)];
+    // Workspace: alle sehen den Call, aber nur das Team darf hinein; im Forum duerfen alle Beitraege erstellen
+    const ovVoice = () => [{ id: gid, type: 0, deny: String(VIEW) },
+      ...userIds.map(id => ({ id, type: 0, allow: bits(PERM.VIEW), deny: bits(PERM.CONNECT, PERM.SPEAK) })),
+      ...staffIds.map(id => ({ id, type: 0, allow: bits(PERM.VIEW, PERM.CONNECT, PERM.SPEAK, PERM.STREAM) })),
+      ...adminUsers.map(u => ({ id: u, type: 1, allow: bits(PERM.VIEW, PERM.CONNECT, PERM.SPEAK, PERM.STREAM) })), bot(0)];
+    const ovForum = () => [{ id: gid, type: 0, deny: String(VIEW) },
+      ...ACCESS.filter(k => rid[k]).map(k => ({ id: rid[k], type: 0, allow: bits(PERM.VIEW, PERM.HIST, PERM.SEND_THREAD, PERM.PUB_THREAD, PERM.ATTACH, PERM.EMBED, PERM.REACT) })), bot(0)];
     const ids = {};
     for (const S of STRUCT) {
-      const wantName = catName(S.emoji, S.cat), wantOv = S.priv ? ovPriv() : ovOpen();
+      const wantName = catName(S.emoji, S.cat), wantOv = S.priv ? ovStaff() : ovOpen();
       let cat = chans.find(c => c.type === 4 && baseCat(c.name) === S.cat.toLowerCase());
       if (!cat) {
         const c = await dapi(env, 'POST', `/guilds/${gid}/channels`, { name: wantName, type: 4, permission_overwrites: wantOv });
@@ -68,9 +90,10 @@ export async function runSetup(env, renew) {
         const c = await dapi(env, 'PATCH', `/channels/${cat.id}`, { name: wantName, permission_overwrites: wantOv });
         L(`Kategorie ${S.cat}: ${c.ok ? 'aktualisiert' : 'Fehler (' + c.status + ')'}`);
       } else L(`Kategorie ${S.cat}: ok`);
-      for (const [name, emoji, topic, locked] of S.ch) {
-        const want = chName(emoji, name), ov = S.priv ? ovPriv() : locked ? ovLocked() : ovOpen();
-        const ex = chans.find(c => c.type === 0 && baseCh(c.name) === name);
+      for (const [name, emoji, topic, locked, kind = '', priv] of S.ch) {
+        const want = chName(emoji, name), typ = TYPE[kind];
+        const ov = kind === 'voice' ? ovVoice() : kind === 'forum' ? ovForum() : priv === 'admin' ? ovAdmin() : priv === 'staff' || S.priv ? ovStaff() : locked ? ovLocked() : ovOpen();
+        const ex = chans.find(c => c.type === typ && baseCh(c.name) === name);
         if (ex) {
           ids[name] = ex.id;
           if (ex.name !== want || ex.parent_id !== cat.id || normOv(ex.permission_overwrites) !== normOv(ov)) {
@@ -79,27 +102,35 @@ export async function runSetup(env, renew) {
           } else L(`#${name}: ok`);
           continue;
         }
-        const c = await dapi(env, 'POST', `/guilds/${gid}/channels`, { name: want, type: 0, parent_id: cat.id, topic, permission_overwrites: ov });
+        const body = { name: want, type: typ, parent_id: cat.id, permission_overwrites: ov };
+        if (kind !== 'voice') body.topic = topic;
+        if (kind === 'forum') Object.assign(body, { available_tags: FORUM_TAGS, default_reaction_emoji: { emoji_name: '👍' }, default_sort_order: 1 });
+        const c = await dapi(env, 'POST', `/guilds/${gid}/channels`, body);
         if (!c.ok) { L(`#${name}: Fehler (${c.status})`); continue; }
         ids[name] = c.data.id; L(`#${name}: erstellt`);
       }
     }
-    if (ids['ticket-logs']) await setCfg(env, 'log_channel', ids['ticket-logs']);
-    if (ids['key-kaufen']) await setCfg(env, 'key_channel', ids['key-kaufen']);
-    if (ids['support']) await setCfg(env, 'support_channel', ids['support']);
+    for (const [name, key] of [['ticket-logs', 'log_channel'], ['key-kaufen', 'key_channel'], ['support', 'support_channel'], ['feedback', 'feedback_channel'], ['bug-reports', 'bug_channel'], ['status', 'status_channel'], ['rangliste', 'rank_channel'], ['general', 'general_channel'], ['download', 'download_channel']]) {
+      if (ids[name]) await setCfg(env, key, ids[name]);
+    }
 
     const M = n => ids[n] ? `<#${ids[n]}>` : `#${n}`;
     const posts = [
       ['welcome', 'welcome', { embeds: [emb(env, { title: "Willkommen bei Cocos Tool", desc: "Cocos Tool ist das VOD-Review-Tool für Fortnite: Replays analysieren, Fehler erkennen und dein Gameplay auf das nächste Level bringen.", fields: [
         { name: 'Erste Schritte', value: `1. Regeln lesen: ${M('rules')}\n2. Anleitung: ${M('how-to-use')}\n3. App laden: ${M('download')}` },
         { name: 'Lizenz', value: `Für die VOD-Analyse brauchst du einen Key: ${M('key-kaufen')}` },
+        { name: 'Community', value: `Rangliste: ${M('rangliste')} · Ideen einreichen: ${M('vorschläge')}` },
         { name: 'Hilfe', value: `Fragen: ${M('questions')} · Support per Ticket: ${M('support')}` }] })] }],
       ['rules', 'rules', { embeds: [emb(env, { title: 'Regeln', desc: '**1. Respekt** – Geh respektvoll mit allen um. Keine Beleidigungen, Diskriminierung oder Hetze.\n**2. Kein Spam** – Keine Werbung, Fremd-Links oder Mehrfach-Posts.\n**3. Keys sind persönlich** – Ein Key ist an dein Discord-Konto und ein Gerät gebunden. Weitergabe führt zur Sperre ohne Erstattung.\n**4. Zahlung nur im Ticket** – Bezahlt wird ausschließlich im Ticket-Kanal. Das Team schreibt dich nie zuerst privat an.\n**5. Discord-Richtlinien** – Es gelten die Nutzungsbedingungen und Community-Richtlinien von Discord.\n\nMit dem Button bestätigst du die Regeln und erhältst die Rolle **Member**.' })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Regeln akzeptieren', custom_id: 'rules_accept' }] }] }],
       ['download', 'download', { embeds: [emb(env, { title: 'Download', desc: "Lade die aktuelle Version von Cocos Tool herunter. Updates installiert die App danach automatisch.", fields: [
-        { name: 'System', value: 'Windows 10/11 (64-Bit)', inline: true }, { name: 'Lizenz', value: `Für die VOD-Analyse nötig – ${M('key-kaufen')}`, inline: true }] })], components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Download', url: env.DOWNLOAD_URL || 'https://example.com/download' }] }] }],
+        { name: 'System', value: 'Windows 10/11 (64-Bit)', inline: true }, { name: 'Lizenz', value: `Für die VOD-Analyse nötig – ${M('key-kaufen')}`, inline: true }] })], components: downloadComponents(env.DOWNLOAD_URL || 'https://github.com/Coco32432465/cocos-fn-tool/releases/latest') }],
       ['key-kaufen', 'key-panel', { embeds: [emb(env, { title: "Cocos Tool – Lizenz erwerben", desc: 'Eröffne ein Ticket, um eine Lizenz zu bestellen.', fields: [
         { name: '1 Woche', value: price(env, 'week'), inline: true }, { name: '1 Monat', value: price(env, 'month'), inline: true }, { name: 'Umfang', value: 'VOD-Analyse · 1 Gerät pro Key', inline: true },
         { name: 'Ablauf', value: '1. Ticket eröffnen und Laufzeit wählen\n2. Bezahlen\n3. Nach Bestätigung erhältst du deinen Key\n4. In der App mit Discord verbinden und Key eingeben' }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Key kaufen', custom_id: 'ticket_buy' }] }] }],
+      ['status', 'status', { embeds: [emb(env, { title: '📊 Cocos Tool · Status', desc: 'Der Status wird in wenigen Minuten automatisch aktualisiert.' })] }],
+      ['rangliste', 'rankboard', { embeds: [boardEmbed(env, [], 0)] }],
+      ['feedback', 'feedback-panel', { embeds: [emb(env, { title: '💌 Feedback senden', desc: 'Dir gefällt etwas, du vermisst etwas oder hast eine Idee? Klicke auf den Button und schreib uns – dein Feedback landet direkt beim Team.', fields: [{ name: 'Größere Ideen', value: `Poste sie im Forum ${M('vorschläge')}, dort kann die Community abstimmen.` }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Feedback senden', custom_id: 'form_feedback', emoji: { name: '💌' } }] }] }],
+      ['bug-reports', 'bug-panel', { embeds: [emb(env, { title: '🐛 Fehler melden', desc: 'Etwas funktioniert nicht? Klicke auf den Button, beschreibe den Fehler und nenne die App-Version. Das Team setzt den Status (Offen → In Arbeit → Erledigt).', fields: [{ name: 'Tipp', value: 'Schreib, was du vorher gemacht hast und welche Replay-Datei betroffen ist.' }] })], components: [{ type: 1, components: [{ type: 2, style: 4, label: 'Fehler melden', custom_id: 'form_bug', emoji: { name: '🐛' } }] }] }],
       ['support', 'support-panel', { embeds: [emb(env, { title: 'Support', desc: 'Du brauchst Hilfe mit dem Tool oder deinem Key? Eröffne ein privates Ticket, das Team meldet sich.', fields: [{ name: 'Tipp', value: `Häufige Fragen findest du in ${M('questions')} und ${M('how-to-use')}.` }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Hilfe-Ticket öffnen', custom_id: 'ticket_support' }] }] }]
     ];
     for (const [chName, flag, payload] of posts) {
