@@ -7,7 +7,7 @@
 //   POST /license/activate    Key einloesen   {session, key, device}
 //   POST /license/refresh     Ticket erneuern {session, device}
 //   POST /api/verify          {key, deviceId} -> {valid, expiresAt}
-import { json, now, emb, eph, bad, noPerm, COL, PLANS, fmtDate, normKey, KEY_RE } from './util.js';
+import { json, now, emb, eph, bad, noPerm, COL, PLANS, PLAN_ALL, fmtDate, normKey, KEY_RE } from './util.js';
 import { dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin } from './discord.js';
 import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statusOf, expireSweep } from './keys.js';
 import { openTicket, selectPlan, closeTicket } from './tickets.js';
@@ -21,7 +21,7 @@ const COMMANDS = [
     { type: 5, name: 'entfernen', description: 'Zugang entziehen statt vergeben', required: false }] },
   { name: 'key', description: 'Lizenz-Keys', options: [
     { type: 1, name: 'erstellen', description: 'Keys erzeugen (Admin)', options: [
-      { type: 3, name: 'dauer', description: 'Laufzeit', required: true, choices: [{ name: '1 Woche', value: 'week' }, { name: '1 Monat', value: 'month' }] },
+      { type: 3, name: 'dauer', description: 'Laufzeit', required: true, choices: [{ name: '1 Woche', value: 'week' }, { name: '1 Monat', value: 'month' }, { name: '10 Minuten (Test)', value: 'test' }] },
       { type: 4, name: 'anzahl', description: 'Wie viele Keys (1–25)', required: false, min_value: 1, max_value: 25 }] },
     { type: 1, name: 'einlösen', description: 'Key an dein Konto binden und freischalten', options: [{ type: 3, name: 'key', description: 'XXXX-XXXX-XXXX', required: true }] },
     { type: 1, name: 'info', description: 'Deine Lizenz anzeigen' },
@@ -45,10 +45,10 @@ async function handleKey(i, env, ctx, uid) {
 
   if (sub.name === 'erstellen') {
     const planId = opt('dauer'), count = Math.min(25, Math.max(1, opt('anzahl') || 1));
-    if (!PLANS[planId]) return bad(env, 'Unbekannte Laufzeit', '');
+    if (!PLAN_ALL[planId]) return bad(env, 'Unbekannte Laufzeit', '');
     const keys = await createKeys(env, planId, count, uid);
     const inTicket = await env.DB.prepare('SELECT user_id FROM tickets WHERE channel_id=?').bind(i.channel_id).first();
-    const e = keyEmbedList(env, keys, PLANS[planId]);
+    const e = keyEmbedList(env, keys, PLAN_ALL[planId]);
     if (inTicket) return { type: 4, data: { content: `<@${inTicket.user_id}>`, embeds: [e] } }; // im Ticket sichtbar fuer den Kunden
     return { type: 4, data: { embeds: [e], flags: 64 } };
   }
@@ -60,7 +60,7 @@ async function handleKey(i, env, ctx, uid) {
     if (!r.ok) return bad(env, 'Einlösen fehlgeschlagen', r.message);
     return eph(env, { title: r.code === 'already' ? 'Bereits eingelöst' : 'Lizenz freigeschaltet', color: COL.ok,
       desc: 'Die Rolle **Customer** ist aktiv. Öffne jetzt die App, verbinde dein Discord-Konto und gib den Key ein.',
-      fields: [{ name: 'Laufzeit', value: (PLANS[r.row.plan] || {}).label || r.row.plan, inline: true }, { name: 'Gültig bis', value: fmtDate(r.row.expires_at), inline: true }, { name: 'Geräte', value: '1', inline: true }] });
+      fields: [{ name: 'Laufzeit', value: (PLAN_ALL[r.row.plan] || {}).label || r.row.plan, inline: true }, { name: 'Gültig bis', value: fmtDate(r.row.expires_at), inline: true }, { name: 'Geräte', value: '1', inline: true }] });
   }
 
   if (sub.name === 'info') {
@@ -68,7 +68,7 @@ async function handleKey(i, env, ctx, uid) {
     if (!row) return eph(env, { title: 'Keine Lizenz', desc: 'Du hast noch keinen Key eingelöst. Öffne ein Ticket in <#' + (env.PANEL_CHANNEL_ID || '') + '> oder nutze `/key einlösen`.', color: COL.neutral });
     const st = statusOf(row);
     return eph(env, { title: 'Deine Lizenz', color: st === 'Aktiv' ? COL.ok : COL.bad, fields: [
-      { name: 'Status', value: st, inline: true }, { name: 'Laufzeit', value: (PLANS[row.plan] || {}).label || row.plan, inline: true },
+      { name: 'Status', value: st, inline: true }, { name: 'Laufzeit', value: (PLAN_ALL[row.plan] || {}).label || row.plan, inline: true },
       { name: 'Gültig bis', value: fmtDate(row.expires_at), inline: true }, { name: 'Gerät', value: row.device ? 'Gebunden (1 von 1)' : 'Noch nicht gebunden', inline: true },
       { name: 'Key', value: '`' + row.key.slice(0, 4) + '-••••-' + row.key.slice(-4) + '`', inline: true }] });
   }
@@ -93,7 +93,7 @@ async function handleKey(i, env, ctx, uid) {
     const rows = await listKeys(env, opt('user'));
     if (!rows.length) return eph(env, { title: 'Lizenzübersicht', desc: 'Keine Keys vorhanden.', color: COL.neutral });
     const t = now();
-    return eph(env, { title: 'Lizenzübersicht', desc: rows.map(r => `\`${r.key}\` · ${r.discord_id ? `<@${r.discord_id}>` : 'frei'}\n${statusOf(r, t)} · ${(PLANS[r.plan] || {}).label || r.plan}${r.expires_at ? ' · bis ' + fmtDate(r.expires_at) : ''}${r.status === 'active' ? ' · ' + (r.device ? 'Gerät gebunden' : 'Gerät frei') : ''}`).join('\n\n') });
+    return eph(env, { title: 'Lizenzübersicht', desc: rows.map(r => `\`${r.key}\` · ${r.discord_id ? `<@${r.discord_id}>` : 'frei'}\n${statusOf(r, t)} · ${(PLAN_ALL[r.plan] || {}).label || r.plan}${r.expires_at ? ' · bis ' + fmtDate(r.expires_at) : ''}${r.status === 'active' ? ' · ' + (r.device ? 'Gerät gebunden' : 'Gerät frei') : ''}`).join('\n\n') });
   }
   return bad(env, 'Unbekannter Befehl', '');
 }

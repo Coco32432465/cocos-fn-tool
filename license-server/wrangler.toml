@@ -2,9 +2,9 @@ name = "cft-license"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
-# Taeglich 04:00 UTC: abgelaufene Keys -> Customer-Rolle entziehen + DM
+# Stuendlich: abgelaufene Keys -> Customer-Rolle entziehen + DM
 [triggers]
-crons = ["0 4 * * *"]
+crons = ["0 * * * *"]
 
 [[d1_databases]]
 binding = "DB"
