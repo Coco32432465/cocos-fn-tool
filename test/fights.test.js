@@ -38,6 +38,16 @@ const S = CFT.fightSummary([f]);
 assert.strictEqual(S.n, 2);
 assert.ok(S.winRate >= 0 && S.winRate <= 100);
 
+// Solo: viele Gegner in der Nähe -> kein "von euch", kein Team-Tag
+const solo = pl(0, 0, line(0, 0, 0, 0, 200), { vit: [[0, 150, 100]] });
+const crowd = [1, 2, 3, 4, 5].map(i => pl(i, i, line(1000 + i * 300, 0, 0, 0, 200)));
+const R4 = { tn: 1, players: [solo].concat(crowd), invNames: [], hits: [{ t: 50, k: 1, dmg: 40 }], ev: [{ t: 55, v: 1, k: 0, down: false }] };
+f = CFT.fights(R4);
+assert.strictEqual(f.length, 1);
+assert.strictEqual(f[0].solo, true);
+assert.ok(f[0].tags.some(t => /Gegner in 45 m/.test(t.txt)), 'Solo-Text');
+assert.ok(!f[0].tags.some(t => /von euch|Mate|Teams/.test(t.txt + t.better)), 'kein Team-Text im Solo');
+
 // Leere Daten
 assert.deepStrictEqual(CFT.fights({ tn: 1, players: [me2], hits: [], ev: [] }), []);
 assert.deepStrictEqual(CFT.fights(null), []);

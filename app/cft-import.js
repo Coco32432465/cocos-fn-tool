@@ -45,7 +45,7 @@
     ['Lifty Lodge', 0.333, 0.150], ['Freaky Fields', 0.600, 0.235], ['Wonkeeland', 0.745, 0.305], ['Chopped Shop', 0.172, 0.330],
     ['Nightmare Neighborhood', 0.428, 0.372], ['Green Hill Zone', 0.317, 0.483], ["Reality's Reign", 0.545, 0.490],
     ['Golden Grove', 0.789, 0.539], ['Stone Sanctum', 0.456, 0.631], ['Shaken Sanctuary', 0.667, 0.676],
-    ['Heatwave Harbor', 0.222, 0.683], ['Sunken Shores', 0.433, 0.794], ['Cluster Coast', 0.733, 0.813], ['Roter-Geist-Insel', 0.313, 0.803]
+    ['Heatwave Harbor', 0.222, 0.683], ['Sunken Shores', 0.433, 0.794], ['Roter-Geist-Insel', 0.313, 0.803]
   ];
   /** nächster Ort zu einer Weltposition; innerhalb ~9 % der Kartenbreite = "in", sonst "bei" */
   CFT.poiAt = function (wx, wy) {
