@@ -965,7 +965,7 @@ header .mbtn{margin-right:14px}
 <div id="lic" role="dialog" aria-modal="true" aria-labelledby="lict"><div class="mbox"><div class="mic"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><h2 id="lict">Discord &amp; Lizenz</h2><p id="licp">Verbinde dein Discord-Konto und gib deinen Lizenz-Key ein, um die VOD-Analyse freizuschalten. Den Key bekommst du im Discord über ein Ticket.</p>
 <div class="licrow" id="licw"></div>
 <div id="lics1"><button class="go dc" id="licdc">Mit Discord verbinden</button></div>
-<div id="lics2"><label for="lick">Lizenz-Key eingeben</label><input id="lick" class="key" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19"></div>
+<div id="lics2"><label for="lick">Lizenz-Key eingeben</label><input id="lick" class="key" autocomplete="off" placeholder="XXXX-XXXX-XXXX" maxlength="19"></div>
 <div class="lst" id="lics"></div>
 <div class="mr"><button class="go" id="licgo">Aktivieren</button><button class="gh" id="lico">Abmelden</button><button class="gh" id="licl">Später</button></div>
 <a class="lnk2" id="licj">Key kaufen / Discord-Server öffnen</a></div></div>
@@ -1670,7 +1670,7 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
       .then(function(){busy=false;b.disabled=false;b.textContent='Mit Discord verbinden'})};
   $('licgo').onclick=function(){
     var k=$('lick').value.trim().toUpperCase();
-    if(!/^[A-Z0-9]{4}(-[A-Z0-9]{4}){3}$/.test(k)){say('Bitte den kompletten Key eingeben (XXXX-XXXX-XXXX-XXXX).','bad');return}
+    if(!/^[A-Z0-9]{4}(-[A-Z0-9]{4}){2,3}$/.test(k)){say('Bitte den kompletten Key eingeben (XXXX-XXXX-XXXX).','bad');return}
     say('Prüfe …');
     F.licActivate(k).then(function(s){S=s;render();if(s.valid){say('Lizenz aktiv. Viel Erfolg!','ok');setTimeout(close,1100)}else say(s.error||'Key ungültig.','bad')})};
   $('lico').onclick=function(){if(F.licLoginCancel)F.licLoginCancel();F.licLogout().then(function(s){S=s;say('Abgemeldet.');render();if(S.enabled&&S.required)open()})};
