@@ -10,7 +10,7 @@
   root.CFT = CFT;
 
   var GAP = 14;            // Sekunden ohne Ereignis -> neuer Kampf
-  var NEAR_ENEMY = 7000;   // cm: Gegner in dieser Nähe zählen zum Kampf
+  var NEAR_ENEMY = 4500;   // cm: Gegner in dieser Nähe zählen zum Kampf (45 m)
   var NEAR_MATE = 4500;    // cm: Mate gilt als "dabei"
   var F_STORM = 32;
 
@@ -133,7 +133,7 @@
       /* --- Bewertung --- */
       var s = 60, tags = [];
       function add(k, good, w, txt, better) { s += w; tags.push({ k: k, good: good, w: Math.abs(w), txt: txt, better: better || '' }); }
-      var mine = 1 + matesNear;
+      var mine = 1 + matesNear, solo = tn <= 1;
       if (total != null) {
         if (total >= 180) add('hp', true, 8, 'Volle HP + Schild (' + total + ')');
         else if (total < 100) add('hp', false, -15, 'Nur ' + total + ' HP + Schild beim Kampfstart', 'Vor dem Fight healen/Schild trinken – unter 100 gar nicht erst pushen, erst Cover bauen und heilen.');
@@ -146,10 +146,15 @@
         if (matesNear >= 1) add('team', true, 8, matesNear + ' Mate' + plural(matesNear, '', 's') + ' in der Nähe');
         else if (minMate > 6000) add('alone', false, -12, 'Mates ' + Math.round(minMate / 100) + ' m entfernt', 'Kämpfe nur, wenn ein Mate in ca. 40 m ist – sonst zurück zum Team und gemeinsam pushen.');
       }
-      var diff = nearE - mine;
-      if (diff >= 2) add('outnum', false, -12, nearE + ' Gegner gegen ' + mine + ' von euch', 'Bei Unterzahl nicht pushen: Distanz halten, Cover/Höhe nehmen und auf den Zonenzug oder ein Mate warten.');
-      else if (diff === 1) add('outnum', false, -6, nearE + ' Gegner gegen ' + mine + ' von euch', 'Bei knapper Unterzahl Mate dazuholen, bevor du den Kampf annimmst.');
-      if (teamN >= 3) add('third', false, -8, 'Mehrere Teams im Kampf (' + teamN + ')', 'Bei Third-Party sofort Position wechseln, statt im offenen Feld weiterzukämpfen.');
+      if (solo) {
+        if (nearE >= 4) add('outnum', false, -10, nearE + ' Gegner in 45 m um dich', 'Bei vielen Gegnern gleichzeitig nicht in der Mitte kämpfen: Rand oder Höhe suchen, einzelne Gegner herausziehen und Mats für Cover aufsparen.');
+        else if (nearE >= 2) add('outnum', false, -5, nearE + ' Gegner in 45 m um dich', 'Bei mehreren Gegnern erst Cover bauen und einen nach dem anderen nehmen, statt offen zu pushen.');
+      } else {
+        var diff = nearE - mine;
+        if (diff >= 2) add('outnum', false, -12, nearE + ' Gegner gegen ' + mine + ' von euch', 'Bei Unterzahl nicht pushen: Distanz halten, Cover/Höhe nehmen und auf den Zonenzug oder ein Mate warten.');
+        else if (diff === 1) add('outnum', false, -6, nearE + ' Gegner gegen ' + mine + ' von euch', 'Bei knapper Unterzahl Mate dazuholen, bevor du den Kampf annimmst.');
+        if (teamN >= 3) add('third', false, -8, 'Mehrere Teams im Kampf (' + teamN + ')', 'Bei Third-Party sofort Position wechseln, statt im offenen Feld weiterzukämpfen.');
+      }
       if (mats != null && mats < 150 && dur > 5) add('mats', false, -8, 'Nur ' + mats + ' Mats im Kampf', 'Vor Fights mindestens 300–500 Mats sammeln – ohne Mats hast du kein Cover und keine Höhe.');
       if (storm) add('storm', false, -6, 'Kampf im Sturm', 'Vor der Zone kämpfen: im Sturm verlierst du HP und die Gegner haben die bessere Position.');
       if (heals > 0 && total != null && total < 100) add('heal', false, -6, heals + ' Heilitem' + plural(heals, '', 's') + ' ungenutzt', 'Heilitems vor dem Kampf benutzen, nicht danach.');
@@ -167,7 +172,7 @@
         t0: Math.round(g.t0 * 10) / 10, t1: Math.round(g.t1 * 10) / 10, ts: ts, dur: Math.round(dur),
         x: pme[0], y: pme[1], poi: poi ? poi.label : null,
         result: result, score: s, grade: grade(s), hp: total, mats: mats, heals: heals,
-        enemies: enemyN, enemyNear: nearE, teams: teamN, matesNear: matesNear, dist: isFinite(minD) ? Math.round(minD / 100) : null,
+        enemies: enemyN, enemyNear: nearE, solo: tn <= 1, teams: teamN, matesNear: matesNear, dist: isFinite(minD) ? Math.round(minD / 100) : null,
         dz: dz == null ? null : Math.round(dz / 100), kills: kills, elims: elims, losses: losses,
         surprised: surprised, storm: storm, tags: tags,
         why: (result === 'won' || result === 'trade' ? (good[0] || bad[0]) : (bad[0] || good[0])) || null,

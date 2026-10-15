@@ -331,6 +331,38 @@ body.vw #sbar,body.rp #sbar{display:none}
 
 
 
+
+
+.cupbar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.cupbar label{font-size:11px;color:var(--mute)}
+.cupbar select{flex:1;min-width:0;padding:9px 12px;border-radius:10px;background:#ffffff08;color:var(--txt);border:1px solid var(--line);font:600 15px 'Rajdhani',sans-serif;cursor:pointer}
+.cupbar select:focus{outline:1px solid var(--acc)}
+.cupbar option{background:#14141b;color:var(--txt)}
+/* ===== v0.9.8 Felder scrollen einzeln, Spalten stehen fest ===== */
+@media (min-width:1101px){
+ main>aside,main>.col,main>section{overflow:hidden;padding-right:0}
+ main>aside>.panel,main>section>.panel{display:flex;flex-direction:column;min-height:0}
+ main>aside>.panel>ul,main>aside>.panel>.news{overflow-y:auto;min-height:0;flex:1 1 auto;padding-right:4px}
+ main>aside>.panel>nav{overflow-y:auto;min-height:0}
+ main>aside>.panel[hidden],main>section>.panel[hidden]{display:none}
+ main>aside>.panel::-webkit-scrollbar,main>aside>.panel>ul::-webkit-scrollbar{width:6px}
+ main>aside>.panel>ul::-webkit-scrollbar-thumb{background:#ffffff1f;border-radius:6px}
+ main>aside:first-child>.panel:first-child{flex:1 1 0;min-height:160px}
+ main>aside:first-child>.panel:nth-child(2){flex:0 1 auto;min-height:120px}
+ main>aside.right>.panel:first-child{flex:none}
+ main>aside.right>.panel:not(:first-child){flex:1 1 0;min-height:130px}
+ main>section.center>.panel:first-child,main>.col>.panel:first-child{flex:1 1 0;min-height:200px}
+ main .center>.tp.on,main .center .tp.on{overflow-y:auto;min-height:0;flex:1 1 auto}
+ main .center>.slider{flex:0 0 auto!important;height:clamp(130px,19vh,240px)!important;min-height:0!important;max-height:none!important}
+ main .center>.cta,main .center>.hint{flex:none}
+}
+@media (min-width:1181px){
+ .rpane{overflow:hidden}
+ .rpane>.panel{flex:1 1 0;min-height:120px;overflow-y:auto}
+ .rpane>.panel.la{flex:3 1 0}
+ .rpane>.panel::-webkit-scrollbar{width:6px}.rpane>.panel::-webkit-scrollbar-thumb{background:#ffffff1f;border-radius:6px}
+}
+
 /* ===== v0.9.7 Fight-Analyse ===== */
 .fsum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .fsum div{padding:10px;border-radius:10px;background:#ffffff06;border:1px solid var(--line);text-align:center}
@@ -755,7 +787,7 @@ header .mbtn{margin-right:14px}
         <button class="tab on" data-t="cups" role="tab">Turniere &amp; Cups</button>
         <button class="tab" data-t="up" role="tab">Ordner verknüpfen / Schnell-Upload</button>
       </div>
-      <div class="tp on" id="tp-cups"><button class="go cupbtn" id="rpo">Cup-Report öffnen · alle Games &amp; Muster</button><ul class="cups" id="cups"></ul></div>
+      <div class="tp on" id="tp-cups"><div class="cupbar" id="cupbar" hidden><label for="cupsel" class="disp">Cup</label><select id="cupsel" aria-label="Cup auswählen"></select></div><button class="go cupbtn" id="rpo">Runden-Report öffnen · alle Runden &amp; Muster</button><ul class="cups" id="cups"></ul></div>
       <div class="tp" id="tp-up">
         <div class="drop" id="drop">
           <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0 4 4m-4-4L8 8M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
@@ -858,7 +890,7 @@ header .mbtn{margin-right:14px}
   <div class="vtop rtop">
     <button class="mbtn" data-menu aria-label="Hauptmenü"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Hauptmenü</button><button class="back" id="vb">← Dashboard</button>
     <div class="brand sm"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg><b class="disp">Coco's <span>Fn</span> Tool</b></div>
-    <nav class="vtabs" role="tablist"><button class="vtab" id="vr" role="tab">Cup Report</button><button class="vtab on" id="vv" role="tab">Replay Viewer</button></nav>
+    <nav class="vtabs" role="tablist"><button class="vtab" id="vr" role="tab">Runden-Report</button><button class="vtab on" id="vv" role="tab">Replay Viewer</button></nav>
     <div class="sp"></div>
     <div class="score" id="vscore" title="Durchschnitt aller Games"><small>Session-Score</small><b>–</b></div>
     <button class="go imp" id="vimp">⤓ Import</button>
@@ -932,7 +964,7 @@ header .mbtn{margin-right:14px}
 </div>
 <div id="report">
   <div class="vtop rtop"><button class="mbtn" data-menu aria-label="Hauptmenü"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Hauptmenü</button><button class="back" id="rb">← Dashboard</button><div class="brand sm"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg><b class="disp">Coco's <span>Fn</span> Tool</b></div>
-    <nav class="vtabs" role="tablist"><button class="vtab on" id="rcr" role="tab">Cup Report</button><button class="vtab" id="rv" role="tab">Replay Viewer</button></nav>
+    <nav class="vtabs" role="tablist"><button class="vtab on" id="rcr" role="tab">Runden-Report</button><button class="vtab" id="rv" role="tab">Replay Viewer</button></nav>
     <small id="rs"></small><div class="sp"></div>
     <div class="score" id="rscore" title="Durchschnitt aller Games"><small>Session-Score</small><b>–</b></div>
     <button class="go imp" id="rimp">⤓ Import</button></div>
@@ -1052,9 +1084,23 @@ function fdate(ms){try{return new Date(ms).toLocaleString('de-DE',{day:'2-digit'
 function rname(r){return typeof r==='string'?r.replace(/^.*[\\/]/,''):r.name}
 function rpath(r){return typeof r==='string'?r:r.path}
 function gameCard(g,i){var m=g.m;return '<li><div class="grade '+gc[m.g]+'">'+m.g+'</div><div class="info"><b>'+esc(m.n)+'</b><small>'+(m.pl>0?'Platz #'+m.pl+' · ':'')+m.k+' Elims · Total '+g.tot+'</small></div><div class="pts"><b>'+(m.pl>0?'#'+m.pl:'–')+'</b>Note '+m.g+'</div><button class="go" data-o="'+i+'">Analyse starten</button></li>'}
+window.cftCup=(function(){
+ var sel='';try{sel=localStorage.getItem('cft_cup')||''}catch(e){}
+ function dt(g){var m=/^(\d{2}\.\d{2}\.\d{4})/.exec((g.m&&g.m.n)||'');return m?m[1]:''}
+ function key(g){var p=(g.real&&g.real.meta&&g.real.meta.playlist)||'Replay';return p+' · '+(dt(g)||'?')}
+ function list(){var o={},a=[];((window.CFT&&CFT.games)||[]).forEach(function(g){var k=key(g);if(!o[k]){o[k]={k:k,n:0};a.push(o[k])}o[k].n++});return a}
+ function get(){return sel&&list().some(function(c){return c.k===sel})?sel:''}
+ return{key:key,list:list,get:get,set:function(k){sel=k||'';try{localStorage.setItem('cft_cup',sel)}catch(e){}},
+  filter:function(gs){var s=get();return s?gs.filter(function(g){return key(g)===s}):gs}}})();
+function cupUI(){
+ var bar=$('cupbar'),sl=$('cupsel');if(!bar||!sl)return;var L=cftCup.list();
+ bar.hidden=!L.length;if(!L.length)return;
+ sl.innerHTML='<option value="">Alle Runden ('+CFG.games.length+')</option>'+L.map(function(c){return '<option value="'+esc(c.k)+'">'+esc(c.k)+' · '+c.n+' Runde'+(c.n>1?'n':'')+'</option>'}).join('');
+ sl.value=cftCup.get();
+ sl.onchange=function(){cftCup.set(sl.value);renderCups();if(window.cftApplyNames)cftApplyNames();if(window.cftFocusRefresh)cftFocusRefresh();if(window.cftRender)cftRender()}}
 function renderCups(){
  var h='';if(window.profUpd)window.profUpd();if(window.sbarUpd)window.sbarUpd();if(window.renderLeft&&document.body.classList.contains('vw'))window.renderLeft();
- if(CFG.games.length){h+=CFG.games.map(gameCard).join('')}
+ cupUI();if(CFG.games.length){h+=CFG.games.map(function(g,i){return cftCup.filter([g]).length?gameCard(g,i):''}).join('')}
  if(window.fn){
   var open={};CFG.games.forEach(function(g){if(g.path)open[g.path]=1});
   var rest=RL.filter(function(r){return !open[rpath(r)]});
@@ -1068,7 +1114,7 @@ function renderCups(){
  [].forEach.call($('cups').querySelectorAll('.go[data-o]'),function(b){b.onclick=function(){openViewer(CFG.games[+b.dataset.o].m)}});
  [].forEach.call($('cups').querySelectorAll('.go[data-p]'),function(b){b.onclick=function(){analyze([decodeURIComponent(b.dataset.p)],true,false)}})}
 function profUpd(){
- var G=CFG.games,nm='';try{nm=(JSON.parse(localStorage.getItem('cft_onb')||'null')||{}).n||''}catch(e){}
+ var G=cftCup.filter(CFG.games),nm='';try{nm=(JSON.parse(localStorage.getItem('cft_onb')||'null')||{}).n||''}catch(e){}
  $('pfn').textContent=nm||'Spieler';$('pfa').textContent=(nm||'S').charAt(0).toUpperCase();$('pfs').textContent=nm?'Spielername gespeichert':'Spielername nicht gesetzt';
  if(!G.length&&!window.fn)return; /* Browser-Demo: Beispielwerte stehen lassen */
  var n=G.length,avg=n?G.reduce(function(a,g){return a+g.tot},0)/n:0,pl=G.filter(function(g){return g.m.pl>0}),wins=G.filter(function(g){return g.m.pl===1}).length;
@@ -1455,7 +1501,7 @@ var TPL=[
 var G=[],DEMO=[],sel=7,CF=window.CFT;
 function esc(x){return String(x).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function factsH(m){return m.facts&&m.facts.length?'<div class="facts">'+m.facts.map(function(f){return '<span>'+esc(f)+'</span>'}).join('')+'</div>':''}
-function gamesNow(){if(CF.games.length)return CF.games;if(!DEMO.length){var o=G;G=DEMO;gen();G=o}return DEMO}
+function gamesNow(){if(CF.games.length){CF.games.forEach(function(g,k){g.i=k});var L=window.cftCup?cftCup.filter(CF.games):CF.games;if(L!==CF.games)L.forEach(function(g,k){g.i=k});return L}if(!DEMO.length){var o=G;G=DEMO;gen();G=o}return DEMO}
 window.cftGames=function(){return gamesNow()};window.cftRows=function(g){return g.rows||STEPS};
 function sc(v){return v>=70?'#e8e8ee':v>=45?'#fb923c':'#FF003C'}
 function gen(){
@@ -1529,22 +1575,23 @@ function renderFocus(){
  [].forEach.call(el.querySelectorAll('.fgo,.go,.occ button'),function(b){b.onclick=function(e){e.stopPropagation();jumpTo(+b.dataset.g,+b.dataset.t)}});
  var mo=$('fmore');if(mo)mo.onclick=function(){FMORE=!FMORE;renderFocus()};
  renderFocusMini(F)}
-window.cftFocusRefresh=function(){window.cftApplyNames();if(!CF.games.length){renderFocusMini([]);return}G=CF.games;renderFocusMini(focusGroups())};
+window.cftFocusRefresh=function(){window.cftApplyNames();if(!CF.games.length){renderFocusMini([]);return}G=gamesNow();renderFocusMini(focusGroups())};
 function renderFocusMini(F){
  var p=$('fokus');if(!p)return;p.hidden=!F.length;if(!F.length)return;
  $('fokusl').innerHTML=F.slice(0,3).map(function(f,n){var m=f.w.m,im=impactOf(m);return '<li data-g="'+f.w.g.i+'" data-t="'+Math.round(m.t)+'"><span class="rk">'+(n+1)+'</span><div><b>'+esc(FL[f.k]||'Fehler')+'</b><small>Game '+(f.w.g.i+1)+' · Zone '+m.zone+' · '+CF.fmt(Math.round(m.t))+'</small></div><span class="imp2 '+im.c+'">'+esc(im.t)+'</span></li>'}).join('');
  [].forEach.call($('fokusl').children,function(li){li.onclick=function(){jumpTo(+li.dataset.g,+li.dataset.t)}})}
 window.cftReportName=function(){
  var gs=(window.CFT&&CFT.games)||[],n=gs.length;
- if(!n)return{up:'CUP REPORT',cap:'Cup-Report'};
- var ks={};gs.forEach(function(g){var p=String((g.real&&g.real.meta&&g.real.meta.playlist)||'').toLowerCase();ks[/scrim/.test(p)?'s':/ranked|rank/.test(p)?'r':/showdown|cup|tournament|fncs|cash|arena/.test(p)?'c':'x']=1});
+ if(!n)return{up:'RUNDEN-REPORT',cap:'Runden-Report',sub:'alle Runden & Muster'};
+ var cup=window.cftCup?cftCup.get():'';
+ if(cup)return{up:'CUP-REPORT',cap:'Cup-Report',sub:cup};
+ var ks={};gs.forEach(function(g){var p=String((g.real&&g.real.meta&&g.real.meta.playlist)||'').toLowerCase();ks[/scrim/.test(p)?'s':/ranked|rank/.test(p)?'r':'x']=1});
  var kk=Object.keys(ks);
- if(kk.length===1&&kk[0]==='s')return{up:'SCRIM REPORT',cap:'Scrim-Report'};
- if(kk.length===1&&kk[0]==='r')return{up:'RANKED REPORT',cap:'Ranked-Report'};
- if(kk.length===1&&kk[0]==='c')return{up:'CUP REPORT',cap:'Cup-Report'};
- return n===1?{up:'GAME REPORT',cap:'Game-Report'}:{up:'SESSION REPORT',cap:'Session-Report'}};
+ if(kk.length===1&&kk[0]==='s')return{up:'SCRIM-REPORT',cap:'Scrim-Report',sub:'alle Runden & Muster'};
+ if(kk.length===1&&kk[0]==='r')return{up:'RANKED-REPORT',cap:'Ranked-Report',sub:'alle Runden & Muster'};
+ return{up:'RUNDEN-REPORT',cap:'Runden-Report',sub:'alle Runden & Muster'}};
 window.cftApplyNames=function(){var r=cftReportName(),a=document.getElementById('vr'),b=document.getElementById('rcr'),c=document.getElementById('rpo');
- if(a)a.textContent=r.up;if(b)b.textContent=r.up;if(c)c.innerHTML=r.cap+' öffnen · alle Games &amp; Muster';
+ if(a)a.textContent=r.up;if(b)b.textContent=r.up;if(c)c.textContent=r.cap+' öffnen · '+(r.sub||'');
  var o=document.getElementById('obr');if(o)o.textContent='Stattdessen den '+r.cap+' öffnen'};
 function topReal(){
  var all=[];G.forEach(function(g){(g.mis||[]).forEach(function(m){all.push({g:g,m:m})})});
@@ -1559,7 +1606,7 @@ var FRES={won:'GEWONNEN',trade:'TRADE',lost:'VERLOREN',lostmate:'MATE VERLOREN',
 function fightCard(f,gi){
  var chips=[];
  if(f.hp!=null)chips.push('<span class="chip '+(f.hp>=150?'g':f.hp<100?'b':'')+'">'+f.hp+' HP+Schild</span>');
- chips.push('<span class="chip">'+f.enemies+' Gegner'+(f.dist!=null?' · '+f.dist+' m':'')+'</span>');
+ chips.push('<span class="chip">'+(f.solo?f.enemyNear+' Gegner in 45 m':f.enemies+' Gegner')+(f.dist!=null?' · nächster '+f.dist+' m':'')+'</span>');
  if(f.matesNear)chips.push('<span class="chip g">'+f.matesNear+' Mate'+(f.matesNear>1?'s':'')+' nah</span>');
  if(f.mats!=null)chips.push('<span class="chip '+(f.mats<150?'b':'')+'">'+f.mats+' Mats</span>');
  f.tags.filter(function(t){return t.k!=='result'&&['hp','team'].indexOf(t.k)<0}).slice(0,3).forEach(function(t){chips.push('<span class="chip '+(t.good?'g':'b')+'">'+esc(t.txt)+'</span>')});
@@ -1588,6 +1635,7 @@ function renderPoi(real){
  var hi=-1,lo=-1,best=-1,worst=999;L.forEach(function(x,i){var a=x.t/x.c;if(a>best){best=a;hi=i}if(a<worst){worst=a;lo=i}});
  $('poil').innerHTML=L.map(function(x,i){var a=Math.round(x.t/x.c),tag=L.length>1&&i===hi?' top':L.length>1&&i===lo?' low':'';
   return '<div class="poir'+tag+'"><div><b>'+esc(x.n)+'</b>'+(tag===' top'?'<em>STARK</em>':tag===' low'?'<em>SCHWACH</em>':'')+'</div><div><small>Games</small><b>'+x.c+'</b></div><div><small>Ø Note</small><b>'+a+'</b></div><div><small>Ø Platz</small><b>'+(x.pc?'#'+Math.round(x.pl/x.pc):'–')+'</b></div><div class="bar2"><i style="width:'+a+'%"></i></div></div>'}).join('')}
+window.cftRender=function(){render()};
 function render(){
  window.cftApplyNames();G=gamesNow();window.scoreUpd&&scoreUpd();if(sel>=G.length||sel<0)sel=Math.max(0,G.length-1);var REAL=!!CF.games.length;
  $('rs').textContent=REAL?'Deine Replays · '+G.length+' Game'+(G.length>1?'s':''):'Cash Cup · 11 Games (Demo)';
