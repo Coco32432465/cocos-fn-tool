@@ -3,7 +3,7 @@
    ============================================================================ */
 window.CFT_CONFIG = {
   /* Discord-Server-Einladung, z. B. 'https://discord.gg/abcdefg'. Leer = Button zeigt einen Hinweis. */
-  discordInvite: '',
+  discordInvite: 'https://discord.gg/sZJAMkZMEN',
 
   /* Social-Media-Links (leer lassen = Hinweis beim Klick) */
   social: {

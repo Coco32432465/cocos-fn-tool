@@ -7,20 +7,33 @@
 <script>
 /* Farbschemata (Theme) – wird vor dem ersten Zeichnen gesetzt */
 (function(){
+  function hex(h){return[1,3,5].map(function(i){return parseInt(h.substr(i,2),16)})}
+  function mix(c,k,w){return c.map(function(v,i){return Math.round(v*(1-w)+k*w)})}
+  function H(c){return'#'+c.map(function(v){return('0'+v.toString(16)).slice(-2)}).join('')}
+  function mk(name,grp,a,b){
+    var c=hex(a),d=hex(b||a);
+    return{name:name,grp:grp,acc:a,acc2:b||H(mix(c,255,.25)),rgb:c.join(','),rgb2:d.join(','),dark:H(mix(c,0,.38)),light:H(mix(c,255,.35)),pale:H(mix(c,255,.7)),
+      deep:c.map(function(v){return Math.round(v*.43)}).join(','),
+      t:[H(mix(c,0,.77)),H(mix(c,0,.86)),H(mix(c,0,.67)),H(mix(c,0,.8)),H(mix(d,0,.82)),H(mix(c,255,.84))]}
+  }
   var T={
-    rot:{name:'Schwarz · Rot',acc:'#FF003C',acc2:'#EF4444',rgb:'255,0,60',rgb2:'239,68,68',dark:'#B0002A',light:'#FF6B88',pale:'#FFB3C0',deep:'110,0,25',t:['#3a0813','#240510','#55091b','#330714','#2a0a14','#ffd5dc']},
-    blau:{name:'Schwarz · Blau',acc:'#2F7BFF',acc2:'#5B9BFF',rgb:'47,123,255',rgb2:'91,155,255',dark:'#1544B0',light:'#6FA6FF',pale:'#BBD3FF',deep:'10,30,110',t:['#0b1a3d','#050d26','#10306b','#08173a','#0a1630','#d8e6ff']}
+    rot:{grp:1,name:'Schwarz · Rot',acc:'#FF003C',acc2:'#EF4444',rgb:'255,0,60',rgb2:'239,68,68',dark:'#B0002A',light:'#FF6B88',pale:'#FFB3C0',deep:'110,0,25',t:['#3a0813','#240510','#55091b','#330714','#2a0a14','#ffd5dc']},
+    blau:{grp:1,name:'Schwarz · Blau',acc:'#2F7BFF',acc2:'#5B9BFF',rgb:'47,123,255',rgb2:'91,155,255',dark:'#1544B0',light:'#6FA6FF',pale:'#BBD3FF',deep:'10,30,110',t:['#0b1a3d','#050d26','#10306b','#08173a','#0a1630','#d8e6ff']},
+    gruen:mk('Schwarz · Grün',1,'#19E36B'),
+    gold:mk('Schwarz · Gold',1,'#FFB800'),
+    bl:mk('Blau · Lila',2,'#3B82F6','#A855F7'),
+    gb:mk('Grün · Blau',2,'#10E5A0','#2F7BFF')
   };
   function apply(n,save){
     if(!T[n])n='rot';var t=T[n],s=document.documentElement.style;
     s.setProperty('--acc',t.acc);s.setProperty('--acc2',t.acc2);s.setProperty('--rgb',t.rgb);s.setProperty('--rgb2',t.rgb2);
-    s.setProperty('--acc-dark',t.dark);s.setProperty('--acc-light',t.light);s.setProperty('--acc-pale',t.pale);s.setProperty('--rgb-deep',t.deep);
+    s.setProperty('--acc-dark',t.dark);s.setProperty('--acc-light',t.light);s.setProperty('--acc-pale',t.pale);s.setProperty('--rgb-deep',t.deep);['--t1','--t2','--t3','--t4','--t5','--acc-pale2'].forEach(function(k,i){s.setProperty(k,t.t[i])});
     window.THEME=t;window.THEME_NAME=n;document.documentElement.setAttribute('data-theme',n);
     if(save){try{localStorage.setItem('cft_theme',n)}catch(e){}}
     try{window.dispatchEvent(new Event('themechange'))}catch(e){}
   }
   window.THEMES=T;window.applyTheme=function(n){apply(n,true)};
-  var n='rot';try{n=localStorage.getItem('cft_theme')||'rot'}catch(e){}
+  var n='blau';try{n=localStorage.getItem('cft_theme')||'blau'}catch(e){}
   apply(n,false);
 })();
 </script>
