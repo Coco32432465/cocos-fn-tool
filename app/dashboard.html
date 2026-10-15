@@ -71,9 +71,9 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;a
 .icon-btn svg{width:20px;height:20px;transition:transform .5s;stroke:var(--txt);fill:none;stroke-width:1.8}
 
 /* Layout */
-main{display:grid;grid-template-columns:290px minmax(0,1fr) 300px;gap:18px;padding:clamp(14px,2.4vw,24px);max-width:1500px;margin:0 auto}
-aside,.col{display:flex;flex-direction:column;gap:18px;min-width:0}
-.panel{background:linear-gradient(180deg,#14141b,var(--panel));border:1px solid var(--line);border-radius:14px;padding:16px;
+main{display:grid;grid-template-columns:minmax(300px,24%) minmax(0,1fr) minmax(310px,25%);gap:24px;padding:clamp(16px,2.4vw,32px);max-width:2000px;width:100%;margin:0 auto}
+aside,.col{display:flex;flex-direction:column;gap:24px;min-width:0}
+.panel{background:linear-gradient(180deg,#14141b,var(--panel));border:1px solid var(--line);border-radius:14px;padding:20px;
   box-shadow:0 0 0 1px rgba(var(--rgb),.04),0 0 28px rgba(var(--rgb),.08),inset 0 1px 0 #ffffff08}
 .panel h2{font-size:12px;color:var(--acc2);display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .panel h2::before{content:"";width:6px;height:6px;background:var(--acc);box-shadow:0 0 8px var(--acc);transform:rotate(45deg)}
@@ -85,7 +85,8 @@ aside,.col{display:flex;flex-direction:column;gap:18px;min-width:0}
 .news .tagn{display:inline-block;margin-top:6px;padding:1px 8px;border-radius:6px;font:700 10px 'Orbitron',sans-serif;letter-spacing:.1em;background:rgba(var(--rgb),.16);color:var(--acc)}
 .news .v{display:flex;justify-content:space-between;font-size:12px;color:var(--mute)}
 .news .v b{color:var(--acc2);font-family:'Orbitron',sans-serif;font-size:11px}
-.news p{font-size:15px;font-weight:600;margin-top:2px;line-height:1.25}
+.news p{font-size:15px;font-weight:600;margin-top:4px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.news li{padding:12px 14px}
 .tagn{display:inline-block;margin-top:4px;font-size:11px;padding:1px 7px;border-radius:99px;background:rgba(var(--rgb),.13);color:var(--acc-light);letter-spacing:.05em}
 
 /* Social */
@@ -151,7 +152,7 @@ aside,.col{display:flex;flex-direction:column;gap:18px;min-width:0}
   padding:12px 20px;border-radius:12px;background:var(--panel);border:1px solid var(--acc);box-shadow:0 0 24px rgba(var(--rgb),.4);transition:.35s;z-index:20}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 
-@media (max-width:1100px){main{grid-template-columns:260px minmax(0,1fr)}.right{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:18px}}
+@media (max-width:1100px){main{grid-template-columns:280px minmax(0,1fr)}.right{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:18px}}
 @media (max-width:760px){main{grid-template-columns:1fr}.center{order:-1}.right{grid-template-columns:1fr}.discord small{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
 
@@ -336,7 +337,7 @@ main{flex:1 1 0;min-height:0;overflow:hidden;grid-template-rows:minmax(0,1fr)}
 main>aside,main>.col,main>section{min-height:0;overflow-y:auto;overflow-x:hidden;padding-right:3px}
 main>aside::-webkit-scrollbar,main>.col::-webkit-scrollbar,main>section::-webkit-scrollbar{width:6px}
 main>aside::-webkit-scrollbar-thumb,main>.col::-webkit-scrollbar-thumb,main>section::-webkit-scrollbar-thumb{background:#ffffff1f;border-radius:6px}
-main .center>.slider{flex:1 1 260px;min-height:200px}
+main .center>.slider{flex:1 1 200px;min-height:170px;max-height:min(34vh,320px);aspect-ratio:auto}
 @media (max-width:1100px){main{overflow-y:auto;grid-template-rows:none}main>aside,main>.col,main>section{overflow:visible}}
 @media (max-width:760px){body{height:auto;overflow:auto}}
 
@@ -1090,7 +1091,7 @@ drop.addEventListener('drop',function(ev){files(ev.dataTransfer.files)});
 $('sw').classList.add('on');
 $('sw').onclick=function(){this.classList.toggle('on');toast(this.classList.contains('on')?'Ordner-Erkennung aktiv':'Ordner-Erkennung aus');if(this.classList.contains('on'))refreshList()};
 /* Patchnotes aus patchnotes.js */
-(function(){var L=(window.PATCHNOTES||[]).slice(),mx=window.PATCHNOTES_MAX||4,el=$('news');if(!el)return;
+(function(){var L=(window.PATCHNOTES||[]).slice(),mx=window.PATCHNOTES_MAX||3,el=$('news');if(!el)return;
  function ago(d){if(!d)return'';var t=Date.parse(d);if(isNaN(t))return d;var n=Math.floor((Date.now()-t)/864e5);
   return n<=0?'Heute':n===1?'Gestern':n<7?'vor '+n+' Tagen':n<14?'vor 1 Woche':n<30?'vor '+Math.floor(n/7)+' Wochen':n<60?'vor 1 Monat':'vor '+Math.floor(n/30)+' Monaten'}
  /* Reihenfolge wie in patchnotes.js (neueste oben) */
