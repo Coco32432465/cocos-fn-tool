@@ -1,0 +1,22 @@
+name: Deploy Lizenz-Server
+on:
+  push:
+    branches: [main]
+    paths: ['license-server/**']
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+        working-directory: license-server
+      - run: node test/run.mjs
+        working-directory: license-server
+      - run: npx wrangler deploy
+        working-directory: license-server
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
