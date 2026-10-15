@@ -45,15 +45,17 @@
     ['Lifty Lodge', 0.333, 0.150], ['Freaky Fields', 0.600, 0.235], ['Wonkeeland', 0.745, 0.305], ['Chopped Shop', 0.172, 0.330],
     ['Nightmare Neighborhood', 0.428, 0.372], ['Green Hill Zone', 0.317, 0.483], ["Reality's Reign", 0.545, 0.490],
     ['Golden Grove', 0.789, 0.539], ['Stone Sanctum', 0.456, 0.631], ['Shaken Sanctuary', 0.667, 0.676],
-    ['Heatwave Harbor', 0.222, 0.683], ['Sunken Shores', 0.433, 0.794], ['Roter-Geist-Insel', 0.313, 0.803]
+    ['Heatwave Harbor', 0.222, 0.683], ['Sunken Shores', 0.433, 0.794]
   ];
   /** nächster Ort zu einer Weltposition; innerhalb ~9 % der Kartenbreite = "in", sonst "bei" */
   CFT.poiAt = function (wx, wy) {
     var p = CFT.proj(wx, wy), best = null;
     CFT.POIS.forEach(function (q) { var d = Math.hypot(p[0] - q[1], p[1] - q[2]); if (!best || d < best.d) best = { name: q[0], d: d }; });
     if (!best) return null;
-    best.near = best.d <= 0.09;
-    best.label = (best.near ? '' : 'bei ') + best.name;
+    /* Nur innerhalb ~6 % der Kartenbreite zählt es als dieser Ort, sonst ist es freies Gelände */
+    best.near = best.d <= 0.06;
+    best.x = p[0]; best.y = p[1];
+    best.label = best.near ? best.name : 'freies Gelände bei ' + best.name;
     return best;
   };
 
@@ -777,7 +779,7 @@
     var title = (when ? when : base) + (pls ? ' · ' + pls : '') + (num(meta.round, 0) > 0 ? ' · Runde ' + meta.round : '');
 
     R.meta = { me: me.name, teamSize: tn, players: P.length, positions: O.reduce(function (s, p) { return s + p.pts.length; }, 0), kills: ev.length, zones: Zs.length,
-      place: place > 0 ? place : null, mis: mis.length, landT: landT, landPoi: landPoi ? landPoi.label : null, landName: landPoi ? landPoi.name : null, stormSec: Math.round(stormSec), playlist: pls };
+      place: place > 0 ? place : null, mis: mis.length, landT: landT, landPoi: landPoi ? landPoi.label : null, landName: landPoi ? (landPoi.near ? landPoi.name : 'Freies Gelände bei ' + landPoi.name) : null, landNear: landPoi ? !!landPoi.near : null, landPt: landPoi ? [Math.round(landPoi.x * 1000) / 1000, Math.round(landPoi.y * 1000) / 1000] : null, stormSec: Math.round(stormSec), playlist: pls };
     var kills = num(me.kills, 0);
     var m = { n: title, pl: place > 0 ? place : 0, pts: 0, k: kills, g: L, s: 7, real: R, ph: ph, mis: mis };
     return { i: 0, c: res, rows: rows, ds: ds, win: win, ph: ph, tot: tot, m: m, real: R, mis: mis, rot: rot, fname: base };
