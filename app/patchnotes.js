@@ -15,6 +15,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.9.7', date: '2026-10-15', tag: 'NEU', text: 'Fight-Analyse: jeder Kampf deines Teams wird bewertet (HP, Mats, Höhe, Mates, Unterzahl, Third-Party, Sturm) mit Note A–D und konkretem Verbesserungstipp. Neuer Tab „Fights“ im Replay-Viewer und Fight-Bilanz mit Siegquote im Cup-Report' },
   { v: '0.9.6', date: '2026-10-15', tag: 'NEU', text: 'Dashboard luftiger und breiter (mehr Platz auf großen Bildschirmen, kürzere News-Karten), App startet jetzt direkt im gewählten Farbschema (kein rotes Aufblitzen mehr bei Blau · Lila u. a.), Discord-Einladung hinterlegt' },
   { v: '0.9.5', date: '2026-10-15', tag: 'NEU', text: 'Neues Key-Format XXXX-XXXX-XXXX (ältere Keys bleiben gültig), Key wird beim ersten Aktivieren in der App eingelöst und die Laufzeit startet dann. Neuer Lizenz-Bot: Server-Setup, Tickets mit Laufzeit-Auswahl, Transkripte, Key-Befehle und Verifizierungs-API' },
   { v: '0.9.4', date: '2026-10-14', tag: 'NEU', text: 'Lizenz-System: Discord-Konto per Login verbinden, Key aus dem Discord-Ticket eingeben, Zugang wird vom Server geprüft (1 Gerät pro Key, Ablauf, Offline-Toleranz). Dazu Lizenz-Server mit Bot, Ticket-Panel und Team-Commands' },
