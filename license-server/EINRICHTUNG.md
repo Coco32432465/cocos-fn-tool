@@ -100,3 +100,6 @@ Discord-Login für deine Website: `…/auth/start?cid=ZUFALLSTEXT&next=https://d
 - Fehler anzeigen: `npx wrangler tail`, dann die Aktion im Discord wiederholen.
 - Bot kann Rolle nicht vergeben: Bot-Rolle muss in der Rollenliste **über** der Zielrolle stehen.
 - Ticket/Kanal lässt sich nicht erstellen: Bot braucht „Kanäle verwalten" und „Rollen verwalten".
+
+## Server privat halten (Rolle „User“)
+`/setup` legt die Rolle **User** an. Alle Kanäle sind für @everyone unsichtbar – nur wer User, Member, Customer, Tester oder Admin hat, sieht sie. Zugang vergeben/entziehen: `/zugang user:@Name` bzw. mit `entfernen:true`. Die Bot-Rolle muss in den Servereinstellungen über „User“ stehen. Kanäle und Kategorien bekommen Emojis (`📜│rules`); `/setup` benennt vorhandene Kanäle automatisch um.
