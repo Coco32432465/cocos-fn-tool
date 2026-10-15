@@ -15,5 +15,7 @@ contextBridge.exposeInMainWorld('fn', {
   licActivate: (k) => ipcRenderer.invoke('lic-activate', k),
   licRefresh: () => ipcRenderer.invoke('lic-refresh'),
   licLogout: () => ipcRenderer.invoke('lic-logout'),
+  rankSet: (on, stats) => ipcRenderer.invoke('lic-rank-set', on, stats),
+  rankSync: (stats) => ipcRenderer.invoke('lic-rank-sync', stats),
   onUpdate: (cb) => ipcRenderer.on('update-status', (_e, s) => cb(s))
 });
