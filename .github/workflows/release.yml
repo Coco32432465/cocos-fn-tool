@@ -5,6 +5,8 @@ name: Release bauen
 on:
   push:
     tags: ['v*']
+    branches: [main]
+    paths: ['package.json']   # neue Version in package.json -> Release startet automatisch (Tag legt electron-builder an)
   workflow_dispatch:   # zusätzlich per Knopf unter "Actions" startbar (nimmt die Version aus package.json)
 
 permissions:
