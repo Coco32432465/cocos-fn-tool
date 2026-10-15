@@ -1552,7 +1552,7 @@ $('la').onclick=function(e){var b=e.target.closest('button');if(!b)return;var L=
 /* linke Spalte */
 var GR={A:'g-a',B:'g-b',C:'g-c',D:'g-d'};
 function curGames(){return window.cftGames?window.cftGames():[]}
-function scoreUpd(){var G=curGames(),v=G.length?(G.reduce(function(a,g){return a+g.tot},0)/G.length/10).toFixed(1)+' / 10':'–';
+function scoreUpd(){window.cftRankSync&&window.cftRankSync();var G=curGames(),v=G.length?(G.reduce(function(a,g){return a+g.tot},0)/G.length/10).toFixed(1)+' / 10':'–';
  ['vscore','rscore'].forEach(function(id){var e=document.getElementById(id);if(e)e.querySelector('b').textContent=v})}
 window.scoreUpd=scoreUpd;
 function renderLeft(){
@@ -1923,6 +1923,9 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
     <h3>App</h3>
     <div class="row"><span>Version <b id="stgv">–</b></span><button id="stgu">Nach Updates suchen</button></div>
     <div class="um" id="stgm"></div>
+    <h3>Rangliste</h3>
+    <div class="row"><span>Community-Rangliste im Discord <b id="rkst">–</b></span><button id="rkb">Teilnehmen</button></div>
+    <div class="um" id="rkm">Freiwillig: Es werden nur Name, Ø Note, Runden, Siege und Kills geteilt. Jederzeit abschaltbar.</div>
   </div>
 </div>
 <script>
@@ -1938,8 +1941,25 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
     $('stgt').innerHTML=h;
     [].forEach.call($('stgt').querySelectorAll('button'),function(b){b.onclick=function(){window.applyTheme(b.dataset.t);cards()}});
   }
+  function rankStats(){
+    var G=(window.cftGames?window.cftGames():[]).filter(function(g){return g&&g.real});if(!G.length)return null;
+    var pl=G.map(function(g){return g.pl}).filter(function(x){return x>0});
+    return{games:G.length,avgScore:Math.round(G.reduce(function(a,g){return a+(g.tot||0)},0)/G.length*10)/10,wins:G.filter(function(g){return g.pl===1}).length,
+      kills:G.reduce(function(a,g){return a+(g.k||0)},0),avgPlace:pl.length?Math.round(pl.reduce(function(a,b){return a+b},0)/pl.length*10)/10:0,bestPlace:pl.length?Math.min.apply(null,pl):0}}
+  function rankUI(st){
+    var on=st&&st.rank,b=$('rkb');$('rkst').textContent=!st||!st.connected?'(nicht verbunden)':on?'· aktiv':'· aus';
+    b.textContent=on?'Austragen':'Teilnehmen';b.disabled=!st||!st.connected;if(st&&st.error)$('rkm').textContent=st.error}
+  var rkT=0;
+  window.cftRankSync=function(){clearTimeout(rkT);rkT=setTimeout(function(){var s=rankStats();if(s&&window.fn&&window.fn.rankSync)window.fn.rankSync(s)},4000)};
+  $('rkb').onclick=function(){
+    if(!window.fn||!window.fn.rankSet){$('rkm').textContent='Nur in der installierten App verfügbar.';return}
+    window.fn.licState().then(function(st){
+      var on=!st.rank,s=rankStats();
+      if(on&&!s){$('rkm').textContent='Analysiere zuerst ein paar Replays, dann kannst du teilnehmen.';return}
+      window.fn.rankSet(on,s).then(function(r){rankUI(r);if(!r.error)$('rkm').textContent=on?'Du bist dabei! Die Rangliste steht im Discord-Kanal #rangliste (mind. 3 Runden).':'Du wurdest aus der Rangliste entfernt.'})})};
   window.openSettings=function(){
     cards();$('stgm').textContent='';box.classList.add('on');
+    if(window.fn&&window.fn.licState)window.fn.licState().then(rankUI);
     if(window.fn&&window.fn.version)window.fn.version().then(function(v){$('stgv').textContent='v'+v});
   };
   function close(){box.classList.remove('on')}

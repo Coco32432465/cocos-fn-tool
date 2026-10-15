@@ -57,7 +57,7 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
 
   async function state(extra) {
     const s = load();
-    const base = { enabled: enabled(), required: required(), connected: !!s.session, user: s.user || null };
+    const base = { enabled: enabled(), required: required(), connected: !!s.session, user: s.user || null, rank: !!s.rankOptIn };
     if (!enabled()) return { ...base, valid: true, ...(extra || {}) };
     const p = s.ticket ? checkTicket(s.ticket, await dev()) : null;
     return { ...base, valid: !!p, exp: p ? p.exp : 0, keyExp: p ? p.keyExp : 0, ...(extra || {}) };
@@ -118,12 +118,36 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
     catch (e) { return state(); } // offline: gueltiges Ticket bleibt bis zum Ablauf nutzbar
   }
 
+  // Community-Rangliste (freiwillig): Opt-in wird lokal gemerkt, Werte gehen nur bei aktivem Opt-in raus.
+  const cleanStats = st => { st = st || {}; const n = k => Number(st[k]); return { games: n('games'), avgScore: n('avgScore'), wins: n('wins'), kills: n('kills'), avgPlace: n('avgPlace') || undefined, bestPlace: n('bestPlace') || undefined }; };
+  async function rankSet(on, stats) {
+    const s = load();
+    if (!enabled() || !s.session) return state({ error: 'Bitte zuerst mit Discord verbinden.' });
+    try {
+      if (on) {
+        const j = await post('/rank/submit', { session: s.session, stats: cleanStats(stats) });
+        if (!j.ok) return state({ error: j.error === 'session' ? 'Sitzung abgelaufen. Bitte neu mit Discord verbinden.' : j.error === 'stats' ? 'Noch zu wenige analysierte Runden.' : 'Rangliste nicht erreichbar.' });
+        s.rankOptIn = true;
+      } else {
+        await post('/rank/leave', { session: s.session });
+        delete s.rankOptIn;
+      }
+      save(s);
+    } catch (e) { return state({ error: 'Lizenz-Server nicht erreichbar.' }); }
+    return state();
+  }
+  async function rankSync(stats) {
+    const s = load();
+    if (!s.rankOptIn || !s.session || !enabled()) return false;
+    try { const j = await post('/rank/submit', { session: s.session, stats: cleanStats(stats) }); return !!j.ok; } catch (e) { return false; }
+  }
+
   function logout() { try { fs.unlinkSync(file); } catch (e) { /* weg */ } return state(); }
 
   function start() { refresh(); timer = setInterval(refresh, REFRESH_EVERY); }
   function stop() { clearInterval(timer); }
 
-  return { state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
+  return { rankSet, rankSync, state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
 }
 
 function register(ipcMain, opts) {
@@ -134,6 +158,8 @@ function register(ipcMain, opts) {
   ipcMain.handle('lic-activate', (_e, key) => L.activate(key));
   ipcMain.handle('lic-refresh', () => L.refresh());
   ipcMain.handle('lic-logout', () => L.logout());
+  ipcMain.handle('lic-rank-set', (_e, on, stats) => L.rankSet(!!on, stats));
+  ipcMain.handle('lic-rank-sync', (_e, stats) => L.rankSync(stats));
   return L;
 }
 
