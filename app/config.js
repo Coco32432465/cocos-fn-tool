@@ -8,7 +8,7 @@ window.CFT_CONFIG = {
   /* Social-Media-Links (leer lassen = Hinweis beim Klick) */
   social: {
     TikTok: 'https://www.tiktok.com/@xcocofn',
-    Twitch: '',
+    Twitch: 'https://www.twitch.tv/xcocofn',
     YouTube: ''
   },
 
