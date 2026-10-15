@@ -126,10 +126,11 @@ await T('Täglicher Job: abgelaufen -> Rolle entzogen + DM, nur einmal', async (
 await T('/setup: baut Struktur, überspringt Vorhandenes, 2. Lauf ändert nichts', async () => {
   assert.match(J(await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('U1') })), /Keine Berechtigung/);
   const r = await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); assert.equal(r.type, 5); await flush();
+  for (let g = 0; g < 6 && /Limit erreicht/.test(JSON.stringify(S.patched.at(-1))); g++) { await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); await flush(); }
   const names = S.channels.map(c => c.name.replace(/^[^a-z0-9]+/i, '').toLowerCase());
-  for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs']) assert.ok(names.includes(n), n);
+  for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs', 'status', 'rangliste', 'arbeit', 'vorschläge', 'team-chat']) assert.ok(names.includes(n), n);
   assert.equal(names.filter(n => n === 'key-kaufen').length, 1); // vorhanden, nicht doppelt
-  for (const n of ['Admin', 'Customer', 'Member', 'Tester', 'User']) assert.equal(S.roles.filter(x => x.name === n).length, 1, n);
+  for (const n of ['Admin', 'Moderator', 'Supporter', 'Developer', 'Content Creator', 'Top 10', 'Customer', 'Member', 'Tester', 'User']) assert.equal(S.roles.filter(x => x.name === n).length, 1, n);
   globalThis.byBase = b => S.channels.find(c => c.name.replace(/^[^a-z0-9]+/i, '') === b);
   assert.equal(byBase('rules').name, '📜│rules'); assert.equal(S.channels.find(c => c.name === '🚀 START').type, 4);
   const ann = byBase('announcements'); assert.ok(ann.permission_overwrites.some(o => o.id === 'G' && (BigInt(o.deny) & 2048n))); // nur Admin schreibt
@@ -170,6 +171,92 @@ await T('/zugang: User-Rolle vergeben und entziehen', async () => {
   assert.ok(S.members.U1.roles.includes(userId));
   assert.match(J(await inter({ type: 2, data: { name: 'zugang', options: [{ name: 'user', value: 'U1' }, { name: 'entfernen', value: true }] }, member: mem('ADMIN') })), /Zugang entzogen/);
   assert.ok(!S.members.U1.roles.includes(userId));
+});
+// ---------- Bot v2 ----------
+const sha = s => createHash('sha256').update(s).digest('hex');
+let V2;
+await T('Verlängern: Erinnerung 3 Tage vorher (einmal) -> Button -> Renew-Ticket -> Team bestätigt', async () => {
+  const k = J(await cmd('erstellen', [{ name: 'dauer', value: 'week' }])).match(KEYRE)[0];
+  await cmd('einlösen', [{ name: 'key', value: k }], 'U7');
+  const t0 = Math.floor(Date.now() / 1000), exp0 = t0 + 2 * 86400;
+  db.prepare('UPDATE keys SET expires_at=? WHERE key=?').run(exp0, k);
+  await worker.scheduled({ cron: '0 * * * *' }, env, ctx); await flush();
+  const dms = S.dms.filter(d => d.to === 'U7' && /läuft bald ab/.test(JSON.stringify(d.body)));
+  assert.equal(dms.length, 1); assert.equal(dms[0].body.components[0].components[0].custom_id, 'renew_open');
+  await worker.scheduled({ cron: '0 * * * *' }, env, ctx); await flush();
+  assert.equal(S.dms.filter(d => d.to === 'U7' && /läuft bald ab/.test(JSON.stringify(d.body))).length, 1); // nur einmal
+  const r = await inter({ type: 3, data: { custom_id: 'renew_open' }, user: { id: 'U7', username: 'user7' } }); // aus der DM, ohne member
+  assert.match(J(r), /<#C\d+>/);
+  const ch = S.channels.find(c => c.name.startsWith('verlaengern-') && c.name.endsWith('user7')); assert.ok(ch, 'Renew-Kanal fehlt');
+  assert.equal(db.prepare('SELECT plan FROM tickets WHERE channel_id=?').get(ch.id).plan, 'week'); // Laufzeit vorbelegt
+  const first = JSON.stringify(S.msgs[ch.id][0]); assert.match(first, /paypal|PayPal/i); assert.match(first, /Screenshot/);
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('U7') })), /Keine Berechtigung/);
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), /Zahlung bestätigt/);
+  assert.equal(db.prepare('SELECT expires_at FROM keys WHERE key=?').get(k).expires_at, exp0 + 7 * 86400);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM sales WHERE user_id='U7' AND kind='renew'").get().n, 1);
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), /Schon bestätigt/);
+  assert.equal(db.prepare('SELECT reminded FROM keys WHERE key=?').get(k).reminded, 0); // neue Erinnerung moeglich
+});
+await T('Kauf-Ticket bestätigen: neuer Key im Ticket', async () => {
+  await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U8') });
+  const ch = S.channels.find(c => c.name === 'kauf-useru8');
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), /Laufzeit fehlt/);
+  await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['month'] }, member: mem('U8') });
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), KEYRE);
+  assert.equal(db.prepare("SELECT SUM(amount) AS s FROM sales WHERE user_id='U8'").get().s, 15);
+});
+await T('Formulare: Feedback + Bug (Modal -> Embed), Team setzt Status', async () => {
+  assert.equal((await inter({ type: 3, data: { custom_id: 'form_bug' }, member: mem('U1') })).type, 9);
+  const modal = (id, t, x) => ({ type: 5, data: { custom_id: id, components: [{ type: 1, components: [{ type: 4, custom_id: 'f_title', value: t }] }, { type: 1, components: [{ type: 4, custom_id: 'f_text', value: x }] }] }, member: mem('U1') });
+  assert.match(J(await inter(modal('modal_feedback', 'Idee', 'Mehr Statistiken bitte'))), /Danke/);
+  assert.match(JSON.stringify(S.msgs[env.FEEDBACK_CHANNEL_ID || (await (async () => { const e = await (await import('../src/discord.js')).withCfg(env); return e.FEEDBACK_CHANNEL_ID; })())]), /Mehr Statistiken/);
+  const e2 = await (await import('../src/discord.js')).withCfg(env);
+  assert.match(J(await inter(modal('modal_bug', 'Crash', 'App stürzt ab'))), /Fehler gemeldet/);
+  const bm = S.msgs[e2.BUG_CHANNEL_ID].at(-1); assert.equal(bm.components[0].components[0].custom_id, 'rep_prog');
+  const asMsg = member => ({ type: 3, data: { custom_id: 'rep_prog' }, member, message: { embeds: bm.embeds, components: bm.components } });
+  assert.match(J(await inter(asMsg(mem('U1')))), /Keine Berechtigung/);
+  const up = await inter(asMsg(mem('ADMIN'))); assert.equal(up.type, 7); assert.match(J(up), /In Arbeit/);
+});
+await T('Rangliste: Opt-in per Sitzung, Top 10, Rolle, /rank ich + austragen', async () => {
+  const e2 = await (await import('../src/discord.js')).withCfg(env);
+  const mk = (n, uname) => db.prepare('INSERT INTO sessions (token_hash,discord_id,username,created_at) VALUES (?,?,?,?)').run(sha('tok-' + n), n, uname, 1);
+  mk('U1', 'Alpha'); mk('U7', 'Bravo'); mk('U8', 'Charlie');
+  assert.equal((await post('/rank/submit', { session: 'falsch', stats: {} })).status, 401);
+  assert.equal((await post('/rank/submit', { session: 'tok-U1', stats: { games: 'x' } })).status, 400);
+  assert.equal((await post('/rank/submit', { session: 'tok-U1', stats: { games: 10, avgScore: 80, wins: 2, kills: 40, avgPlace: 12, bestPlace: 1 } })).status, 200);
+  assert.equal((await post('/rank/submit', { session: 'tok-U7', stats: { games: 5, avgScore: 90, wins: 1, kills: 10 } })).status, 200);
+  assert.equal((await post('/rank/submit', { session: 'tok-U8', stats: { games: 2, avgScore: 99, wins: 9, kills: 99 } })).status, 200); // < 3 Runden
+  const board = await inter({ type: 2, data: { name: 'rank', options: [{ type: 1, name: 'top' }] }, member: mem('U1') });
+  const txt = J(board); assert.ok(txt.indexOf('Bravo') < txt.indexOf('Alpha')); assert.ok(!/Charlie/.test(txt));
+  assert.match(J(await inter({ type: 2, data: { name: 'rank', options: [{ type: 1, name: 'ich' }] }, member: mem('U1') })), /Rang: #2/);
+  assert.match(J(await inter({ type: 2, data: { name: 'rank', options: [{ type: 1, name: 'ich' }] }, member: mem('U8') })), /Noch nicht platziert/);
+  const before = S.edited || 0; await worker.scheduled({ cron: '30 * * * *' }, env, ctx); await flush();
+  assert.ok((S.edited || 0) > before, 'Ranglisten-Embed nicht aktualisiert');
+  assert.match(JSON.stringify(S.msgs[e2.RANK_CHANNEL_ID][0].embeds), /Bravo/);
+  assert.ok(S.members.U7.roles.includes(e2.RANK_ROLE_ID) && S.members.U1.roles.includes(e2.RANK_ROLE_ID));
+  assert.match(J(await inter({ type: 2, data: { name: 'rank', options: [{ type: 1, name: 'austragen' }] }, member: mem('U7') })), /entfernt/);
+  assert.equal((await post('/rank/leave', { session: 'tok-U1' })).status, 200);
+  await worker.scheduled({ cron: '30 * * * *' }, env, ctx); await flush();
+  assert.ok(!S.members.U7.roles.includes(e2.RANK_ROLE_ID));
+});
+await T('/admin stats + /team: nur Admin', async () => {
+  const st = { type: 2, data: { name: 'admin', options: [{ type: 1, name: 'stats' }] } };
+  assert.match(J(await inter({ ...st, member: mem('U1') })), /Keine Berechtigung/);
+  const r = J(await inter({ ...st, member: mem('ADMIN') })); assert.match(r, /Umsatz/); assert.match(r, /Lizenzen/);
+  const e2 = await (await import('../src/discord.js')).withCfg(env);
+  const tm = (who, rem) => inter({ type: 2, data: { name: 'team', options: [{ name: 'user', value: 'U2' }, { name: 'rolle', value: 'moderator' }, ...(rem ? [{ name: 'entfernen', value: true }] : [])] }, member: mem(who) });
+  assert.match(J(await tm('U1')), /Keine Berechtigung/);
+  assert.match(J(await tm('ADMIN')), /Moderator/); assert.ok(S.members.U2.roles.includes(e2.MOD_ROLE_ID));
+  assert.match(J(await tm('ADMIN', true)), /entzogen/); assert.ok(!S.members.U2.roles.includes(e2.MOD_ROLE_ID));
+});
+await T('Status-Panel + Willkommen: Version aus GitHub, Embed wird bearbeitet', async () => {
+  const e2 = await (await import('../src/discord.js')).withCfg(env);
+  const before = S.edited || 0; await worker.scheduled({ cron: '15,45 * * * *' }, env, ctx); await flush();
+  assert.ok((S.edited || 0) > before); assert.match(JSON.stringify(S.msgs[e2.STATUS_CHANNEL_ID][0].embeds), /v9\.9\.9/);
+  assert.match(JSON.stringify(S.msgs[e2.DOWNLOAD_CHANNEL_ID][0].components), /Setup\.exe/);
+  const n = (S.msgs[e2.GENERAL_CHANNEL_ID] || []).length;
+  await inter({ type: 3, data: { custom_id: 'rules_accept' }, member: mem('U2') }); await flush();
+  assert.equal((S.msgs[e2.GENERAL_CHANNEL_ID] || []).length, n + 1);
 });
 await T('Patchnotes: Embed im Kanal, nur einmal pro Version', async () => {
   const S = makeDiscord(); try {

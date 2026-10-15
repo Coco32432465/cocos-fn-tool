@@ -80,3 +80,14 @@ export async function expireSweep(env, notify) {
   }
   return n;
 }
+
+// Zahlung bestaetigt: bestehende Lizenz verlaengern (Ablauf + Laufzeit) oder neuen Key erstellen
+export async function extendLicense(env, uid, planId, by) {
+  const plan = PLAN_ALL[planId];
+  const row = await env.DB.prepare("SELECT * FROM keys WHERE discord_id=? AND status='active' ORDER BY expires_at DESC LIMIT 1").bind(uid).first();
+  if (!row) { const [key] = await createKeys(env, planId, 1, by); return { mode: 'new', key }; }
+  const base = Math.max(now(), row.expires_at), exp = base + Math.round(plan.days * 86400);
+  await env.DB.prepare('UPDATE keys SET expires_at=?, role_removed=0, reminded=0 WHERE key=?').bind(exp, row.key).run();
+  await addRole(env, uid);
+  return { mode: 'extended', key: row.key, expires_at: exp };
+}

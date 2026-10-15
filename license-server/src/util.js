@@ -25,6 +25,7 @@ export const normKey = k => String(k || '').trim().toUpperCase();
 const TZ = 'Europe/Berlin';
 export const fmtDate = ts => new Date(ts * 1000).toLocaleDateString('de-DE', { timeZone: TZ });
 export const fmtDateTime = ts => new Date(ts * 1000).toLocaleString('de-DE', { timeZone: TZ, dateStyle: 'short', timeStyle: 'short' });
+export const priceNum = s => parseFloat(String(s || '').replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
 export const price = (env, planId) => (planId === 'week' ? env.PRICE_WEEK : env.PRICE_MONTH) || '';
 
 /* ---------- Embeds ---------- */
@@ -40,3 +41,15 @@ export function emb(env, o) {
 export const eph = (env, o) => ({ type: 4, data: { embeds: [emb(env, o)], flags: 64 } });
 export const bad = (env, title, desc) => eph(env, { title, desc, color: COL.bad });
 export const noPerm = env => bad(env, 'Keine Berechtigung', 'Dieser Befehl ist dem Team vorbehalten.');
+
+// PayPal-Link mit Betrag (paypal.me/name -> paypal.me/name/5EUR); andere Links bleiben unveraendert
+export function paypalUrl(env, planId) {
+  const u = String(env.PAYPAL_URL || '').trim();
+  if (!u) return '';
+  const amt = priceNum(price(env, planId));
+  return /paypal\.me\//i.test(u) && amt ? u.replace(/\/+$/, '') + '/' + amt + 'EUR' : u;
+}
+// Discord-Berechtigungen als Bitfeld-String
+export const bits = (...a) => String(a.reduce((x, y) => x | BigInt(y), 0n));
+export const PERM = { KICK: 1n << 1n, AUDIT: 1n << 7n, PRIORITY: 1n << 8n, STREAM: 1n << 9n, VIEW: 1n << 10n, SEND: 1n << 11n, MSG_MANAGE: 1n << 13n, EMBED: 1n << 14n, ATTACH: 1n << 15n, HIST: 1n << 16n, REACT: 1n << 6n,
+  CONNECT: 1n << 20n, SPEAK: 1n << 21n, MUTE: 1n << 22n, DEAFEN: 1n << 23n, MOVE: 1n << 24n, NICK: 1n << 27n, THREADS: 1n << 34n, PUB_THREAD: 1n << 35n, SEND_THREAD: 1n << 38n, TIMEOUT: 1n << 40n };

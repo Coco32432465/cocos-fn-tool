@@ -103,3 +103,10 @@ Discord-Login für deine Website: `…/auth/start?cid=ZUFALLSTEXT&next=https://d
 
 ## Server privat halten (Rolle „User“)
 `/setup` legt die Rolle **User** an. Alle Kanäle sind für @everyone unsichtbar – nur wer User, Member, Customer, Tester oder Admin hat, sieht sie. Zugang vergeben/entziehen: `/zugang user:@Name` bzw. mit `entfernen:true`. Die Bot-Rolle muss in den Servereinstellungen über „User“ stehen. Kanäle und Kategorien bekommen Emojis (`📜│rules`); `/setup` benennt vorhandene Kanäle automatisch um.
+
+## Bot v2 (Zahlung, Erinnerung, Rangliste, Rollen)
+- `PAYPAL_URL` in `wrangler.toml` auf deinen PayPal.me-Link setzen (z. B. `https://paypal.me/deinname`). Der Bot hängt den Betrag automatisch an.
+- Bot-Rolle muss in den Servereinstellungen **über** allen Team-Rollen stehen (Moderator, Supporter, Developer, Top 10 …).
+- Danach einmal `/setup` (bei Limit-Hinweis nochmal) ausführen. Neue Befehle: `/rank`, `/admin stats`, `/team`.
+- Cron-Jobs: stündlich Ablauf + 3-Tage-Erinnerung, :15/:45 Patchnotes + Status, :30 Rangliste. Alles auf dem kostenlosen Cloudflare-Plan.
+- Tabellen/Spalten legt der Worker selbst an (Selbst-Migration), kein manueller SQL-Schritt.
