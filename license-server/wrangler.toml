@@ -6,6 +6,15 @@ compatibility_date = "2025-01-01"
 [triggers]
 crons = ["0 * * * *", "15,45 * * * *", "30 * * * *"]
 
+# Bot dauerhaft online (Praesenz) ueber ein Durable Object
+[[durable_objects.bindings]]
+name = "GATEWAY_DO"
+class_name = "Gateway"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Gateway"]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "cft-license"
@@ -13,6 +22,8 @@ database_id = "9087d397-0bd3-49ab-91e4-48f060e33a9c"
 
 # Oeffentliche IDs (keine Geheimnisse)
 [vars]
+# "off" schaltet die Dauer-Online-Verbindung ab
+GATEWAY = "on"
 DISCORD_APP_ID = "1559989883362091160"
 DISCORD_PUBLIC_KEY = "817e93caa2e752cb077d5bf744c039da23178d1124e9ad3a603861f287da60c3"
 GUILD_ID = "1175531248836411432"

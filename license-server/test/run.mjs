@@ -258,6 +258,28 @@ await T('Status-Panel + Willkommen: Version aus GitHub, Embed wird bearbeitet', 
   await inter({ type: 3, data: { custom_id: 'rules_accept' }, member: mem('U2') }); await flush();
   assert.equal((S.msgs[e2.GENERAL_CHANNEL_ID] || []).length, n + 1);
 });
+await T('Gateway: Identify mit Präsenz, Heartbeat, Neuverbindung, Abschalten', async () => {
+  const { Gateway, pingGateway } = await import('../src/gateway.js');
+  const sent = []; let sockets = 0;
+  class FakeWS { constructor() { this.readyState = 1; this.l = {}; sockets++; } accept() {} addEventListener(t, f) { this.l[t] = f; } send(x) { const o = JSON.parse(x); sent.push(o); if (o.op === 1) setTimeout(() => this.emit({ op: 11 }), 1); } close() { this.readyState = 3; } emit(o) { this.l.message({ data: JSON.stringify(o) }); } }
+  const real = globalThis.fetch; let ws;
+  globalThis.fetch = async u => { if (String(u).startsWith('https://gateway.discord.gg')) { ws = new FakeWS(); return { webSocket: ws }; } return real(u); };
+  try {
+    const state = { storage: { setAlarm: async () => {} } };
+    const g = new Gateway(state, { BOT_TOKEN: 'T', GATEWAY: 'on' });
+    await g.ensure(); assert.equal(sockets, 1);
+    ws.emit({ op: 10, d: { heartbeat_interval: 20 } });
+    const idf = sent.find(x => x.op === 2); assert.ok(idf); assert.equal(idf.d.presence.status, 'online'); assert.equal(idf.d.token, 'T');
+    ws.emit({ op: 0, t: 'READY', s: 1, d: { session_id: 'S' } }); assert.equal(g.status, 'online');
+    await new Promise(r => setTimeout(r, 60)); assert.ok(sent.some(x => x.op === 1)); // Heartbeat
+    ws.emit({ op: 11 });
+    await g.ensure(); assert.equal(sockets, 1); // laeuft, keine zweite Verbindung
+    ws.emit({ op: 7 }); await g.ensure(); assert.equal(sockets, 2); // Reconnect -> Resume
+    ws.emit({ op: 10, d: { heartbeat_interval: 1000 } }); assert.ok(sent.some(x => x.op === 6 && x.d.session_id === 'S'));
+    g.env.GATEWAY = 'off'; await g.ensure(); assert.equal(g.status, 'off'); assert.equal(ws.readyState, 3);
+    assert.equal(await pingGateway({ GATEWAY: 'off' }), null);
+  } finally { globalThis.fetch = real; }
+});
 await T('Patchnotes: Embed im Kanal, nur einmal pro Version', async () => {
   const S = makeDiscord(); try {
   S.channels.push({ id: 'ANN', name: '📢│announcements', type: 0, parent_id: 'CATX', permission_overwrites: [{ id: 'G', type: 0, deny: '2048' }] }); // /setup lief nie: Kanal wird selbst angelegt
