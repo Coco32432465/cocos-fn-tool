@@ -1,0 +1,14 @@
+name: Patchnotes in Discord
+on:
+  push:
+    branches: [main]
+    paths: ['app/patchnotes.js']
+  workflow_dispatch:
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Warten, bis Release und Bot-Update fertig sind
+        run: sleep 240
+      - name: Patchnotes-Embed anstossen
+        run: curl -fsS --retry 3 --retry-delay 20 https://cft-license.cocotool.workers.dev/patchnotes

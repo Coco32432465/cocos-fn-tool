@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Coco's Fn Tool – Dashboard</title>
+<title>Cocos Tool – Dashboard</title>
 <script>
 /* Farbschemata (Theme) – wird vor dem ersten Zeichnen gesetzt */
 (function(){
@@ -742,6 +742,22 @@ body.mn #menu{display:flex;animation:fade .45s}
 .mbtn:hover{background:rgba(var(--rgb),.22);box-shadow:0 0 16px rgba(var(--rgb),.45)}
 .mbtn svg{width:15px;height:15px;stroke:var(--acc);fill:none;stroke-width:2}
 header .mbtn{margin-right:14px}
+
+#menu .mh{display:block;margin-bottom:18px}
+#menu .mlogo{width:58px;height:58px;margin:0 auto 10px;filter:drop-shadow(0 0 18px rgba(var(--rgb),.7));animation:mfloat 4s ease-in-out infinite}
+#menu .mlogo svg{width:100%;height:100%}
+#menu .mh small{letter-spacing:.55em;font-size:13px;opacity:.9}
+#menu .mh h1{font-size:clamp(20px,2.8vw,34px);background:linear-gradient(90deg,#fff 0%,var(--acc-light) 50%,#fff 100%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none;filter:drop-shadow(0 0 16px rgba(var(--rgb),.5));animation:mshine 6s linear infinite}
+#menu .mline{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px}
+#menu .mline i{display:block;height:1px;width:clamp(60px,12vw,180px);background:linear-gradient(90deg,transparent,rgba(var(--rgb),.8))}
+#menu .mline i:last-child{transform:scaleX(-1)}
+#menu .mline b{width:8px;height:8px;transform:rotate(45deg);background:var(--acc);box-shadow:0 0 14px var(--acc)}
+@keyframes mfloat{50%{transform:translateY(-4px)}}
+@keyframes mshine{to{background-position:200% center}}
+.mt::after{content:"";position:absolute;left:0;top:0;width:26px;height:26px;border-top:2px solid var(--acc);border-left:2px solid var(--acc);border-top-left-radius:14px;opacity:.55;pointer-events:none;transition:opacity .22s,width .22s,height .22s}
+.mt:hover::after,.mt.on-main::after{opacity:1;width:40px;height:40px}
+.mt.on-main .go{animation:mpulse 2.4s ease-in-out infinite}
+@keyframes mpulse{50%{box-shadow:0 0 34px rgba(var(--rgb),.85)}}
 @media (max-width:1100px){#menu{overflow-y:auto}#menu .tiles{grid-template-columns:1fr 1fr;grid-auto-rows:minmax(190px,auto)}.mt:nth-child(3){grid-column:1/-1;order:-1}}
 @media (max-width:600px){#menu .tiles{grid-template-columns:1fr}}
 </style>
@@ -752,7 +768,7 @@ header .mbtn{margin-right:14px}
   <button class="mbtn" data-menu aria-label="Hauptmenü"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Hauptmenü</button>
   <div class="brand">
     <svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg>
-    <b class="disp">Coco's <span>Fn</span> Tool</b>
+    <b class="disp">Cocos <span>Tool</span></b>
   </div>
   <div class="sp"></div>
   <button class="discord" id="dc" aria-label="Discord-Server beitreten">
@@ -889,7 +905,7 @@ header .mbtn{margin-right:14px}
 <div id="viewer">
   <div class="vtop rtop">
     <button class="mbtn" data-menu aria-label="Hauptmenü"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Hauptmenü</button><button class="back" id="vb">← Dashboard</button>
-    <div class="brand sm"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg><b class="disp">Coco's <span>Fn</span> Tool</b></div>
+    <div class="brand sm"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg><b class="disp">Cocos <span>Tool</span></b></div>
     <nav class="vtabs" role="tablist"><button class="vtab" id="vr" role="tab">Runden-Report</button><button class="vtab on" id="vv" role="tab">Replay Viewer</button></nav>
     <div class="sp"></div>
     <div class="score" id="vscore" title="Durchschnitt aller Games"><small>Session-Score</small><b>–</b></div>
@@ -963,7 +979,7 @@ header .mbtn{margin-right:14px}
   </div>
 </div>
 <div id="report">
-  <div class="vtop rtop"><button class="mbtn" data-menu aria-label="Hauptmenü"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Hauptmenü</button><button class="back" id="rb">← Dashboard</button><div class="brand sm"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg><b class="disp">Coco's <span>Fn</span> Tool</b></div>
+  <div class="vtop rtop"><button class="mbtn" data-menu aria-label="Hauptmenü"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Hauptmenü</button><button class="back" id="rb">← Dashboard</button><div class="brand sm"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg><b class="disp">Cocos <span>Tool</span></b></div>
     <nav class="vtabs" role="tablist"><button class="vtab on" id="rcr" role="tab">Runden-Report</button><button class="vtab" id="rv" role="tab">Replay Viewer</button></nav>
     <small id="rs"></small><div class="sp"></div>
     <div class="score" id="rscore" title="Durchschnitt aller Games"><small>Session-Score</small><b>–</b></div>
@@ -982,7 +998,7 @@ header .mbtn{margin-right:14px}
     <button class="skip" id="obs">Überspringen</button>
     <div class="obh">
       <svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">FN</text></svg>
-      <h2 class="disp">Willkommen bei Coco's Fn Tool</h2><p>In 3 Schritten zu deiner ersten VOD Review.</p>
+      <h2 class="disp">Willkommen bei Cocos Tool</h2><p>In 3 Schritten zu deiner ersten VOD Review.</p>
     </div>
     <div class="steps" id="obst"></div>
     <div class="glass">
@@ -1014,7 +1030,7 @@ header .mbtn{margin-right:14px}
 </div>
 <div id="menu" role="dialog" aria-label="Modus wählen">
   <button id="mdc" type="button" aria-label="Discord verknüpfen"><svg viewBox="0 0 24 24"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.2a18.3 18.3 0 0 0-5.6 0L8.6 3a19.7 19.7 0 0 0-4.9 1.4C.6 9 0 13.5.3 18a19.9 19.9 0 0 0 6 3l1.3-2.1c-.7-.3-1.4-.6-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.9 19.9 0 0 0 6-3c.4-5.2-.7-9.7-3.4-13.6ZM8.5 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.1 1.1 2.1 2.4-.9 2.4-2.1 2.4Zm7 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.1 1.1 2.1 2.4-.9 2.4-2.1 2.4Z"/></svg><span><small>Discord</small><strong id="mdcs">Verknüpfen</strong></span></button>
-  <div class="mh"><small>Coco's Fn Tool</small><h1>SELECT A MODE</h1></div>
+  <div class="mh"><div class="mlogo"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 18 L168 40 L162 108 Q158 150 100 184 Q42 150 38 108 L32 40 Z" fill="#14141b" stroke-width="9" stroke-linejoin="round" style="stroke:var(--acc)"/><text x="100" y="118" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="58" style="fill:var(--acc)">CT</text></svg></div><small>Cocos Tool</small><h1>WÄHLE DEINEN MODUS</h1><div class="mline"><i></i><b></b><i></i></div></div>
   <div class="tiles">
   <button class="mt soon" tabindex="0" aria-disabled="true"><svg class="art" viewBox="0 0 200 150" aria-hidden="true"><path d="M34 96c-8-26 8-52 34-58 10-18 40-22 54-6 22 0 40 18 36 42-4 20-26 30-50 26-14 10-40 12-52 0-12-2-20-2-22-4z" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M18 30L180 118" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="3 6" opacity=".55"/><path d="M60 92c20-6 30-20 52-18s28-12 40-22" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="6 5"/><path d="M152 52a12 12 0 1 1 .1 0z" fill="var(--acc)"/><circle cx="152" cy="46" r="4" fill="#0A0A0C"/><circle cx="60" cy="92" r="5" fill="var(--acc2)"/></svg><h2>DROP MAP &amp; ROUTES</h2><p>Landing-Spots planen &amp; Loot-Routen analysieren</p><span class="badge">Demnächst</span></button>
   <button class="mt soon" tabindex="0" aria-disabled="true"><svg class="art" viewBox="0 0 200 150" aria-hidden="true"><path d="M70 20h60v34a30 30 0 0 1-60 0z" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M70 28H48v10a20 20 0 0 0 22 20M130 28h22v10a20 20 0 0 1-22 20" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M100 84v22M76 112h48" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="30" y="122" width="40" height="22" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><rect x="80" y="112" width="40" height="32" fill="rgba(var(--rgb),.3)" stroke="var(--acc)" stroke-width="2"/><rect x="130" y="128" width="40" height="16" fill="rgba(var(--rgb),.12)" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M100 30l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z" fill="var(--acc)" transform="translate(0 4) scale(.9) translate(11 0)"/></svg><h2>TOURNAMENT TRACKER</h2><p>Cups, FNCS Termine &amp; PR-Verlauf im Blick</p><span class="badge">Demnächst</span></button>
@@ -1297,7 +1313,7 @@ function draw(){
  V.F.forEach(function(f){if(f.e&&f.mk&&f.e.v!=null&&V.P[f.e.v]){var age=t-f.t;if(age>=0&&age<4){var a=pos(V.P[f.e.v],f.t);ctx.strokeStyle='rgba('+THEME.rgb+','+(1-age/4)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(a[0]),Y(a[1]),6+age*10,0,6.2832);ctx.stroke()}}});
  (V.H||[]).forEach(function(h){var age=t-h.t;if(age>=0&&age<3){var a=pos(V.P[0],t),b=pos(V.P[h.f],t),k=1-age/3;ctx.save();ctx.strokeStyle='rgba(255,59,74,'+k+')';ctx.lineWidth=2;ctx.shadowColor='#ff3b4a';ctx.shadowBlur=10;ctx.beginPath();ctx.moveTo(X(a[0]),Y(a[1]));ctx.lineTo(X(b[0]),Y(b[1]));ctx.stroke();ctx.fillStyle='rgba(255,110,130,'+k+')';ctx.font='800 15px Orbitron,sans-serif';ctx.fillText('\u2212'+h.d,X(a[0])+10,Y(a[1])-8-age*10);ctx.restore()}});
  if(R){
-  function shot(k,v,tt,alpha,dash){var A=V.P[k],B=V.P[v];if(!A||!B||(CF.started&&!CF.started(A.real,tt)))return;var a=pos(A,tt),b=pos(B,tt),ax=X(a[0]),ay=Y(a[1]),bx=X(b[0]),by=Y(b[1]),ang=Math.atan2(by-ay,bx-ax),r=7;
+  function shot(k,v,tt,alpha,dash){var A=V.P[k],B=V.P[v];if(!A||!B||(CF.started&&!CF.started(A.real,tt))||(A.dead!=null&&tt>A.dead+.3)||(B.dead!=null&&tt>B.dead+.3))return;var a=pos(A,tt),b=pos(B,tt),ax=X(a[0]),ay=Y(a[1]),bx=X(b[0]),by=Y(b[1]),ang=Math.atan2(by-ay,bx-ax),r=7;
    ctx.save();ctx.strokeStyle='rgba(255,70,84,'+alpha+')';ctx.fillStyle='rgba(255,70,84,'+alpha+')';ctx.lineWidth=2;if(dash)ctx.setLineDash([5,4]);
    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx-Math.cos(ang)*r,by-Math.sin(ang)*r);var ss=ctx.strokeStyle;ctx.strokeStyle='rgba(10,10,12,'+alpha*.75+')';ctx.lineWidth=5.5;ctx.stroke();ctx.strokeStyle=ss;ctx.lineWidth=2.6;ctx.stroke();ctx.setLineDash([]);
    ctx.beginPath();ctx.moveTo(bx-Math.cos(ang)*r,by-Math.sin(ang)*r);ctx.lineTo(bx-Math.cos(ang)*(r+9)+Math.sin(ang)*5,by-Math.sin(ang)*(r+9)-Math.cos(ang)*5);ctx.lineTo(bx-Math.cos(ang)*(r+9)-Math.sin(ang)*5,by-Math.sin(ang)*(r+9)+Math.cos(ang)*5);ctx.closePath();ctx.fill();

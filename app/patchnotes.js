@@ -15,6 +15,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.9.9', date: '2026-10-15', tag: 'NEU', text: 'App heißt jetzt „Cocos Tool“ und die Modus-Auswahl hat ein neues Design. Wiederbelebte Spieler gelten nicht mehr als tot. Treffer-Linien kommen nur noch von lebenden Gegnern in plausibler Entfernung. Leben und Schild laden jetzt auch in Solo-Replays. Neuer Discord-Kanal „Patchnotes“: neue Versionen werden automatisch als Embed gepostet.' },
   { v: '0.9.8', date: '2026-10-15', tag: 'NEU', text: 'Spalten stehen fest, nur die einzelnen Felder scrollen (Dashboard + Viewer). Fight-Analyse erkennt Solo (kein „von euch“ mehr, Gegner im 45-m-Umkreis). „Cup Report“ heißt jetzt Runden-Report; neue Cup-Auswahl im Dashboard (Runden nach Playlist + Tag gruppiert) für Cup-Report und Stats. Landeort „Cluster Coast“ entfernt' },
   { v: '0.9.7', date: '2026-10-15', tag: 'NEU', text: 'Fight-Analyse: jeder Kampf deines Teams wird bewertet (HP, Mats, Höhe, Mates, Unterzahl, Third-Party, Sturm) mit Note A–D und konkretem Verbesserungstipp. Neuer Tab „Fights“ im Replay-Viewer und Fight-Bilanz mit Siegquote im Cup-Report' },
   { v: '0.9.6', date: '2026-10-15', tag: 'NEU', text: 'Dashboard luftiger und breiter (mehr Platz auf großen Bildschirmen, kürzere News-Karten), App startet jetzt direkt im gewählten Farbschema (kein rotes Aufblitzen mehr bei Blau · Lila u. a.), Discord-Einladung hinterlegt' },
