@@ -403,6 +403,21 @@ sealed class Extras
                 if (p.ValueKind == JsonValueKind.Object && p.TryGetProperty("TeamIndex", out var ti) && ti.ValueKind == JsonValueKind.Number
                     && ti.TryGetInt32(out var tix) && tix == ownerTeam && p.TryGetProperty("Id", out var idv) && idv.TryGetInt32(out var pid)) team.Add(pid);
 
+        // Inventar / Leben ohne Spieler-Zuordnung gehoeren (Replays nehmen nur die eigenen Werte auf) dem Replay-Besitzer.
+        // Solo-Replays loesen die Pawn->Spieler-Kette teils nicht auf; ohne bekannte Besitzer-ID landet es unter Schluessel -1.
+        int okey = ownerId >= 0 ? ownerId : -1;
+        team.Add(-1);
+        if (OrphanInv.Count > 0)
+        {
+            var best = OrphanInv.OrderByDescending(kv => kv.Value.Count).First();
+            if (!Inv.TryGetValue(okey, out var cur) || cur.Count < best.Value.Count / 4) Inv[okey] = best.Value;
+        }
+        if (OrphanHp.Count > 0)
+        {
+            var best = OrphanHp.OrderByDescending(kv => kv.Value.Count).First();
+            if (best.Value.Count >= 5 && (!Vitals.TryGetValue(okey, out var curH) || curH.Count < 5)) Vitals[okey] = best.Value;
+        }
+
         w.WriteString("vitalsInfo", Info);
         // --- Leben / Schild: pro Spieler [t, hp, schild] ---
         w.WriteStartObject("vitals");
@@ -421,21 +436,6 @@ sealed class Extras
             w.WriteEndArray();
         }
         w.WriteEndObject();
-
-        // Inventar / Leben ohne Spieler-Zuordnung gehoeren (Replays nehmen nur die eigenen Werte auf) dem Replay-Besitzer.
-        // Solo-Replays loesen die Pawn->Spieler-Kette teils nicht auf; ohne bekannte Besitzer-ID landet es unter Schluessel -1.
-        int okey = ownerId >= 0 ? ownerId : -1;
-        team.Add(-1);
-        if (OrphanInv.Count > 0)
-        {
-            var best = OrphanInv.OrderByDescending(kv => kv.Value.Count).First();
-            if (!Inv.TryGetValue(okey, out var cur) || cur.Count < best.Value.Count / 4) Inv[okey] = best.Value;
-        }
-        if (OrphanHp.Count > 0)
-        {
-            var best = OrphanHp.OrderByDescending(kv => kv.Value.Count).First();
-            if (best.Value.Count >= 5 && (!Vitals.TryGetValue(okey, out var curH) || curH.Count < 5)) Vitals[okey] = best.Value;
-        }
 
         // --- Inventar (nur dein Team): Namenstabelle + pro Spieler [t, [[nameIdx, anzahl], ...]] ---
         var names = new List<string>(); var nameIdx = new Dictionary<string, int>();

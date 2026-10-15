@@ -173,12 +173,11 @@ await T('/zugang: User-Rolle vergeben und entziehen', async () => {
 });
 await T('Patchnotes: Embed im Kanal, nur einmal pro Version', async () => {
   const S = makeDiscord(); try {
-  await runSetup(env, false);
+  S.channels.push({ id: 'ANN', name: '📢│announcements', type: 0, parent_id: 'CATX', permission_overwrites: [{ id: 'G', type: 0, deny: '2048' }] }); // /setup lief nie: Kanal wird selbst angelegt
   const src = "window.PATCHNOTES = [\n  { v: '0.9.9', date: '2026-10-15', tag: 'NEU', text: 'Erster Punkt. Zweiter Punkt mit \\'Zitat\\'.' },\n  { v: '0.9.8', date: '2026-10-15', tag: 'FIX', text: 'Alt.' }\n];";
   assert.equal(parsePatchnotes(src).length, 2);
-  const pc = S.channels.find(c => c.name.endsWith('patchnotes'));
-  const r1 = await postPatchnotes(env, src); assert.deepEqual(r1.sent, ['0.9.9']);
-  const e = S.msgs[pc.id].at(-1).embeds[0]; assert.match(e.title, /Cocos Tool v0\.9\.9/); assert.match(e.description, /• Erster Punkt\.\n• Zweiter Punkt/);
+  const r1 = await postPatchnotes(env, src); const pc = S.channels.find(c => c.name.endsWith('patchnotes')); assert.equal(pc.parent_id, 'CATX'); assert.deepEqual(r1.sent, ['0.9.8', '0.9.9']);
+  const e = S.msgs[pc.id].at(-1).embeds[0]; assert.match(e.title, /Version 0\.9\.9/); assert.match(e.description, /Erster Punkt\.\n\n.*Zweiter Punkt/); assert.equal(e.fields.length, 3); assert.match(e.footer.text, /v0\.9\.9/);
   const n = S.msgs[pc.id].length; const r2 = await postPatchnotes(env, src); assert.deepEqual(r2.sent, []); assert.equal(S.msgs[pc.id].length, n);
   const r3 = await postPatchnotes(env, src.replace("[\n", "[\n  { v: '1.0.0', date: '2026-10-16', tag: 'NEU', text: 'Neu.' },\n")); assert.deepEqual(r3.sent, ['1.0.0']);
 } finally { S.restore(); }

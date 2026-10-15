@@ -11,4 +11,6 @@ jobs:
       - name: Warten, bis Release und Bot-Update fertig sind
         run: sleep 240
       - name: Patchnotes-Embed anstossen
-        run: curl -fsS --retry 3 --retry-delay 20 https://cft-license.cocotool.workers.dev/patchnotes
+        run: |
+          curl -fsS --retry 3 --retry-delay 20 https://cft-license.cocotool.workers.dev/patchnotes | tee out.json
+          node -e "const r=JSON.parse(require('fs').readFileSync('out.json','utf8'));if(!r.ok){console.error('Fehler:',r.reason||r.error);process.exit(1)}"
