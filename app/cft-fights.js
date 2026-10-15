@@ -110,6 +110,23 @@
       }
       var storm = !!(CFT.flagsAt(me, ts) & F_STORM);
 
+      /* Wer hat die Distanz geschlossen? (6 s vor Kampfbeginn: wer ist mehr auf den anderen zugelaufen) */
+      var came = null;
+      (function () {
+        var m0 = CFT.posAt(me, ts - 6); if (!m0 || !pme) return;
+        var moveMe = d2(m0, pme), mvE = 0, nE = 0, closeBefore = Infinity, closeNow = Infinity;
+        for (var j = tn; j < P.length; j++) {
+          if (!enemy[j]) continue;
+          var e1 = CFT.posAt(P[j], ts), e0 = CFT.posAt(P[j], ts - 6); if (!e1 || !e0) continue;
+          var dn = d2(e1, pme); if (dn > NEAR_ENEMY * 1.4) continue;
+          mvE += d2(e1, e0); nE++;
+          closeNow = Math.min(closeNow, dn); closeBefore = Math.min(closeBefore, d2(e0, m0));
+        }
+        if (!nE || !isFinite(closeBefore) || closeBefore - closeNow < 400) return;
+        mvE /= nE;
+        if (mvE > moveMe * 1.25) came = 'enemy'; else if (moveMe > mvE * 1.25) came = 'me';
+      })();
+
       /* Ausgang */
       var kills = 0, elims = 0, losses = 0, iDown = false;
       g.items.forEach(function (x) {
@@ -136,11 +153,13 @@
       var mine = 1 + matesNear, solo = tn <= 1;
       if (total != null) {
         if (total >= 180) add('hp', true, 8, 'Volle HP + Schild (' + total + ')');
-        else if (total < 100) add('hp', false, -15, 'Nur ' + total + ' HP + Schild beim Kampfstart', 'Vor dem Fight healen/Schild trinken – unter 100 gar nicht erst pushen, erst Cover bauen und heilen.');
+        else if (total < 100) add('hp', false, -15, 'Nur ' + total + ' HP + Schild beim Kampfstart', came === 'enemy'
+          ? 'Die Gegner sind zu dir gekommen – mit nur ' + total + ' HP + Schild war das ein Nachteil. Heile oder trinke Schild schon, sobald du Gegner hörst oder siehst, und baue sofort Deckung, statt offen stehen zu bleiben.'
+          : 'Vor dem Fight healen/Schild trinken – unter 100 gar nicht erst pushen, erst Cover bauen und heilen.');
       }
       if (dz != null) {
         if (dz > 400) add('high', true, 8, 'Höhenvorteil');
-        else if (dz < -400) add('low', false, -10, 'Tiefer als der Gegner (' + Math.round(-dz / 100) + ' m)', 'Höhe nehmen, bevor du pusht: Ramp/Floor bauen oder einen Winkel mit Cover wählen.');
+        else if (dz < -400) add('low', false, -10, 'Tiefer als der Gegner (' + Math.round(-dz / 100) + ' m)', came === 'enemy' ? 'Gegner von oben: sofort Deckung bauen und selbst Höhe nehmen (Ramp/Floor), statt tief stehen zu bleiben.' : 'Höhe nehmen, bevor du pusht: Ramp/Floor bauen oder einen Winkel mit Cover wählen.');
       }
       if (tn > 1 && mateAlive > 0) {
         if (matesNear >= 1) add('team', true, 8, matesNear + ' Mate' + plural(matesNear, '', 's') + ' in der Nähe');
@@ -151,8 +170,10 @@
         else if (nearE >= 2) add('outnum', false, -5, nearE + ' Gegner in 45 m um dich', 'Bei mehreren Gegnern erst Cover bauen und einen nach dem anderen nehmen, statt offen zu pushen.');
       } else {
         var diff = nearE - mine;
-        if (diff >= 2) add('outnum', false, -12, nearE + ' Gegner gegen ' + mine + ' von euch', 'Bei Unterzahl nicht pushen: Distanz halten, Cover/Höhe nehmen und auf den Zonenzug oder ein Mate warten.');
-        else if (diff === 1) add('outnum', false, -6, nearE + ' Gegner gegen ' + mine + ' von euch', 'Bei knapper Unterzahl Mate dazuholen, bevor du den Kampf annimmst.');
+        if (diff >= 2) add('outnum', false, -12, nearE + ' Gegner gegen ' + mine + ' von euch', came === 'enemy'
+          ? 'Die Gegner haben euch gepusht: sofort Wand/Cover bauen, Höhe nehmen und mit dem Mate zusammen den Kampf annehmen, statt einzeln offen zu stehen.'
+          : 'Bei Unterzahl nicht pushen: Distanz halten, Cover/Höhe nehmen und auf den Zonenzug oder ein Mate warten.');
+        else if (diff === 1) add('outnum', false, -6, nearE + ' Gegner gegen ' + mine + ' von euch', came === 'enemy' ? 'Die Gegner sind zu euch gekommen: Mate heranholen und gemeinsam Cover bauen, bevor ihr zurückschießt.' : 'Bei knapper Unterzahl Mate dazuholen, bevor du den Kampf annimmst.');
         if (teamN >= 3) add('third', false, -8, 'Mehrere Teams im Kampf (' + teamN + ')', 'Bei Third-Party sofort Position wechseln, statt im offenen Feld weiterzukämpfen.');
       }
       if (mats != null && mats < 150 && dur > 5) add('mats', false, -8, 'Nur ' + mats + ' Mats im Kampf', 'Vor Fights mindestens 300–500 Mats sammeln – ohne Mats hast du kein Cover und keine Höhe.');
@@ -174,7 +195,7 @@
         result: result, score: s, grade: grade(s), hp: total, mats: mats, heals: heals,
         enemies: enemyN, enemyNear: nearE, solo: tn <= 1, teams: teamN, matesNear: matesNear, dist: isFinite(minD) ? Math.round(minD / 100) : null,
         dz: dz == null ? null : Math.round(dz / 100), kills: kills, elims: elims, losses: losses,
-        surprised: surprised, storm: storm, tags: tags,
+        surprised: surprised, storm: storm, came: came, tags: tags,
         why: (result === 'won' || result === 'trade' ? (good[0] || bad[0]) : (bad[0] || good[0])) || null,
         better: bad.length ? bad[0].better : ''
       });

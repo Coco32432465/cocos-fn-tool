@@ -382,6 +382,17 @@ body.vw #sbar,body.rp #sbar{display:none}
 .poir{cursor:pointer;transition:background .2s,border-color .2s}
 .poir:hover{background:rgba(var(--rgb),.08)}
 .poir .pmh{display:block;margin-top:2px;font-size:11px;color:var(--acc);letter-spacing:.08em;text-transform:uppercase}
+
+/* ===== v0.9.11 Knock-Anzeige ===== */
+#kdn{position:absolute;left:50%;top:62px;transform:translateX(-50%);z-index:7;padding:8px 26px 9px;border-radius:12px;text-align:center;pointer-events:none;
+ background:linear-gradient(180deg,rgba(120,40,0,.88),rgba(60,18,0,.88));border:1px solid #fb923c;box-shadow:0 0 30px rgba(251,146,60,.6),inset 0 0 18px rgba(251,146,60,.25);animation:kdp 1s ease-in-out infinite}
+#kdn[hidden]{display:none}
+#kdn b{display:block;font:900 22px 'Orbitron',sans-serif;letter-spacing:.2em;color:#ffd9b8;text-shadow:0 0 14px #fb923c}
+#kdn span{display:block;margin-top:2px;font:600 13px 'Rajdhani',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#fdba74}
+#kdn.rv{border-color:#4ade80;background:linear-gradient(180deg,rgba(10,90,40,.88),rgba(5,45,20,.88));box-shadow:0 0 30px rgba(74,222,128,.55);animation:none}
+#kdn.rv b{color:#d1fae5;text-shadow:0 0 14px #4ade80}#kdn.rv span{color:#86efac}
+@keyframes kdp{50%{box-shadow:0 0 46px rgba(251,146,60,.95),inset 0 0 22px rgba(251,146,60,.4)}}
+.hud .chip.kn{border-color:#fb923c;color:#fdba74;background:rgba(251,146,60,.16)}
 /* ===== v0.9.8 Felder scrollen einzeln, Spalten stehen fest ===== */
 @media (min-width:1101px){
  main>aside,main>.col,main>section{overflow:hidden;padding-right:0}
@@ -966,6 +977,7 @@ header .mbtn{margin-right:14px}
     <section class="vc">
       <div class="vhead"><h1 class="disp" id="vt">Replay</h1><small id="vs"></small></div>
       <div class="stage" id="stage"><canvas id="cv"></canvas>
+        <div id="kdn" hidden><b>KNOCKED</b><span id="kdns"></span></div>
         <div class="hud"><span class="chip">LEBEND <b id="al">24</b></span><span class="chip">TEAM-ELIMS <b id="ke">0</b></span><span class="chip">NOTE <b id="mg">-</b></span></div>
         <button class="mapbtn" id="mb">Karte ausblenden</button>
         <button class="mapbtn b3" id="mc" hidden>Karte kalibrieren</button>
@@ -1353,7 +1365,12 @@ function updRealHUD(t){
    dn=false;p.dbno.forEach(function(w){if(t>=w[0]&&t<w[1])dn=true});
   var q=CF.posAt(p,Math.min(t,p.dead!=null?p.dead:t)),dist=(q&&mp&&CF.started(p,t))?Math.round(Math.hypot(q[0]-mp[0],q[1]-mp[1])/100):0;
   h+='<div class="rb'+(dd?' dead':dn?' bad':'')+'"><small>'+esc(p.name)+'</small><b>'+(dd?'Eliminiert':!CF.started(p,t)?'im Bus':(dn?'Niedergeschossen · ':'')+dist+' m')+'</b></div>'}
- if(HUDC.r!==h){HUDC.r=h;$('rhud').innerHTML=h}}
+ if(HUDC.r!==h){HUDC.r=h;$('rhud').innerHTML=h}
+ /* Knock-Anzeige fuer dich: laufender Down bzw. kurz nach der Wiederbelebung */
+ var kd=$('kdn');if(kd){var cur=null,rv=null;me.dbno.forEach(function(w){if(t>=w[0]&&t<w[1])cur=w;else if(t>=w[1]&&t<w[1]+4&&!(me.dead!=null&&Math.abs(me.dead-w[1])<1.5))rv=w});
+  if(cur){kd.hidden=false;kd.className='';kd.firstChild.textContent='KNOCKED';$('kdns').textContent='seit '+Math.max(0,Math.round(t-cur[0]))+' s am Boden'}
+  else if(rv){kd.hidden=false;kd.className='rv';kd.firstChild.textContent='WIEDERBELEBT';$('kdns').textContent='du bist wieder oben'}
+  else kd.hidden=true}}
 function esc(x){return String(x).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function updHUD(t){if(R){updRealHUD(t);return}var me=V.P[0],dead=me.dead!=null&&t>=me.dead,hp=dead?0:Math.round(55+45*Math.abs(Math.cos(t/83))),sh=dead?0:Math.round(100*Math.abs(Math.sin(t/121+1))),mt=dead?0:Math.round(80+281*Math.abs(Math.sin(t/190)));
  $('hp').style.width=hp+'%';$('sh').style.width=sh+'%';setT('hpn',hp);setT('shn',sh);setT('mats',mt+' Mats');
