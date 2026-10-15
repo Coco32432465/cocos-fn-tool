@@ -31,7 +31,7 @@ export const price = (env, planId) => (planId === 'week' ? env.PRICE_WEEK : env.
 export const COL = { brand: 0x1e6bff, ok: 0x2ecc71, bad: 0xe5484d, neutral: 0x4f545c };
 export const DEFAULT_ICON = 'https://raw.githubusercontent.com/Coco32432465/cocos-fn-tool/main/app/icon.png';
 export function emb(env, o) {
-  const e = { title: o.title, color: o.color == null ? COL.brand : o.color, footer: { text: "Coco's Fn Tool" }, timestamp: new Date().toISOString() };
+  const e = { title: o.title, color: o.color == null ? COL.brand : o.color, footer: { text: "Cocos Tool" }, timestamp: new Date().toISOString() };
   if (o.desc) e.description = o.desc;
   if (o.fields) e.fields = o.fields;
   if (env.ICON_URL !== '-') e.thumbnail = { url: env.ICON_URL || DEFAULT_ICON };

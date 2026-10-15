@@ -234,6 +234,7 @@
       }
       var ownV = {}, ownI = {};
       P.forEach(function (p) { if (p !== me && p.vit.length >= 5) ownV[String(p.id)] = 1; if (p !== me && p.inv.length >= 2) ownI[String(p.id)] = 1; });
+      if (me.vit.length < 5 && !(me.team >= 0 && P.some(function (p) { return p !== me && p.team === me.team && p.pts.length; }))) ownV = {}; /* Solo: Werte sind keinem Mate zuzuordnen -> laengste Serie nehmen */
       if (me.vit.length < 5) { var kv = longest(d.vitals, ownV); if (kv && d.vitals[kv].length >= 5) me.vit = d.vitals[kv].filter(function (a) { return a && a.length >= 3; }).map(function (a) { return [a[0] - shift, a[1], a[2]]; }); }
       if (me.inv.length < 2) { var ki = longest((d.inv || {}).p, ownI); if (ki && d.inv.p[ki].length >= 2) me.inv = d.inv.p[ki].filter(function (a) { return a && a.length >= 2; }).map(function (a) { return [a[0] - shift, a[1]]; }); }
     })();
@@ -273,6 +274,20 @@
       if (e.down) return;
       var p = byId[e.vid];
       if (p && (p.dead == null || e.t < p.dead)) p.dead = e.t;
+    });
+    /* Wiederbelebt statt tot: wer nach dem "Tod" noch dauerhaft aufrecht laeuft, war nur down */
+    P.forEach(function (p) {
+      if (p.dead == null || p.pts.length < 4) return;
+      var a0 = null, n = 0, lastMove = null;
+      p.pts.forEach(function (a) { if (a[0] <= p.dead && (!a0 || a[0] > a0[0])) a0 = a; });
+      if (!a0) return;
+      p.pts.forEach(function (a) {
+        if (a[0] > p.dead + 4 && !(a[4] & F_DBNO) && Math.hypot(a[1] - a0[1], a[2] - a0[2]) > 800) { n++; lastMove = a[0]; }
+      });
+      if (n < 3 || lastMove < p.dead + 8) return;
+      var later = null;
+      ev.forEach(function (e) { if (!e.down && e.vid === p.id && e.t >= lastMove - 3 && (later == null || e.t < later)) later = e.t; });
+      p.dead = later;
     });
     var deadTimes = P.filter(function (p) { return p.dead != null; }).map(function (p) { return p.dead; }).sort(function (a, b) { return a - b; });
 
@@ -688,7 +703,11 @@
       var c = (kt || vt) ? (e.down ? '#fbbf77' : (kt ? A : '#f4f4f5')) : '#ffffff22';
       var item = { t: e.t, mk: kt || vt, c: c, txt: txt, kill: kt && !e.down };
       if (!e.down && e.v != null) item.e = { t: e.t, v: e.v, k: e.k != null ? e.k : 999 };
-      if (vt && e.k != null && e.k >= tn && e.k < players.length) item.h = { k: e.k, v: e.v, down: !!e.down };
+      if (vt && e.k != null && e.k >= tn && e.k < players.length) {
+        var sk = players[e.k], pk = posAt(sk, e.t), pv = posAt(players[e.v], e.t);
+        var okS = pk && pv && alive(sk, e.t + 0.5) && dist(pk, pv) <= Math.max(6000, (e.dist > 0 ? e.dist * 100 * 1.8 + 3000 : 0));
+        if (okS) item.h = { k: e.k, v: e.v, down: !!e.down };
+      }
       feed.push(item);
     });
     Zs.forEach(function (z, idx) { feed.push({ t: z.s, mk: true, c: '#d4d4d8', txt: 'Zone ' + (idx + 2) + ' zieht zu' }); });

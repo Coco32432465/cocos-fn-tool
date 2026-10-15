@@ -1,5 +1,6 @@
 // Coco's Fn Tool – Lizenz-Server + Discord-Bot (Cloudflare Worker, D1/SQLite)
 //   POST /interactions        Discord (Slash-Commands, Buttons, Dropdowns)
+//   GET  /patchnotes          postet neue Patchnotes aus GitHub als Embed in den Patchnotes-Kanal (idempotent)
 //   GET  /register?secret=    einmalig: Slash-Commands registrieren
 //   GET  /auth/start?cid=     Discord-Login starten (App oder Website)
 //   GET  /auth/callback       Rueckkehr von Discord
@@ -12,6 +13,7 @@ import { dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin } from '
 import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statusOf, expireSweep } from './keys.js';
 import { openTicket, selectPlan, closeTicket } from './tickets.js';
 import { runSetup, setupEmbed } from './setup.js';
+import { syncPatchnotes } from './patchnotes.js';
 import { authStart, authCallback, authPoll, licenseActivate, licenseRefresh, apiVerify, hit, blocked, cleanup, corsHeaders } from './auth.js';
 
 const COMMANDS = [
@@ -162,6 +164,10 @@ export default {
         const reg = await dapi(env0, 'PUT', `/applications/${env0.DISCORD_APP_ID}/guilds/${env0.GUILD_ID}/commands`, COMMANDS);
         return json({ commands: reg.ok ? 'ok' : reg.data });
       }
+      if (url.pathname === '/patchnotes') {
+        if (!(await hit(env0, 'pn:' + ip, 6, 60))) return json({ ok: false, error: 'rate' }, 429);
+        return json(await syncPatchnotes(await withCfg(env0)));
+      }
       if (url.pathname === '/auth/start') return authStart(url, env0);
       if (url.pathname === '/auth/callback') return authCallback(url, env0);
       const API = ['/auth/poll', '/license/activate', '/license/refresh', '/api/verify'];
@@ -185,7 +191,7 @@ export default {
     }
   },
   async scheduled(event, env0, ctx) {
-    ctx.waitUntil((async () => { const env = await withCfg(env0); await expireSweep(env, notifyExpired(env)); await cleanup(env0); })());
+    ctx.waitUntil((async () => { const env = await withCfg(env0); await expireSweep(env, notifyExpired(env)); await cleanup(env0); try { await syncPatchnotes(env); } catch (e) { /* Discord/GitHub gerade nicht erreichbar */ } })());
   }
 };
 

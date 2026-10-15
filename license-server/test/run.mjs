@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from '../src/index.js';
 import { runSetup } from '../src/setup.js';
+import { postPatchnotes, parsePatchnotes } from '../src/patchnotes.js';
 import { makeDb, makeEnv, makeDiscord, signer } from './mock.mjs';
 
 // 1) Migration v1 -> v2 mit Altdaten
@@ -170,4 +171,17 @@ await T('/zugang: User-Rolle vergeben und entziehen', async () => {
   assert.match(J(await inter({ type: 2, data: { name: 'zugang', options: [{ name: 'user', value: 'U1' }, { name: 'entfernen', value: true }] }, member: mem('ADMIN') })), /Zugang entzogen/);
   assert.ok(!S.members.U1.roles.includes(userId));
 });
+await T('Patchnotes: Embed im Kanal, nur einmal pro Version', async () => {
+  const S = makeDiscord(); try {
+  await runSetup(env, false);
+  const src = "window.PATCHNOTES = [\n  { v: '0.9.9', date: '2026-10-15', tag: 'NEU', text: 'Erster Punkt. Zweiter Punkt mit \\'Zitat\\'.' },\n  { v: '0.9.8', date: '2026-10-15', tag: 'FIX', text: 'Alt.' }\n];";
+  assert.equal(parsePatchnotes(src).length, 2);
+  const pc = S.channels.find(c => c.name.endsWith('patchnotes'));
+  const r1 = await postPatchnotes(env, src); assert.deepEqual(r1.sent, ['0.9.9']);
+  const e = S.msgs[pc.id].at(-1).embeds[0]; assert.match(e.title, /Cocos Tool v0\.9\.9/); assert.match(e.description, /• Erster Punkt\.\n• Zweiter Punkt/);
+  const n = S.msgs[pc.id].length; const r2 = await postPatchnotes(env, src); assert.deepEqual(r2.sent, []); assert.equal(S.msgs[pc.id].length, n);
+  const r3 = await postPatchnotes(env, src.replace("[\n", "[\n  { v: '1.0.0', date: '2026-10-16', tag: 'NEU', text: 'Neu.' },\n")); assert.deepEqual(r3.sent, ['1.0.0']);
+} finally { S.restore(); }
+});
 console.log(`\n${ok} Tests bestanden`); S.restore();
+
