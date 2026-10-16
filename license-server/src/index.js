@@ -1,6 +1,7 @@
 // Coco's Fn Tool – Lizenz-Server + Discord-Bot (Cloudflare Worker, D1/SQLite)
 //   POST /interactions        Discord (Slash-Commands, Buttons, Dropdowns)
 //   GET  /patchnotes          postet neue Patchnotes aus GitHub als Embed in den Patchnotes-Kanal (idempotent)
+//   GET  /download           leitet direkt auf die neueste Setup-Datei weiter
 //   GET  /register?secret=    einmalig: Slash-Commands registrieren
 //   GET  /auth/start?cid=     Discord-Login starten (App oder Website)
 //   GET  /auth/callback       Rueckkehr von Discord
@@ -17,7 +18,7 @@ import { remindSweep, RENEW_BUTTON } from './remind.js';
 import { rankSubmit, rankLeave, handleRank, syncRank } from './rank.js';
 import { openForm, submitForm, setBugStatus } from './forms.js';
 import { adminStats, handleTeam } from './admin.js';
-import { syncStatus } from './panels.js';
+import { syncStatus, downloadTarget } from './panels.js';
 import { Gateway, pingGateway } from './gateway.js';
 import { handleGiveaway, joinGiveaway, endSweep } from './giveaway.js';
 import { runSetup, setupEmbed } from './setup.js';
@@ -216,6 +217,10 @@ export default {
         if (!env0.SETUP_SECRET || url.searchParams.get('secret') !== env0.SETUP_SECRET) return new Response('nope', { status: 403 });
         const reg = await dapi(env0, 'PUT', `/applications/${env0.DISCORD_APP_ID}/guilds/${env0.GUILD_ID}/commands`, COMMANDS);
         return json({ commands: reg.ok ? 'ok' : reg.data });
+      }
+      if (url.pathname === '/download') { // Direkt-Download der neuesten Setup-Datei
+        if (!(await hit(env0, 'dl:' + ip, 30, 60))) return new Response('Zu viele Anfragen', { status: 429 });
+        return Response.redirect(await downloadTarget(await withCfg(env0)), 302);
       }
       if (url.pathname === '/patchnotes') {
         if (!(await hit(env0, 'pn:' + ip, 6, 60))) return json({ ok: false, error: 'rate' }, 429);

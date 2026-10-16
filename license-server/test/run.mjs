@@ -320,6 +320,10 @@ await T('Giveaway: Start, Teilnahme, automatische Ziehung, Gewinner-Ticket mit N
   await inter({ type: 3, data: { custom_id: 'ticket_support' }, member: mem('U1') });
   assert.ok(S.channels.some(c => /^support-useru1-0\d$/.test(c.name)), 'Support-Name');
 });
+await T('/download: leitet direkt auf die neueste Setup-Datei', async () => {
+  const r = await worker.fetch(new Request('https://w.dev/download', { headers: { 'cf-connecting-ip': 'dlip' } }), env, ctx);
+  assert.equal(r.status, 302); assert.match(r.headers.get('location'), /Setup\.exe$/);
+});
 await T('Patchnotes: Embed im Kanal, nur einmal pro Version', async () => {
   const S = makeDiscord(); try {
   S.channels.push({ id: 'ANN', name: '📢│announcements', type: 0, parent_id: 'CATX', permission_overwrites: [{ id: 'G', type: 0, deny: '2048' }] }); // /setup lief nie: Kanal wird selbst angelegt
