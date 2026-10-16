@@ -86,5 +86,66 @@
     return d >= 2 ? { dir: 'up', d: d } : d <= -2 ? { dir: 'down', d: d } : { dir: 'flat', d: d };
   };
 
+  /* ---------- Training: Übungen je Fehlerart, fertige Pläne, Auto-Plan ---------- */
+  S.DRILLS = {
+    rot: { goal: 'Rechtzeitig in der nächsten Zone sein', tasks: ['Öffne bei jedem Zonenzug sofort die Map und lege dein nächstes Ziel fest', 'Starte die Rotation, wenn die neue Zone erscheint, nicht erst wenn der Sturm näher kommt', 'Spiele 3 Games und peile immer die Innenseite des Kreises an', 'Schau nach jedem Game im Replay, bei welchem Zonenzug du zu spät warst'] },
+    storm: { goal: 'Keinen Schaden mehr im Sturm nehmen', tasks: ['Fülle vor jedem Zonenzug Heilung und Schild auf', 'Merke dir die Sturm-Timer: bei Zonenstart sofort loslaufen', 'Plane den Weg vor dem Loot: erst Ziel, dann Items', 'Spiele 3 Games ohne einen Tick Sturmschaden'] },
+    early: { goal: 'Die erste Minute überleben', tasks: ['Lande 3 Games an einem ruhigeren Ort (siehe Landung & Rotation)', 'Hol dir zuerst Waffe und Heilung, bevor du den ersten Fight nimmst', 'Nimm Fights in der ersten Minute nur, wenn dein Mate in der Nähe ist', 'Prüfe im Replay, wie viele Gegner beim Landen in 150 m waren'] },
+    alone: { goal: 'Nie allein gegen mehrere kämpfen', tasks: ['Bleib in den ersten 5 Minuten unter 40 m zu deinem Mate', 'Sag vor jeder Rotation an, wohin ihr lauft', 'Warte vor dem Fight kurz auf deinen Mate und lass ihn mitschießen', 'Spiele 3 Games, in denen ihr beim ersten Fight beide dabei seid'] },
+    team: { goal: 'Näher an deinem Mate bleiben', tasks: ['Bleib in den ersten 5 Minuten unter 40 m zu deinem Mate', 'Rotiert gemeinsam und sagt den Weg an', 'Benutze Pings für Gegner, Loot und Ziel', 'Prüfe im Replay die Stelle, an der ihr euch getrennt habt'] },
+    spread: { goal: 'Das Team zusammenhalten', tasks: ['Rotiert gemeinsam und sagt den Weg an', 'Bleibt im Midgame unter 70 m Abstand', 'Teilt Heilung und Mats, bevor ihr trennt', 'Spielt 3 Games mit der festen Regel: beide in der gleichen Zone'] },
+    aftermate: { goal: 'Nach einem Verlust nicht sofort in den nächsten Fight', tasks: ['Resette nach jedem Down: heilen, Mats prüfen, Deckung suchen', 'Gib bei Unterzahl Position auf statt zu pushen', 'Sammle den Loot deines Mates ein, bevor du weiterläufst', 'Prüfe im Replay, was direkt nach dem Verlust passierte'] },
+    death: { goal: 'Bessere Entscheidungen vor Fights', tasks: ['Prüfe vor jedem Fight Zone, Heilung und Deckung', 'Nimm nur Fights, in denen du Höhe oder Deckung hast', 'Reviewe nach jedem Tod eine Minute: Was war die Entscheidung?', 'Spiele 3 Games mit der Regel: lieber resetten als pushen'] },
+    edge: { goal: 'Besser in der Zone stehen', tasks: ['Stell dich in den späten Zonen auf die Innenseite des Kreises', 'Bleib nicht am Rand stehen, wenn der Kreis sich schließt', 'Lege vor Zone 6 deine Endposition fest', 'Prüfe im Replay, wie weit du am Zonenrand warst'] },
+    height: { goal: 'Den hohen Layer halten', tasks: ['Nimm vor Fights zuerst Höhe: Rampe oder Gelände', 'Sammle ab Zone 5 genug Mats für Höhe (mind. 300)', 'Halte den hohen Layer, auch wenn ein Gegner pusht', 'Prüfe im Replay, wann die Gegner höher standen'] },
+    lowground: { goal: 'Nie tiefer als die Gegner kämpfen', tasks: ['Nimm vor Fights zuerst Höhe: Rampe oder Gelände', 'Lauf nicht frontal gegen höhere Gegner an', 'Wechsle die Position, statt unten zu bleiben', 'Prüfe im Replay, wo die Gegner höher standen als du'] },
+    outnum: { goal: 'Keine Fights in Unterzahl', tasks: ['Zähle vor dem Fight die Gegner und pinge sie', 'Geh bei Unterzahl raus, statt zu pushen', 'Warte auf deinen Mate, bevor du anfängst', 'Prüfe im Replay, wie viele Gegner in der Nähe waren'] },
+    range: { goal: 'Nicht auf Distanz erwischt werden', tasks: ['Laufe von Deckung zu Deckung, nicht über offenes Gelände', 'Baue beim Kreuzen eine Wand', 'Weiche Snipern aus, statt zurück zu schießen', 'Prüfe im Replay, wo du offen gerannt bist'] },
+    lowhp: { goal: 'Mit vollen Werten in jeden Zonenzug', tasks: ['Fülle vor jedem Zonenzug auf 100 HP und 100 Schild', 'Behalte immer mindestens 2 Heilitems', 'Heile nach jedem Fight, bevor du weiterläufst', 'Zähle im Replay, bei welchen Zonen du zu wenig HP hattest'] },
+    unheal: { goal: 'Heilung nutzen, bevor du stirbst', tasks: ['Heile bei unter 70 HP sofort, bevor du etwas anderes machst', 'Lege Heilung auf feste Hotkeys', 'Heile nach jedem Fight, nicht erst vor dem nächsten', 'Prüfe im Replay, wann du Heilung übrig hattest'] }
+  };
+
+  S.PRESETS = [
+    { id: 'aim', name: 'Aim & Tracking', blurb: 'Treffsicherheit und Crosshair-Kontrolle, 10 Minuten am Tag', tasks: ['Mache vor jeder Session 5 Minuten Aim-Aufwärmen (Flicks und Tracking)', 'Spiele 1 Game nur mit bewusstem Crosshair auf Kopfhöhe', 'Ändere diese Woche deine Sensitivity nicht', 'Reviewe 3 verlorene Fights: Warum hast du nicht getroffen?', 'Spiele 3 Games und schau, wie viele Schüsse du auf Distanz wirklich triffst'] },
+    { id: 'rotation', name: 'Rotation', blurb: 'Früh und sicher durch jede Zone', tasks: ['Öffne bei jedem Zonenzug sofort die Map', 'Spiele 5 Games und peile immer die Innenseite des Kreises an', 'Fülle vor jedem Zonenzug Heilung und Schild auf', 'Reviewe die Rotation in Zone 5 bis 8 im Replay', 'Spiele 3 Games ohne Sturmschaden'] },
+    { id: 'endgame', name: 'Endgame', blurb: 'Bessere Positionen in den letzten Zonen', tasks: ['Sammle vor Zone 5 mindestens 300 Mats', 'Nimm ab Zone 6 früh Höhe', 'Kämpfe im Endgame nur, wenn dein Mate nah ist', 'Spiele 3 Runden mit Fokus auf die Endposition', 'Reviewe jedes Endgame: Wer hatte die Höhe?'] },
+    { id: 'team', name: 'Team-Play', blurb: 'Zusammen spielen statt allein verlieren', tasks: ['Bleib in den ersten 5 Minuten unter 40 m zu deinem Mate', 'Sagt vor jeder Rotation an, wohin ihr lauft', 'Benutze Pings für Gegner, Loot und Ziel', 'Teilt Heilung und Mats gleichmäßig', 'Reviewe, wann ihr euch getrennt habt'] },
+    { id: 'boxfight', name: 'Boxfights & Edits', blurb: 'Nahkampf, Edits und schnelle Entscheidungen', tasks: ['Mache täglich 10 Minuten Edit-Aufwärmen', 'Spiele 5 Boxfights gegen Freunde oder in einer Übungsumgebung', 'Übe Reset-Edits: raus aus der Box, neue Wand, wieder rein', 'Benutze im Fight bewusst eine Wand pro Schuss-Wechsel', 'Reviewe 3 Nahkämpfe: Wer hat zuerst gebaut?'] }
+  ];
+
+  S.weekKey = function (now) { var d = new Date(now || Date.now()); var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); var day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); var y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return t.getUTCFullYear() + '-W' + Math.ceil(((t - y0) / DAY + 1) / 7); };
+
+  /** Auto-Plan aus den häufigsten Fehlern (max. 3). Ohne ausreichend Daten: null. */
+  S.autoPlan = function (games, now) {
+    var G = S.period(games, 30, now); if (G.length < 3) G = S.sorted(games);
+    if (G.length < 3) return null;
+    var W = S.weaknesses(G).filter(function (w) { return S.DRILLS[w.kind] && w.pct >= 20; }).slice(0, 3);
+    if (!W.length) return null;
+    return {
+      type: 'auto', name: 'Dein Wochenplan', started: now || Date.now(), week: S.weekKey(now),
+      items: W.map(function (w) {
+        var D = S.DRILLS[w.kind];
+        return { id: w.kind, title: w.label, goal: D.goal + ': von ' + w.pct + ' % auf unter ' + Math.max(5, Math.round(w.pct * 0.6)) + ' % der Games', kind: w.kind, base: w.pct, target: Math.max(5, Math.round(w.pct * 0.6)), tasks: D.tasks.slice(0, 3).map(function (t) { return { t: t, done: false }; }) };
+      })
+    };
+  };
+  S.presetPlan = function (id, now) {
+    var P = S.PRESETS.filter(function (p) { return p.id === id; })[0]; if (!P) return null;
+    return { type: 'preset', name: P.name, started: now || Date.now(), week: S.weekKey(now), items: [{ id: P.id, title: P.name, goal: P.blurb, tasks: P.tasks.map(function (t) { return { t: t, done: false }; }) }] };
+  };
+  /** Fortschritt: erledigte Aufgaben + Fehlerquote seit Planstart (ab 3 neuen Games) */
+  S.planProgress = function (plan, games) {
+    var total = 0, done = 0;
+    plan.items.forEach(function (it) { it.tasks.forEach(function (t) { total++; if (t.done) done++; }); });
+    var G = S.sorted(games).filter(function (g) { return (g.mtime || 0) >= plan.started; });
+    var items = plan.items.map(function (it) {
+      if (!it.kind) return { id: it.id, now: null };
+      if (G.length < 3) return { id: it.id, now: null, need: 3 - G.length };
+      var w = S.weaknesses(G).filter(function (x) { return x.kind === it.kind; })[0], pct = w ? w.pct : 0;
+      return { id: it.id, now: pct, n: G.length, good: pct < it.base, reached: pct <= it.target };
+    });
+    return { total: total, done: done, pct: total ? Math.round(100 * done / total) : 0, items: items, newGames: G.length };
+  };
+
   if (typeof module !== 'undefined' && module.exports) module.exports = CFT;
 })(typeof window !== 'undefined' ? window : globalThis);

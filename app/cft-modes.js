@@ -47,6 +47,15 @@
     + '#cm .ctg.g{color:#4ade80}#cm .ctg.r{color:#ff5a67}'
     + '#cm .emp{text-align:center;padding:60px 20px;color:var(--dim,#9a9aa6);font-size:18px}#cm .emp b{display:block;font:800 20px Orbitron,sans-serif;color:#fff;margin-bottom:10px}'
     + '#cm svg.chart{width:100%;height:auto;display:block}'
+    + '#cm .tk{display:flex;gap:12px;align-items:flex-start;padding:9px 0;cursor:pointer;font-size:17px;line-height:1.3;border-top:1px solid #ffffff0d}#cm .tk:first-of-type{border-top:0}'
+    + '#cm .tk input{position:absolute;opacity:0}#cm .tk i{flex:none;width:22px;height:22px;border-radius:7px;border:1.5px solid #ffffff44;display:grid;place-items:center;font-style:normal;font-size:14px;color:#fff;transition:.15s;margin-top:1px}'
+    + '#cm .tk:hover i{border-color:var(--acc)}#cm .tk.done i{background:var(--acc);border-color:var(--acc);box-shadow:0 0 10px var(--acc)}#cm .tk.done span{color:var(--mute);text-decoration:line-through}'
+    + '#cm .pi{border:1px solid rgba(var(--rgb),.2);border-radius:12px;padding:14px 16px;background:#0c0c11}#cm .pi h4{font:800 16px Orbitron,sans-serif;color:#fff;letter-spacing:.06em}#cm .pi .gl{color:var(--dim,#9a9aa6);font-size:16px;margin:4px 0 8px}'
+    + '#cm .pb2{height:10px;border-radius:10px;background:#ffffff12;overflow:hidden;margin:8px 0 4px}#cm .pb2 i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));box-shadow:0 0 12px var(--acc)}'
+    + '#cm .mv{font-size:15px;margin:6px 0;color:var(--mute)}#cm .mv b.g{color:#4ade80}#cm .mv b.r{color:#ff5a67}'
+    + '#cm .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}#cm .pbtn{font:800 14px Orbitron,sans-serif;letter-spacing:.12em;padding:12px 18px;border-radius:9px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer;box-shadow:0 0 18px rgba(var(--rgb),.35)}'
+    + '#cm .pbtn.gh{background:transparent;color:var(--acc-light);box-shadow:none;border-color:rgba(var(--rgb),.4)}#cm .pbtn:hover{filter:brightness(1.15)}'
+    + '#cm .gr{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}#cm .gr .pi{display:flex;flex-direction:column;gap:6px}#cm .gr .pi .btns{margin-top:auto;padding-top:8px}'
     + '#cm .leg{display:flex;gap:18px;flex-wrap:wrap;color:var(--mute);font-size:14px;margin-top:6px}#cm .leg i{display:inline-block;width:18px;height:3px;border-radius:3px;vertical-align:middle;margin-right:6px}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -140,6 +149,42 @@
     [].forEach.call(w.querySelectorAll('.cc button'), function (b) { b.onclick = function () { PERIOD = +b.dataset.p; store.set('cft_period', PERIOD); render(); }; });
   }
 
-  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend']], render: function (t, w) { renderTrend(w); } };
+  /* ---------- Fortschritt: Trainingsplan ---------- */
+  function renderTrain(w) {
+    var all = games(), plan = store.get('cft_plan'), h = '';
+    if (plan && plan.items) {
+      var pr = ST.planProgress(plan, all);
+      h += '<div class="pn"><h3>Aktiver Plan · ' + esc(plan.name) + '</h3><p class="s">Gestartet am ' + esc(new Date(plan.started).toLocaleDateString('de-DE')) + ' · ' + pr.newGames + ' neue Game' + (pr.newGames === 1 ? '' : 's') + ' seitdem</p>'
+        + '<div class="pb2"><i style="width:' + pr.pct + '%"></i></div><p class="s">' + pr.done + ' von ' + pr.total + ' Aufgaben erledigt (' + pr.pct + ' %)</p>'
+        + '<div class="gr" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:10px">' + plan.items.map(function (it, ii) {
+          var pi = pr.items[ii], mv = '';
+          if (it.kind) {
+            mv = pi.now == null ? '<p class="mv">Noch ' + (pi.need || 3) + ' neue Game' + ((pi.need || 3) === 1 ? '' : 's') + ' bis zur ersten Auswertung. Start: ' + it.base + ' %</p>'
+              : '<p class="mv">Seit Planstart: <b class="' + (pi.good ? 'g' : 'r') + '">' + pi.now + ' %</b> (vorher ' + it.base + ' %, Ziel unter ' + it.target + ' %) · ' + pi.n + ' Games' + (pi.reached ? ' · <b class="g">Ziel erreicht!</b>' : '') + '</p>';
+          }
+          return '<div class="pi"><h4>' + esc(it.title) + '</h4><p class="gl">' + esc(it.goal) + '</p>' + mv + it.tasks.map(function (t, ti) {
+            return '<label class="tk' + (t.done ? ' done' : '') + '" data-i="' + ii + '" data-t="' + ti + '"><input type="checkbox"' + (t.done ? ' checked' : '') + '><i>' + (t.done ? '✓' : '') + '</i><span>' + esc(t.t) + '</span></label>';
+          }).join('') + '</div>';
+        }).join('') + '</div><div class="btns"><button class="pbtn gh" id="plEnd">Plan beenden</button></div></div>';
+    } else {
+      var auto = ST.autoPlan(all), W = ST.weaknesses(ST.period(all, 30).length >= 3 ? ST.period(all, 30) : ST.sorted(all)).slice(0, 3);
+      h += '<div class="pn"><h3>Auto-Plan aus deinen Replays</h3>' + (auto
+        ? '<p class="s">Aus deinen letzten Games erstelle ich einen Wochenplan gegen deine häufigsten Fehler:</p>' + auto.items.map(function (it) { return '<div class="bar weak"><span>' + esc(it.title) + '</span><div><i style="width:' + it.base + '%"></i></div><b>' + it.base + ' %</b></div>'; }).join('') + '<div class="btns"><button class="pbtn" id="plAuto">Plan starten</button></div>'
+        : '<p class="s">' + (all.length < 3 ? 'Dafür brauche ich mindestens 3 analysierte Games. Du hast ' + all.length + '.' : 'In deinen Games gibt es keinen Fehler, der oft genug vorkommt. Starke Leistung, nimm einen fertigen Plan unten.') + '</p>') + '</div>';
+    }
+    h += '<div class="pn"><h3>Fertige Pläne</h3><p class="s">Feste Pläne für ein Thema. Du kannst jederzeit wechseln.</p><div class="gr">' + ST.PRESETS.map(function (p) {
+      return '<div class="pi"><h4>' + esc(p.name) + '</h4><p class="gl">' + esc(p.blurb) + '</p><p class="mv">' + p.tasks.length + ' Aufgaben</p><div class="btns"><button class="pbtn gh" data-pre="' + p.id + '">Plan starten</button></div></div>';
+    }).join('') + '</div></div>';
+    w.innerHTML = h;
+    var again = function () { renderTrain(w); };
+    var a = w.querySelector('#plAuto'); if (a) a.onclick = function () { var p = ST.autoPlan(games()); if (p) { store.set('cft_plan', p); again(); } };
+    var e = w.querySelector('#plEnd'); if (e) e.onclick = function () { store.set('cft_plan', null); again(); };
+    [].forEach.call(w.querySelectorAll('[data-pre]'), function (b) { b.onclick = function () { var go = function () { store.set('cft_plan', ST.presetPlan(b.dataset.pre)); again(); }; if (store.get('cft_plan') && !window.confirm('Der aktuelle Plan wird ersetzt. Fortfahren?')) return; go(); }; });
+    [].forEach.call(w.querySelectorAll('.tk'), function (l) {
+      l.onclick = function (ev) { ev.preventDefault(); var p = store.get('cft_plan'); if (!p) return; var t = p.items[+l.dataset.i].tasks[+l.dataset.t]; t.done = !t.done; store.set('cft_plan', p); again(); };
+    });
+  }
+
+  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['train', 'Trainingsplan']], render: function (t, w) { if (t === 'train') renderTrain(w); else renderTrend(w); } };
   bind('mtFort', 'fort');
 })();

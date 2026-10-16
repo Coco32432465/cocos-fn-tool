@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.10.1', date: '2026-10-16', tag: 'NEU', text: 'Trainingsplan: Die App erstellt aus deinen häufigsten Fehlern einen Wochenplan mit Übungen zum Abhaken und zeigt, ob sich deine Fehlerquote seit Planstart verbessert. Dazu fünf fertige Pläne: Aim, Rotation, Endgame, Team-Play und Boxfights.' },
   { v: '0.10.0', date: '2026-10-16', tag: 'NEU', text: 'Neuer Modus „Fortschritt & Training“: Verlauf deiner Gesamtnote als Diagramm (7 Tage, 30 Tage, alle), Ø Platz, Elims und Siege im Vergleich zur Vorperiode, Stärken und Schwächen je Spielphase und deine häufigsten Fehler. Rangliste: Siege, Elims und Ø Platz wurden bisher nicht richtig übertragen, das ist behoben.' },
   { v: '0.9.12', date: '2026-10-15', tag: 'NEU', text: 'Community-Rangliste: In den Einstellungen kannst du freiwillig teilnehmen. Deine Ø Note, Runden, Siege und Kills erscheinen dann in der Rangliste im Discord, die Top 10 bekommen eine eigene Rolle. Jederzeit abschaltbar.' },
   { v: '0.9.11', date: '2026-10-15', tag: 'NEU', text: 'Knock-Anzeige im Viewer: großes „KNOCKED“-Banner, solange du am Boden bist, und „WIEDERBELEBT“ danach. Fight-Tipps erkennen jetzt, wenn die Gegner zu dir gekommen sind (kein „pushen“-Tipp mehr). Leben und Schild laden jetzt auch in Solo-Replays (Replays werden einmalig neu eingelesen). Twitch-Link im Dashboard. Patchnotes im Discord sehen besser aus.' },
