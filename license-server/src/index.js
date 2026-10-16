@@ -17,6 +17,7 @@ import { startTrial, rate, openRewardModal, submitReward } from './growth.js';
 import { openTicket, selectPlan, closeTicket, confirmTicket, codeButton, submitCode } from './tickets.js';
 import { ensureSchema } from './schema.js';
 import { remindSweep, RENEW_BUTTON } from './remind.js';
+import { teamApi } from './team.js';
 import { rankAvg, rankSubmit, rankLeave, handleRank, syncRank } from './rank.js';
 import { openForm, submitForm, setBugStatus } from './forms.js';
 import { adminStats, adminUsers, adminKeys, handleTeam } from './admin.js';
@@ -295,6 +296,15 @@ export default {
         let body; try { body = await request.json(); } catch (e) { return json({ ok: false, error: 'json' }, 400, cors); }
         await ensureSchema(env0);
         const res = url.pathname === '/rank/submit' ? await rankSubmit(body, await withCfg(env0)) : await rankLeave(body, await withCfg(env0));
+        for (const [k, v] of Object.entries(cors)) res.headers.set(k, v);
+        return res;
+      }
+      if (url.pathname.startsWith('/team/')) {
+        if (request.method !== 'POST') return json({ ok: false }, 405, cors);
+        if (!(await hit(env0, 'ip:' + ip, 60, 60))) return json({ ok: false, error: 'rate' }, 429, cors);
+        let body; try { body = await request.json(); } catch (e) { return json({ ok: false, error: 'json' }, 400, cors); }
+        await ensureSchema(env0);
+        const res = await teamApi(url.pathname.slice(6), body, await withCfg(env0));
         for (const [k, v] of Object.entries(cors)) res.headers.set(k, v);
         return res;
       }

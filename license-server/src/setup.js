@@ -130,6 +130,7 @@ export async function runSetup(env, renew) {
       ['key-kaufen', 'key-panel', { embeds: [emb(env, { banner: true, title: "Cocos Tool – Lizenz erwerben", desc: 'Eröffne ein Ticket, um eine Lizenz zu bestellen.', fields: [
         { name: '1 Woche', value: price(env, 'week'), inline: true }, { name: '1 Monat', value: price(env, 'month'), inline: true }, { name: 'Umfang', value: 'VOD-Analyse · 1 Gerät pro Key', inline: true },
         { name: '👥 Pakete', value: `**Duo** (2 Keys) ${price(env, 'duo')} · **Squad** (4 Keys) ${price(env, 'squad')}\nFür dich und deine Mates, günstiger als einzeln.` },
+        { name: '🏆 Team-Lizenz', value: `${price(env, 'team')} / Monat · 5 Keys + Coach-Dashboard: du siehst Stats, Schwächen und Verlauf deines ganzen Teams.` },
         { name: '⚙️ Tweak-Paket', value: `${price(env, 'tweaks')} einmalig · FPS-Einstellungen für Fortnite und Windows mit Ein-Klick und Zurück-Knopf. Der PC-Check in der App ist gratis.` },
         { name: '🎁 Creator-Code', value: 'Hast du den Code eines Creators? Gib ihn im Ticket ein: du bekommst **Bonus-Tage** extra, der Creator wird belohnt.' },
         { name: 'Ablauf', value: '1. Ticket eröffnen und Laufzeit wählen\n2. Bezahlen\n3. Nach Bestätigung erhältst du deinen Key\n4. In der App mit Discord verbinden und Key eingeben' }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Key kaufen', custom_id: 'ticket_buy' }, { type: 2, style: 3, label: '1 Tag gratis testen', custom_id: 'trial_start' }] }] }],

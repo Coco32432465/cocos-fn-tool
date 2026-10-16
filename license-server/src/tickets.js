@@ -1,8 +1,9 @@
 // Tickets: Kauf-Ticket (mit Laufzeit-Dropdown) und Hilfe-Ticket, Schliessen mit Transkript.
-import { now, emb, eph, bad, COL, PLANS, PACKS, ADDONS, SHOP, PLAN_ALL, price, priceNum, paypalUrl, fmtDateTime, fmtDate } from './util.js';
+import { now, emb, eph, bad, COL, PLANS, PACKS, TEAMS, ADDONS, SHOP, PLAN_ALL, price, priceNum, paypalUrl, fmtDateTime, fmtDate } from './util.js';
 import { dapi, dapiFile, adminIds, isTeam, tryDM } from './discord.js';
 import { createKeys, extendLicense, bestKey } from './keys.js';
 import { askRating } from './growth.js';
+import { createOrExtendTeam } from './team.js';
 import { attachCode, payOut, rewards, codeRow, openCodeModal } from './codes.js';
 const codeInfo = async (env, c) => { if (!c) return null; const row = await codeRow(env, c); return row ? { code: row.code, buyer: rewards(env, row).buyer } : null; };
 
@@ -11,7 +12,7 @@ const TYPES = { buy: { prefix: 'kauf', label: 'Kauf-Ticket' }, renew: { prefix: 
 
 function components(env, type, plan, code) {
   const rows = [];
-  if (type === 'buy' || type === 'renew') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: 'Laufzeit wählen', options: Object.entries(type === 'renew' ? PLANS : SHOP).map(([id, p]) => ({ label: `${p.label} · ${price(env, id)}`, value: id, description: ADDONS[id] ? 'Einmalkauf · PC-Tweaks in der App' : PACKS[id] ? `${PACKS[id].count} Keys · je ${PLANS[PACKS[id].base].days} Tage Zugang` : `${p.days} Tage Zugang`, default: id === plan })) }] });
+  if (type === 'buy' || type === 'renew') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: 'Laufzeit wählen', options: Object.entries(type === 'renew' ? PLANS : SHOP).map(([id, p]) => ({ label: `${p.label} · ${price(env, id)}`, value: id, description: TEAMS[id] ? '5 Keys + Coach-Dashboard für dein Team' : ADDONS[id] ? 'Einmalkauf · PC-Tweaks in der App' : PACKS[id] ? `${PACKS[id].count} Keys · je ${PLANS[PACKS[id].base].days} Tage Zugang` : `${p.days} Tage Zugang`, default: id === plan })) }] });
   const btns = [];
   const pp = plan ? paypalUrl(env, plan) : '';
   if (pp) btns.push({ type: 2, style: 5, label: 'Mit PayPal bezahlen', url: pp, emoji: { name: '💳' } });
@@ -54,7 +55,7 @@ function ticketEmbed(env, type, uid, plan, uname, code) {
     title: renew ? 'Lizenz verlängern' : 'Lizenzbestellung',
     desc: `Hallo <@${uid}>, ${renew ? 'schön, dass du verlängern möchtest! Wähle unten die Laufzeit – sie wird an deine aktuelle Lizenz angehängt.' : 'wähle unten die gewünschte Laufzeit. Preis und Zahlungshinweis siehst du danach hier.'}`,
     fields: p ? payFields(env, type, plan, uname, code) : [
-      { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` + (renew ? '' : `\n${PACKS.duo.label} · **${price(env, 'duo')}**\n${PACKS.squad.label} · **${price(env, 'squad')}**\n${ADDONS.tweaks.label} · **${price(env, 'tweaks')}**`) },
+      { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` + (renew ? '' : `\n${PACKS.duo.label} · **${price(env, 'duo')}**\n${PACKS.squad.label} · **${price(env, 'squad')}**\n${TEAMS.team.label} · **${price(env, 'team')}**\n${ADDONS.tweaks.label} · **${price(env, 'tweaks')}**`) },
       { name: 'Status', value: 'Laufzeit noch nicht gewählt' }
     ]
   });
@@ -106,7 +107,7 @@ export async function selectPlan(i, env, uid) {
   if (!t || (t.type !== 'buy' && t.type !== 'renew')) return bad(env, 'Kein Kauf-Ticket', 'Die Auswahl gilt nur in Kauf- und Verlängerungs-Tickets.');
   if (t.user_id !== uid && !isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Nur der Ersteller des Tickets kann die Laufzeit wählen.');
   const plan = (i.data.values || [])[0];
-  if (!SHOP[plan] || (t.type === 'renew' && (PACKS[plan] || ADDONS[plan]))) return bad(env, 'Unbekannte Laufzeit', '');
+  if (!SHOP[plan] || (t.type === 'renew' && (PACKS[plan] || TEAMS[plan] || ADDONS[plan]))) return bad(env, 'Unbekannte Laufzeit', '');
   await env.DB.prepare('UPDATE tickets SET plan=? WHERE channel_id=?').bind(plan, i.channel_id).run();
   const ci = await codeInfo(env, t.code);
   return { type: 7, data: { embeds: [ticketEmbed(env, t.type, t.user_id, plan, null, ci)], components: components(env, t.type, plan, ci) } };
@@ -149,8 +150,10 @@ export async function confirmTicket(i, env, uid) {
     kind = 'addon';
     fields = [{ name: 'Freigeschaltet', value: `**${plan.label}**`, inline: true }, { name: 'So geht’s', value: 'In der App auf **Aktualisieren** klicken (oder neu starten), dann im Modus **PC-Check** die Tweaks anwenden.' }];
   } else {
-    const pk = PACKS[t.plan], keys = await createKeys(env, pk ? pk.base : t.plan, pk ? pk.count : 1, uid); kind = 'new'; firstKey = keys[0];
+    const pk = PACKS[t.plan] || TEAMS[t.plan], keys = await createKeys(env, pk ? pk.base : t.plan, pk ? pk.count : 1, uid); kind = 'new'; firstKey = keys[0];
+    const team = TEAMS[t.plan] ? await createOrExtendTeam(env, t.user_id) : null;
     fields = [{ name: pk ? 'Deine Keys' : 'Dein Key', value: '```\n' + keys.join('\n') + '\n```' }, { name: 'Laufzeit', value: pk ? `${pk.count} × ${PLANS[pk.base].label}` : plan.label, inline: true }, { name: 'Einlösen', value: 'In der App: **Mit Discord verbinden**, dann den Key eingeben. Die Laufzeit startet erst beim Einlösen.' }];
+    if (team) fields.push({ name: '👥 Dein Team', value: `Team-Code: **${team.code}**\nGültig bis **${fmtDate(team.expires_at)}**${team.extended ? ' (um 30 Tage verlängert)' : ''}\nVerteile die 5 Keys an deine Spieler. Jeder gibt den Code in der App unter **Fortschritt → Team** ein, dann siehst du als Coach alle im Dashboard.` });
   }
   let codeNote = null;
   if (t.code) { // Bonus-Tage fuer den Kaeufer, Belohnung fuer den Code-Inhaber

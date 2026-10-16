@@ -1,4 +1,5 @@
 // Discord-Login (OAuth2), Lizenz-Endpunkte fuer die App, oeffentliche /api/verify, Rate-Limit.
+import { isCoach } from './team.js';
 import { now, json, enc, b64u, b642u8, rnd, sha256hex, KEY_RE, normKey } from './util.js';
 import { hasRole, dapi } from './discord.js';
 import { redeemKey, getKey, pickKey } from './keys.js';
@@ -114,6 +115,7 @@ async function grant(env, sess, key, device, ip, ver) {
   await env.DB.prepare('UPDATE keys SET last_seen=? WHERE key=?').bind(t, row.key).run().catch(() => {});
   const exp = Math.min(t + TICKET_TTL, row.expires_at);
   const ents = ((await env.DB.prepare('SELECT ent FROM entitlements WHERE user_id=?').bind(sess.discord_id).all().catch(() => null)) || { results: [] }).results.map(r => r.ent);
+  if (await isCoach(env, sess.discord_id)) ents.push('coach');
   if (row.plan === 'lifetime' && !ents.includes('tw')) ents.push('tw'); // Lifetime enthält alle Extras
   const ticket = await signTicket(env, { v: 1, uid: sess.discord_id, name: sess.username, dev, iat: t, exp, keyExp: row.expires_at, ents });
   return json({ ok: true, ticket, exp, keyExp: row.expires_at, user: { id: sess.discord_id, name: sess.username } });
