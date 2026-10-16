@@ -1,7 +1,7 @@
 // Selbst-Migration: neue Tabellen/Spalten werden beim ersten Aufruf automatisch angelegt (kein manueller Schritt noetig).
 import { getCfg, setCfg } from './discord.js';
 
-const SCHEMA_V = '4';
+const SCHEMA_V = '5';
 const STEPS = [
   'ALTER TABLE keys ADD COLUMN reminded INTEGER NOT NULL DEFAULT 0',
   'ALTER TABLE tickets ADD COLUMN paid INTEGER NOT NULL DEFAULT 0',
@@ -17,7 +17,18 @@ const STEPS = [
     id INTEGER PRIMARY KEY AUTOINCREMENT, channel_id TEXT NOT NULL, message_id TEXT NOT NULL, prize TEXT NOT NULL, winners INTEGER NOT NULL DEFAULT 1,
     ends_at INTEGER NOT NULL, host TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'active', winner_ids TEXT NOT NULL DEFAULT '[]', created_at INTEGER NOT NULL)`,
   'CREATE INDEX IF NOT EXISTS giveaways_due ON giveaways(status, ends_at)',
-  `CREATE TABLE IF NOT EXISTS gw_entries (gw_id INTEGER NOT NULL, user_id TEXT NOT NULL, name TEXT, PRIMARY KEY (gw_id, user_id))`
+  `CREATE TABLE IF NOT EXISTS gw_entries (gw_id INTEGER NOT NULL, user_id TEXT NOT NULL, name TEXT, PRIMARY KEY (gw_id, user_id))`,
+  `CREATE TABLE IF NOT EXISTS polls (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, channel_id TEXT NOT NULL, message_id TEXT NOT NULL, question TEXT NOT NULL, options TEXT NOT NULL,
+    ends_at INTEGER NOT NULL, host TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'active', created_at INTEGER NOT NULL)`,
+  'CREATE INDEX IF NOT EXISTS polls_due ON polls(status, ends_at)',
+  `CREATE TABLE IF NOT EXISTS poll_votes (poll_id INTEGER NOT NULL, user_id TEXT NOT NULL, opt INTEGER NOT NULL, PRIMARY KEY (poll_id, user_id))`,
+  `CREATE TABLE IF NOT EXISTS lfg (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, channel_id TEXT NOT NULL, message_id TEXT NOT NULL, host TEXT NOT NULL, mode TEXT NOT NULL, slots INTEGER NOT NULL,
+    note TEXT, members TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'open', created_at INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, text TEXT NOT NULL, due INTEGER NOT NULL, sent INTEGER NOT NULL DEFAULT 0)`,
+  'CREATE INDEX IF NOT EXISTS reminders_due ON reminders(sent, due)'
 ];
 
 let done = false;

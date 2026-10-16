@@ -320,6 +320,46 @@ await T('Giveaway: Start, Teilnahme, automatische Ziehung, Gewinner-Ticket mit N
   await inter({ type: 3, data: { custom_id: 'ticket_support' }, member: mem('U1') });
   assert.ok(S.channels.some(c => /^support-useru1-0\d$/.test(c.name)), 'Support-Name');
 });
+await T('Extras: Umfrage, Duo-Suche, Erinnerung, Tipp', async () => {
+  const slash = (name, options, who = 'U5') => inter({ type: 2, channel_id: 'FUNCH', token: 'tok', data: { name, options }, member: mem(who) });
+  const btn = (id, msgId, who) => inter({ type: 3, token: 'tk', message: { id: msgId }, data: { custom_id: id }, member: mem(who) });
+  // Umfrage
+  assert.match(J(await slash('umfrage', [{ name: 'frage', value: 'Modus?' }, { name: 'optionen', value: 'nur eine' }])), /Zu wenige Optionen/);
+  assert.match(J(await slash('umfrage', [{ name: 'frage', value: 'Modus?' }, { name: 'optionen', value: 'a;b' }, { name: 'dauer', value: 'x' }])), /Dauer ungültig/);
+  assert.match(J(await slash('umfrage', [{ name: 'frage', value: 'Modus?' }, { name: 'optionen', value: 'Duo; Trio; Squad' }, { name: 'dauer', value: '1h' }])), /Umfrage gestartet/);
+  const poll = db.prepare('SELECT * FROM polls ORDER BY id DESC').get(); assert.equal(JSON.parse(poll.options).length, 3);
+  assert.equal(S.msgs.FUNCH[0].components[0].components.length, 3);
+  let r = await btn('poll_1', poll.message_id, 'U6'); assert.equal(r.type, 7); assert.match(J(r), /1 Stimme/);
+  await btn('poll_0', poll.message_id, 'U7'); r = await btn('poll_0', poll.message_id, 'U6'); // U6 wechselt
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM poll_votes WHERE poll_id=? AND opt=0').get(poll.id).n, 2);
+  r = await btn('poll_0', poll.message_id, 'U7'); assert.equal(db.prepare('SELECT COUNT(*) AS n FROM poll_votes WHERE poll_id=?').get(poll.id).n, 1); // Zurueckziehen
+  db.prepare('UPDATE polls SET ends_at=1 WHERE id=?').run(poll.id);
+  assert.match(J(await btn('poll_2', poll.message_id, 'U8')), /Umfrage beendet/);
+  await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush();
+  assert.equal(db.prepare('SELECT status FROM polls WHERE id=?').get(poll.id).status, 'ended');
+  assert.match(JSON.stringify(S.msgs.FUNCH[0].embeds), /Umfrage beendet/); assert.equal(S.msgs.FUNCH[0].components[0].components[0].disabled, true);
+  // Duo-Suche
+  assert.match(J(await slash('lfg', [{ name: 'modus', value: 'duo' }, { name: 'info', value: 'Ranked' }])), /Suche gepostet/);
+  const lfg = db.prepare('SELECT * FROM lfg ORDER BY id DESC').get(); assert.equal(lfg.slots, 2);
+  assert.match(J(await btn('lfg_join', lfg.message_id, 'U5')), /schon dabei/);
+  r = await btn('lfg_join', lfg.message_id, 'U6'); assert.match(J(r), /VOLL/); assert.equal(db.prepare('SELECT status FROM lfg WHERE id=?').get(lfg.id).status, 'full');
+  await new Promise(x => setTimeout(x, 800)); await flush();
+  assert.ok(S.msgs.FUNCH.some(m => /komplett/.test(m.content || '')), 'Voll-Hinweis');
+  assert.match(J(await btn('lfg_join', lfg.message_id, 'U7')), /Schon voll/);
+  await btn('lfg_leave', lfg.message_id, 'U6'); assert.equal(db.prepare('SELECT status FROM lfg WHERE id=?').get(lfg.id).status, 'open');
+  r = await btn('lfg_leave', lfg.message_id, 'U5'); assert.match(J(r), /geschlossen/);
+  // Erinnerung
+  const rm = (sub, options) => inter({ type: 2, channel_id: 'FUNCH', token: 'tok', data: { name: 'erinnerung', options: [{ type: 1, name: sub, options }] }, member: mem('U5') });
+  assert.match(J(await rm('setzen', [{ name: 'in', value: 'abc' }, { name: 'text', value: 'x' }])), /Zeit ungültig/);
+  assert.match(J(await rm('setzen', [{ name: 'in', value: '5m' }, { name: 'text', value: 'Scrim spielen' }])), /Erinnerung gesetzt/);
+  assert.match(J(await rm('liste')), /Scrim spielen/);
+  const dm0 = S.dms.length; await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush(); assert.equal(S.dms.length, dm0); // noch nicht faellig
+  db.prepare('UPDATE reminders SET due=1').run(); await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush();
+  assert.ok(S.dms.slice(dm0).some(d => d.to === 'U5' && /Scrim spielen/.test(JSON.stringify(d.body))), 'Erinnerungs-DM');
+  await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush(); assert.equal(S.dms.length, dm0 + 1); // nur einmal
+  // Tipp
+  assert.match(J(await slash('tipp')), /Tipp/);
+});
 await T('/download: leitet direkt auf die neueste Setup-Datei', async () => {
   const r = await worker.fetch(new Request('https://w.dev/download', { headers: { 'cf-connecting-ip': 'dlip' } }), env, ctx);
   assert.equal(r.status, 302); assert.match(r.headers.get('location'), /Setup\.exe$/);
