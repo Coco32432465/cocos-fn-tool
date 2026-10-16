@@ -1,7 +1,7 @@
 // Selbst-Migration: neue Tabellen/Spalten werden beim ersten Aufruf automatisch angelegt (kein manueller Schritt noetig).
 import { getCfg, setCfg } from './discord.js';
 
-const SCHEMA_V = '8';
+const SCHEMA_V = '9';
 const STEPS = [
   'ALTER TABLE tickets ADD COLUMN code TEXT',
   `CREATE TABLE IF NOT EXISTS codes (code TEXT PRIMARY KEY, owner TEXT NOT NULL, created_at INTEGER NOT NULL, uses INTEGER NOT NULL DEFAULT 0, earned_days REAL NOT NULL DEFAULT 0)`,
@@ -35,6 +35,9 @@ const STEPS = [
   `CREATE TABLE IF NOT EXISTS reminders (
     id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, text TEXT NOT NULL, due INTEGER NOT NULL, sent INTEGER NOT NULL DEFAULT 0)`,
   'CREATE INDEX IF NOT EXISTS reminders_due ON reminders(sent, due)',
+  `CREATE TABLE IF NOT EXISTS trials (user_id TEXT PRIMARY KEY, key TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS ratings (channel_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, stars INTEGER NOT NULL, created_at INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS reward_log (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, days REAL NOT NULL, reason TEXT, by_id TEXT, created_at INTEGER NOT NULL)`,
   'ALTER TABLE codes ADD COLUMN buyer_days REAL',
   'ALTER TABLE codes ADD COLUMN owner_week REAL',
   'ALTER TABLE codes ADD COLUMN owner_month REAL'

@@ -3,6 +3,7 @@
 import { now, emb, eph, bad, COL, fmtDate } from './util.js';
 import { dapi, tryDM, isCodeManager } from './discord.js';
 import { addRole } from './discord.js';
+import { newKey } from './util.js';
 
 const num = (v, d) => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : d; };
 // Standardwerte (Variablen) oder die Werte, die beim Code eingestellt wurden
@@ -38,6 +39,23 @@ export async function attachCode(env, ticket, uid, raw) {
 }
 
 // Beim Bestaetigen der Zahlung: Bonus fuer den Kaeufer ist schon eingerechnet (siehe tickets.js), hier die Belohnung fuer den Inhaber
+// Bonus-Tage gutschreiben: laufende Lizenz verlaengern oder (ohne Lizenz) einen neuen Key erzeugen, dazu eine DM
+export async function grantDays(env, uid, d, title, text) {
+  const t = now(), act = await env.DB.prepare("SELECT * FROM keys WHERE discord_id=? AND status='active' ORDER BY expires_at DESC LIMIT 1").bind(uid).first();
+  let key = null, exp = null;
+  if (act) {
+    exp = Math.max(t, act.expires_at) + Math.round(d * 86400);
+    await env.DB.prepare('UPDATE keys SET expires_at=?, role_removed=0, reminded=0 WHERE key=?').bind(exp, act.key).run();
+    await addRole(env, uid);
+  } else {
+    key = newKey();
+    await env.DB.prepare("INSERT INTO keys (key,plan,days,status,created_at,created_by) VALUES (?,?,?,'unused',?,?)").bind(key, 'week', d, t, 'bonus').run();
+  }
+  await tryDM(env, uid, { embeds: [emb(env, { title, color: 0xf1c40f, desc: text,
+    fields: key ? [{ name: 'Dein Key', value: '```\n' + key + '\n```' }, { name: 'Einlösen', value: 'In der App oder mit `/key einlösen`.' }] : [{ name: 'Neues Ablaufdatum', value: `**${fmtDate(exp)}**` }] })] });
+  return { key, exp };
+}
+
 export async function payOut(env, ticket, buyer) {
   const code = ticket.code; if (!code) return null;
   const row = await env.DB.prepare('SELECT * FROM codes WHERE code=?').bind(code).first();
@@ -47,18 +65,7 @@ export async function payOut(env, ticket, buyer) {
   const r = rewards(env, row), d = r.owner[ticket.plan] || 0;
   await env.DB.prepare('UPDATE codes SET uses=uses+1, earned_days=earned_days+? WHERE code=?').bind(d, code).run();
   if (!d) return { code, owner: row.owner, days: 0, buyer: r.buyer };
-  const t = now(), act = await env.DB.prepare("SELECT * FROM keys WHERE discord_id=? AND status='active' ORDER BY expires_at DESC LIMIT 1").bind(row.owner).first();
-  let key = null, exp = null;
-  if (act) {
-    exp = Math.max(t, act.expires_at) + Math.round(d * 86400);
-    await env.DB.prepare('UPDATE keys SET expires_at=?, role_removed=0, reminded=0 WHERE key=?').bind(exp, act.key).run();
-    await addRole(env, row.owner);
-  } else {
-    const { newKey } = await import('./util.js'); key = newKey();
-    await env.DB.prepare("INSERT INTO keys (key,plan,days,status,created_at,created_by) VALUES (?,?,?,'unused',?,?)").bind(key, 'week', d, t, 'code').run();
-  }
-  await tryDM(env, row.owner, { embeds: [emb(env, { title: '🎁 Dein Code wurde genutzt', color: 0xf1c40f, desc: `Jemand hat **${code}** bei einem Kauf eingelöst. Danke fürs Teilen! Belohnung: **+${days(d)}**.`,
-    fields: key ? [{ name: 'Dein Key', value: '```\n' + key + '\n```' }, { name: 'Einlösen', value: 'In der App oder mit `/key einlösen`.' }] : [{ name: 'Neues Ablaufdatum', value: `**${fmtDate(exp)}**` }] })] });
+  await grantDays(env, row.owner, d, '🎁 Dein Code wurde genutzt', `Jemand hat **${code}** bei einem Kauf eingelöst. Danke fürs Teilen! Belohnung: **+${days(d)}**.`);
   return { code, owner: row.owner, days: d, buyer: r.buyer };
 }
 
