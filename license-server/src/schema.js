@@ -1,7 +1,7 @@
 // Selbst-Migration: neue Tabellen/Spalten werden beim ersten Aufruf automatisch angelegt (kein manueller Schritt noetig).
 import { getCfg, setCfg } from './discord.js';
 
-const SCHEMA_V = '11';
+const SCHEMA_V = '12';
 const STEPS = [
   'ALTER TABLE tickets ADD COLUMN code TEXT',
   `CREATE TABLE IF NOT EXISTS codes (code TEXT PRIMARY KEY, owner TEXT NOT NULL, created_at INTEGER NOT NULL, uses INTEGER NOT NULL DEFAULT 0, earned_days REAL NOT NULL DEFAULT 0)`,
@@ -41,6 +41,9 @@ const STEPS = [
   `CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, descr TEXT, starts_at INTEGER NOT NULL, channel_id TEXT, message_id TEXT, created_by TEXT, created_at INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'open')`,
   `CREATE TABLE IF NOT EXISTS event_rsvp (event_id INTEGER NOT NULL, user_id TEXT NOT NULL, yes INTEGER NOT NULL DEFAULT 1, reminded INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (event_id, user_id))`,
   `CREATE TABLE IF NOT EXISTS entitlements (user_id TEXT NOT NULL, ent TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY (user_id, ent))`,
+  `CREATE TABLE IF NOT EXISTS teams (id INTEGER PRIMARY KEY AUTOINCREMENT, owner_id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, code TEXT NOT NULL UNIQUE, seats INTEGER NOT NULL DEFAULT 5, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS team_members (user_id TEXT PRIMARY KEY, team_id INTEGER NOT NULL, name TEXT, stats TEXT, updated_at INTEGER, joined_at INTEGER NOT NULL)`,
+  'CREATE INDEX IF NOT EXISTS team_members_team ON team_members(team_id)',
   'ALTER TABLE codes ADD COLUMN buyer_days REAL',
   'ALTER TABLE codes ADD COLUMN owner_week REAL',
   'ALTER TABLE codes ADD COLUMN owner_month REAL'

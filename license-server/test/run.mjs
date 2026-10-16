@@ -608,5 +608,55 @@ await T('Tweak-Paket: Einmalkauf schaltet Freigabe im Ticket frei, nicht fuer Ve
   const rc = S.channels.find(c => /^verlaengern-useru63-\d+$/.test(c.name));
   assert.match(J(await inter({ type: 3, channel_id: rc.id, data: { custom_id: 'ticket_plan', values: ['tweaks'] }, member: mem('U63') })), /Unbekannte Laufzeit/);
 });
+await T('Team-Lizenz: Kauf, Beitritt per Code, Coach-Ansicht, Limits, Rechte', async () => {
+  const { sha256hex } = await import('../src/util.js');
+  const sess = async (id, name) => { const tok = 'tok-team-' + id; if (db.prepare('SELECT 1 FROM sessions WHERE discord_id=?').get(id)) return tok; db.prepare('INSERT INTO sessions (token_hash,discord_id,username,created_at) VALUES (?,?,?,?)').run(await sha256hex(tok), id, name, 1); return tok; };
+  const tc = await sess('UC1', 'Chef'); const call = async (a, b) => (await post('/team/' + a, b)).body;
+  // Kauf im Ticket
+  await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('UC1') });
+  const ch = S.channels.find(c => c.name.startsWith('kauf-userucc1-') || c.name.startsWith('kauf-useruc1-')); assert.ok(ch);
+  await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['team'] }, member: mem('UC1') });
+  const conf = J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') }));
+  assert.match(conf, /Team-Code: \*\*T-[A-Z0-9]{6}\*\*/);
+  const team = db.prepare("SELECT * FROM teams WHERE owner_id='UC1'").get(); assert.ok(team); assert.equal(team.seats, 5);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM keys WHERE created_by='ADMIN' AND status='unused' AND plan='month'").get().n >= 5, true);
+  // Coach sieht sich, fremde nicht
+  let me = await call('me', { session: tc }); assert.equal(me.role, 'coach'); assert.equal(me.team.code, team.code); assert.equal(me.members.length, 1);
+  const tp = await sess('UP1', 'Spieler1'), tq = await sess('UP2', 'Spieler2');
+  assert.equal((await post('/team/me', { session: 'nix' })).status, 401);
+  assert.equal((await call('join', { session: tp, code: 'T-XXXXXX' })).error, 'code');
+  assert.equal((await call('join', { session: tp, code: team.code.toLowerCase() })).role, 'member');
+  assert.equal((await call('join', { session: tp, code: team.code })).error, 'already');
+  assert.equal((await call('join', { session: tq, code: team.code })).role, 'member');
+  // Stats teilen, Coach sieht sie, Mitglied sieht keine anderen und keinen Code
+  assert.ok((await call('sync', { session: tp, stats: { games: 12, avgScore: 61.4, wins: 2, kills: 30, avgPlace: 9.5, bestPlace: 1, weak: [{ kind: 'rot', pct: 40 }, { kind: '<b>x', pct: 999 }], trend: [50, 55, 60, 'x', 70] } })).ok);
+  assert.equal((await call('sync', { session: tp, stats: { games: 'x' } })).error, 'stats');
+  me = await call('me', { session: tc }); const p1 = me.members.find(m => m.id === 'UP1');
+  assert.equal(p1.stats.avgScore, 61.4); assert.deepEqual(p1.stats.trend, [50, 55, 60, 70]); assert.equal(p1.stats.weak[1].pct, 100); assert.equal(p1.stats.weak[1].kind, 'bx');
+  const mm = await call('me', { session: tp }); assert.equal(mm.role, 'member'); assert.ok(!mm.members); assert.ok(!mm.team.code); assert.equal(mm.team.coach, 'Chef');
+  // Rechte: Mitglied darf nicht entfernen/umbenennen, Coach schon
+  assert.equal((await call('kick', { session: tp, id: 'UP2' })).error, 'coach'); assert.equal((await call('rename', { session: tp, name: 'x' })).error, 'coach');
+  assert.equal((await call('rename', { session: tc, name: 'Cocos <@everyone> Squad' })).team.name, 'Cocos everyone Squad');
+  // Platz-Limit 5
+  for (const n of [3, 4]) assert.equal((await call('join', { session: await sess('UP' + n, 'S' + n), code: team.code })).role, 'member');
+  assert.equal((await call('join', { session: await sess('UP6', 'S6'), code: team.code })).error, 'full');
+  assert.equal((await call('kick', { session: tc, id: 'UP4' })).members.length, 4);
+  assert.equal((await call('join', { session: await sess('UP6', 'S6'), code: team.code })).role, 'member');
+  assert.equal((await call('kick', { session: tc, id: 'UC1' })).error, 'self');
+  assert.equal((await call('leave', { session: tc })).error, 'owner'); assert.equal((await call('leave', { session: tq })).role, null);
+  // Coach-Freigabe im Lizenz-Ticket
+  db.prepare("INSERT INTO keys (key,plan,days,status,discord_id,created_at,redeemed_at,expires_at,device) VALUES ('COAC-HKEY-0000-0001','month',30,'active','UC1',1,1,?,?)").run(Math.floor(Date.now() / 1000) + 86400, 'device-COACH001');
+  S.members.UC1 = { ...(S.members.UC1 || { user: { id: 'UC1' } }), roles: [env.CUSTOMER_ROLE_ID || S.roles.find(r => r.name === 'Customer').id] };
+  const rf = await post('/license/refresh', { session: tc, device: 'device-COACH001' }); assert.ok(rf.body.ok, JSON.stringify(rf.body)); assert.deepEqual(JSON.parse(Buffer.from(rf.body.ticket.split('.')[0], 'base64url').toString()).ents, ['coach']);
+  // Verlaengern: +30 Tage, gleicher Code; abgelaufen: Coach-Ansicht leer, Beitritt gesperrt
+  const e0 = team.expires_at; db.prepare("UPDATE teams SET expires_at=1 WHERE owner_id='UC1'").run();
+  me = await call('me', { session: tc }); assert.equal(me.team.active, false); assert.ok(!me.members);
+  assert.equal((await call('join', { session: await sess('UP7', 'S7'), code: team.code })).error, 'expired');
+  assert.equal((await call('kick', { session: tc, id: 'UP1' })).error, 'coach');
+  db.prepare("UPDATE teams SET expires_at=? WHERE owner_id='UC1'").run(e0);
+  // Datenschutz: Loeschen entfernt geteilte Stats
+  await inter({ type: 3, data: { custom_id: 'privacy_do' }, member: mem('UP1') });
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM team_members WHERE user_id='UP1'").get().n, 0);
+});
 console.log(`\n${ok} Tests bestanden`); S.restore();
 

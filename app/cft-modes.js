@@ -248,7 +248,98 @@
     window.fn.rankAvg().then(function (r) { REF = r; REFT = Date.now(); if (cur === 'fort' && tab === 'cmp') draw(r); }, function () { draw(null); });
   }
 
-  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan']], render: function (t, w) { if (t === 'train') renderTrain(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else renderTrend(w); } };
+
+  /* ---------- Team (Coach-Dashboard) ---------- */
+  var TM = { d: null, msg: '', err: false, busy: false };
+  var hasTeam = function () { return window.fn && window.fn.team; };
+  var teamTimer = 0;
+  window.cftTeamSync = function () { // nach neuen Analysen: nur wenn der Spieler in einem Team ist
+    clearTimeout(teamTimer);
+    teamTimer = setTimeout(function () { var m = store.get('cft_team'); var P = ST.teamPayload && ST.teamPayload(CFT.games); if (m && m.in && P && hasTeam()) window.fn.team('sync', { stats: P }); }, 5000);
+  };
+  function spark(t) {
+    if (!t || t.length < 2) return '';
+    var W = 96, H = 26, mn = Math.min.apply(null, t), mx = Math.max.apply(null, t), r = (mx - mn) || 1;
+    var pts = t.map(function (v, i) { return (i * W / (t.length - 1)).toFixed(1) + ',' + (H - 3 - (v - mn) / r * (H - 6)).toFixed(1); }).join(' ');
+    return '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '"><polyline points="' + pts + '" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  }
+  function teamStyle() {
+    if (document.getElementById('tmcss')) return;
+    var st = document.createElement('style'); st.id = 'tmcss';
+    st.textContent = '#cm .tmt{width:100%;border-collapse:collapse}#cm .tmt th{font:700 13px Rajdhani,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);text-align:left;padding:8px 10px;border-bottom:1px solid #ffffff1c}'
+      + '#cm .tmt td{padding:10px;border-bottom:1px solid #ffffff10;font-size:17px;color:var(--txt);vertical-align:middle}#cm .tmt td b{color:#fff}#cm .tmt .n{text-align:right;font-variant-numeric:tabular-nums}'
+      + '#cm .tmt button{font:700 13px Rajdhani,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);background:transparent;border:1px solid #ffffff22;border-radius:8px;padding:5px 10px;cursor:pointer}#cm .tmt button:hover{color:#ff5a6a;border-color:#ff5a6a}'
+      + '#cm .tmi{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}#cm .tmi div{background:rgba(var(--rgb),.08);border:1px solid rgba(var(--rgb),.2);border-radius:12px;padding:12px 14px}'
+      + '#cm .tmi span{display:block;color:var(--mute);font:700 12px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase}#cm .tmi b{display:block;color:#fff;font-size:19px;margin-top:3px}'
+      + '#cm .tmc{font:800 22px Orbitron,sans-serif;letter-spacing:.14em;color:var(--acc-light);user-select:all}'
+      + '#cm .tmin{font:600 18px Rajdhani,sans-serif;color:#fff;background:#0c0c11;border:1px solid #ffffff2a;border-radius:10px;padding:10px 14px;letter-spacing:.1em;text-transform:uppercase;width:220px}';
+    document.head.appendChild(st);
+  }
+  function tmCall(w, a, b, then) {
+    TM.busy = true; TM.msg = ''; TM.err = false;
+    window.fn.team(a, b).then(function (r) {
+      TM.busy = false;
+      if (r && r.ok) { if (r.role !== undefined) TM.d = r; if (then) then(r); }
+      else { TM.msg = (r && (r.message || r.error)) || 'Das hat nicht geklappt.'; TM.err = true; }
+      renderTeam(w, true);
+    }).catch(function () { TM.busy = false; TM.msg = 'Nicht erreichbar.'; TM.err = true; renderTeam(w, true); });
+  }
+  function renderTeam(w, keep) {
+    teamStyle();
+    if (!hasTeam()) { w.innerHTML = '<div class="emp"><b>Nur in der Desktop-App</b>Team-Funktionen brauchen die installierte App und eine Discord-Verbindung.</div>'; return; }
+    if (!keep || !TM.d) {
+      if (!keep) { w.innerHTML = '<div class="emp"><b>Lade Team …</b></div>'; }
+      return window.fn.team('me').then(function (r) {
+        if (!r || !r.ok) { w.innerHTML = '<div class="emp"><b>Team nicht verfügbar</b>' + esc((r && (r.message || r.error)) || 'Bitte zuerst im Menü mit Discord verbinden.') + '</div>'; return; }
+        TM.d = r; store.set('cft_team', { in: !!r.role });
+        var P = ST.teamPayload && ST.teamPayload(CFT.games);
+        if (r.role && P) window.fn.team('sync', { stats: P });
+        renderTeam(w, true);
+      });
+    }
+    var d = TM.d, h = '', dis = TM.busy ? ' disabled' : '';
+    if (TM.msg) h += '<div class="pcbox' + (TM.err ? '' : '') + '"><p style="color:' + (TM.err ? '#ff5a6a' : '#fff') + '">' + esc(TM.msg) + '</p></div>';
+    if (!d.role) {
+      h += '<div class="pcbox"><h3>Team beitreten</h3><p>Gib den Team-Code von deinem Coach ein. Dein Coach sieht dann deine <b>Gesamtwerte</b> (Ø Note, Runden, Siege, Elims, häufigste Fehler, Notenverlauf). <b>Keine Replays, keine Einzelheiten.</b> Du kannst das Team jederzeit verlassen, dann sind deine Werte für den Coach weg.</p>'
+        + '<input class="tmin" id="tmcode" maxlength="12" placeholder="T-XXXXXX" autocomplete="off"> <button class="pcbtn" id="tmjoin"' + dis + '>Beitreten</button></div>'
+        + '<div class="pcbox"><h3>Du bist Coach?</h3><p>Mit der <b>Team-Lizenz</b> (5 Keys und Coach-Dashboard) siehst du Stats, Schwächen und Verlauf deines ganzen Teams. Kaufen: im Discord ein Kauf-Ticket öffnen und „Team-Lizenz“ wählen.</p></div>';
+    } else if (d.role === 'member') {
+      h += '<div class="pcbox"><h3>' + esc(d.team.name) + '</h3><p>Coach: <b>' + esc(d.team.coach || 'Coach') + '</b>. Dein Coach sieht deine Gesamtwerte und wird bei neuen Analysen automatisch aktualisiert.' + (d.team.active ? '' : ' <b style="color:#ff5a6a">Die Team-Lizenz ist abgelaufen.</b>') + '</p>'
+        + '<button class="pcbtn" id="tmsync"' + dis + '>Jetzt aktualisieren</button><button class="pcbtn g" id="tmleave"' + dis + '>Team verlassen</button></div>';
+    } else {
+      var ms = d.members || [], I = ST.teamInsight && ST.teamInsight(ms);
+      h += '<div class="pcbox"><h3>' + esc(d.team.name) + '</h3><p>Team-Code zum Weitergeben: <span class="tmc">' + esc(d.team.code) + '</span><br>' + ms.length + ' von ' + d.team.seats + ' Plätzen belegt · gültig bis <b>' + new Date(d.team.expires_at * 1000).toLocaleDateString('de-DE') + '</b>'
+        + (d.team.active ? '' : ' · <b style="color:#ff5a6a">abgelaufen. Verlängere im Discord.</b>') + '</p>'
+        + '<input class="tmin" id="tmname" maxlength="24" value="' + esc(d.team.name) + '" style="text-transform:none"> <button class="pcbtn g" id="tmren"' + dis + '>Umbenennen</button></div>';
+      if (d.team.active) {
+        if (I) {
+          h += '<div class="pcbox"><h3>Team-Überblick</h3><div class="tmi"><div><span>Team-Ø Note</span><b>' + fmt1(I.avg) + '</b></div>'
+            + '<div><span>Stärkster</span><b>' + esc(I.best.name) + ' · ' + fmt1(I.best.stats.avgScore) + '</b></div>'
+            + (I.worst ? '<div><span>Braucht Hilfe</span><b>' + esc(I.worst.name) + ' · ' + fmt1(I.worst.stats.avgScore) + '</b></div>' : '')
+            + (I.rising && I.rising.d > 0 ? '<div><span>Steigt am stärksten</span><b>' + esc(I.rising.m.name) + ' · +' + fmt1(I.rising.d) + '</b></div>' : '')
+            + (I.shared ? '<div><span>Gemeinsame Schwäche</span><b>' + esc(I.shared.label) + ' (' + I.shared.count + ' von ' + I.shared.total + ')</b></div>' : '') + '</div></div>';
+        }
+        h += '<div class="pcbox"><h3>Spieler</h3><table class="tmt"><tr><th>Name</th><th class="n">Runden</th><th class="n">Ø Note</th><th class="n">Ø Platz</th><th class="n">Siege</th><th>Häufigster Fehler</th><th>Verlauf</th><th></th></tr>'
+          + ms.map(function (m) {
+            var st = m.stats, w0 = st && st.weak && st.weak[0];
+            return '<tr><td><b>' + esc(m.name) + '</b>' + (m.coach ? ' <span style="color:var(--mute)">(Coach)</span>' : '') + '</td>'
+              + (st ? '<td class="n">' + st.games + '</td><td class="n"><b>' + fmt1(st.avgScore) + '</b></td><td class="n">' + (st.avgPlace ? '#' + fmt1(st.avgPlace) : '–') + '</td><td class="n">' + st.wins + '</td><td>' + (w0 && ST.LABEL[w0.kind] ? esc(ST.LABEL[w0.kind]) + ' · ' + w0.pct + ' %' : '–') + '</td><td>' + spark(st.trend) + '</td>'
+                : '<td colspan="6" style="color:var(--mute)">Noch nichts geteilt (braucht analysierte Replays)</td>')
+              + '<td>' + (m.coach ? '' : '<button data-k="' + esc(m.id) + '"' + dis + '>Entfernen</button>') + '</td></tr>';
+          }).join('') + '</table></div>';
+      }
+    }
+    h += '<div class="cc"><button id="tmref"' + dis + '>Aktualisieren</button></div>';
+    w.innerHTML = h;
+    var $q = function (id) { return w.querySelector('#' + id); };
+    if ($q('tmjoin')) $q('tmjoin').onclick = function () { var c = $q('tmcode').value; tmCall(w, 'join', { code: c }, function (r) { store.set('cft_team', { in: true }); var P = ST.teamPayload && ST.teamPayload(CFT.games); if (P) window.fn.team('sync', { stats: P }); TM.msg = 'Du bist im Team.'; TM.err = false; }); };
+    if ($q('tmleave')) $q('tmleave').onclick = function () { tmCall(w, 'leave', {}, function () { store.set('cft_team', { in: false }); TM.d = { ok: true, role: null }; TM.msg = 'Du hast das Team verlassen.'; }); };
+    if ($q('tmsync')) $q('tmsync').onclick = function () { var P = ST.teamPayload && ST.teamPayload(CFT.games); if (!P) { TM.msg = 'Noch keine analysierten Runden zum Teilen.'; TM.err = true; return renderTeam(w, true); } tmCall(w, 'sync', { stats: P }, function () { TM.msg = 'Aktualisiert.'; }); };
+    if ($q('tmren')) $q('tmren').onclick = function () { var n = $q('tmname').value.trim(); if (n) tmCall(w, 'rename', { name: n }); };
+    if ($q('tmref')) $q('tmref').onclick = function () { TM.d = null; TM.msg = ''; renderTeam(w); };
+    [].forEach.call(w.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { tmCall(w, 'kick', { id: b.dataset.k }); }; });
+  }
+  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan'], ['team', 'Team']], render: function (t, w) { if (t === 'team') renderTeam(w); else if (t === 'train') renderTrain(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else renderTrend(w); } };
   bind('mtFort', 'fort');
   /* ---------- Landung & Rotation ---------- */
   function renderDrops(w) {

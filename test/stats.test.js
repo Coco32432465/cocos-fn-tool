@@ -66,4 +66,19 @@ assert.ok(ro.tips.length >= 1); assert.strictEqual(S.rotation([]).n, 0); assert.
   assert.deepStrictEqual(S.compare({ n: 0 }, {}), []);
 })();
 
+(function () {
+  var S = CFT.stats;
+  var mk = function (tot, pl, k, kinds, real) { return { tot: tot, real: real === undefined ? true : real, mtime: Date.now() + tot, m: { pl: pl, k: k }, mis: (kinds || []).map(function (x) { return { kind: x, sev: 500 }; }) }; };
+  assert.strictEqual(S.teamPayload([]), null); assert.strictEqual(S.teamPayload([mk(50, 5, 1, [], false)]), null, 'Demo/unechte Runden nie teilen');
+  var P = S.teamPayload([mk(40, 10, 2, ['rot']), mk(60, 1, 5, ['rot', 'storm']), mk(80, 3, 4, [])]);
+  assert.strictEqual(P.games, 3); assert.strictEqual(P.avgScore, 60); assert.strictEqual(P.wins, 1); assert.strictEqual(P.kills, 11); assert.strictEqual(P.bestPlace, 1);
+  assert.strictEqual(P.weak[0].kind, 'rot'); assert.strictEqual(P.weak[0].pct, 67); assert.deepStrictEqual(P.trend, [40, 60, 80]);
+  var big = []; for (var i = 0; i < 20; i++) big.push(mk(i, 5, 0, [])); assert.strictEqual(S.teamPayload(big).trend.length, 12);
+  assert.deepStrictEqual(Object.keys(P).sort(), ['avgPlace', 'avgScore', 'bestPlace', 'games', 'kills', 'trend', 'weak', 'wins']);
+  var T = S.teamInsight([{ name: 'A', stats: { games: 5, avgScore: 70, weak: [{ kind: 'rot', pct: 50 }], trend: [50, 60, 70, 80] } }, { name: 'B', stats: { games: 8, avgScore: 50, weak: [{ kind: 'rot', pct: 40 }, { kind: 'storm', pct: 30 }], trend: [60, 55, 50, 45] } }, { name: 'C', stats: null }, { name: 'D', stats: { games: 0 } }]);
+  assert.strictEqual(T.n, 2); assert.strictEqual(T.avg, 60); assert.strictEqual(T.best.name, 'A'); assert.strictEqual(T.worst.name, 'B');
+  assert.strictEqual(T.shared.kind, 'rot'); assert.strictEqual(T.shared.count, 2); assert.strictEqual(T.rising.m.name, 'A'); assert.ok(T.rising.d > 0);
+  assert.strictEqual(S.teamInsight([]), null); assert.strictEqual(S.teamInsight([{ name: 'A', stats: { games: 3, avgScore: 50, weak: [{ kind: 'rot', pct: 5 }] } }]).shared, null);
+})();
+
 console.log('drops ok');

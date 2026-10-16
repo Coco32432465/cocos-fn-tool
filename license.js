@@ -150,6 +150,25 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
   // Freischaltung (z. B. 'tw' = Tweak-Paket) kommt nur aus dem signierten Ticket, nie aus der Oberfläche
   async function hasEnt(e) { const s = load(); const p = s.ticket ? checkTicket(s.ticket, await dev()) : null; return !!(p && Array.isArray(p.ents) && p.ents.includes(e)); }
 
+  // Team-Lizenz: Beitritt per Code, Stats teilen (freiwillig), Coach-Ansicht. Rechte prueft der Server.
+  const TEAM_ACTIONS = ['me', 'join', 'leave', 'sync', 'kick', 'rename'];
+  async function team(action, body) {
+    const s = load();
+    if (!enabled() || !s.session) return { ok: false, error: 'Bitte zuerst mit Discord verbinden.' };
+    if (!TEAM_ACTIONS.includes(action)) return { ok: false, error: 'Unbekannte Aktion.' };
+    const b = { session: s.session };
+    if (action === 'join') b.code = String((body && body.code) || '').slice(0, 20);
+    if (action === 'kick') b.id = String((body && body.id) || '').slice(0, 30);
+    if (action === 'rename') b.name = String((body && body.name) || '').slice(0, 40);
+    if (action === 'sync') b.stats = body && body.stats;
+    try {
+      const j = await post('/team/' + action, b);
+      if (j && j.error === 'session') { return { ok: false, error: 'Sitzung abgelaufen. Bitte neu mit Discord verbinden.' }; }
+      if (j && j.ok === false && !j.message) j.message = j.error === 'rate' ? 'Zu viele Anfragen, kurz warten.' : 'Das hat nicht geklappt.';
+      return j || { ok: false, error: 'Keine Antwort.' };
+    } catch (e) { return { ok: false, error: 'Lizenz-Server nicht erreichbar.' }; }
+  }
+
   function logout() { try { fs.unlinkSync(file); } catch (e) { /* weg */ } return state(); }
 
   // Lebenszeichen alle 5 Min (nur mit Discord-Sitzung): der Server zeigt damit, wie viele die App gerade nutzen
@@ -162,7 +181,7 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
   function start() { refresh(); ping(); timer = setInterval(refresh, REFRESH_EVERY); pingTimer = setInterval(ping, 5 * 60 * 1000); }
   function stop() { clearInterval(timer); clearInterval(pingTimer); }
 
-  return { hasEnt, rankSet, rankSync, rankAvg, state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
+  return { team, hasEnt, rankSet, rankSync, rankAvg, state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
 }
 
 function register(ipcMain, opts) {
@@ -175,6 +194,7 @@ function register(ipcMain, opts) {
   ipcMain.handle('lic-logout', () => L.logout());
   ipcMain.handle('lic-rank-set', (_e, on, stats) => L.rankSet(!!on, stats));
   ipcMain.handle('lic-rank-avg', () => L.rankAvg());
+  ipcMain.handle('lic-team', (_e, a, b) => L.team(String(a), b));
   ipcMain.handle('lic-rank-sync', (_e, stats) => L.rankSync(stats));
   return L;
 }

@@ -1970,7 +1970,7 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
   function mapUI(){var on=false;try{on=localStorage.getItem('cft_mapall')==='1'}catch(e){}$('mapst').textContent=on?'· an':'· nur Reload';return on}
   $('mapb').onclick=function(){var on=!mapUI();try{localStorage.setItem('cft_mapall',on?'1':'0')}catch(e){}mapUI();$('mapm').textContent=on?'Karte wird jetzt in allen Modi gezeigt. Bitte die App neu starten, damit die Replays neu ausgewertet werden.':'Karte nur bei Reload. Bitte die App neu starten, damit die Replays neu ausgewertet werden.'};
   var rkT=0;
-  window.cftRankSync=function(){clearTimeout(rkT);rkT=setTimeout(function(){var s=rankStats();if(s&&window.fn&&window.fn.rankSync)window.fn.rankSync(s)},4000)};
+  window.cftRankSync=function(){clearTimeout(rkT);if(window.cftTeamSync)window.cftTeamSync();rkT=setTimeout(function(){var s=rankStats();if(s&&window.fn&&window.fn.rankSync)window.fn.rankSync(s)},4000)};
   $('rkb').onclick=function(){
     if(!window.fn||!window.fn.rankSet){$('rkm').textContent='Nur in der installierten App verfügbar.';return}
     window.fn.licState().then(function(st){
