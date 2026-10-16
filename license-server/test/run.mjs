@@ -536,5 +536,41 @@ await T('Lifetime-Key: nur Admin, läuft nicht ab, keine Erinnerung', async () =
   await worker.scheduled({ cron: '0 * * * *' }, env, ctx); await flush();
   assert.ok(!S.dms.some(d => d.to === 'U60' && /läuft bald ab/.test(JSON.stringify(d.body))));
 });
+await T('Paket 2: Wochen-Sieger, Events mit Zu-/Absage + Erinnerung, Newsletter', async () => {
+  const C = await import('../src/community.js'); const { withCfg } = await import('../src/discord.js');
+  db.prepare('INSERT OR REPLACE INTO config (k,v) VALUES (?,?)').run('event_channel', 'EVCH'); db.prepare('INSERT OR REPLACE INTO config (k,v) VALUES (?,?)').run('rank_channel', 'RKCH'); db.prepare('INSERT OR REPLACE INTO config (k,v) VALUES (?,?)').run('general_channel', 'GNCH');
+  // Zeit-Parser (Sommerzeit: 20:00 MESZ = 18:00 UTC; Winter: 20:00 MEZ = 19:00 UTC)
+  assert.equal(C.parseBerlin('24.10.2026 20:00'), Date.UTC(2026, 9, 24, 18) / 1000); assert.equal(C.parseBerlin('15.12.2026 20:00'), Date.UTC(2026, 11, 15, 19) / 1000);
+  assert.equal(C.parseBerlin('quatsch'), null); assert.equal(C.parseBerlin('32.01. 10:00'), null);
+  const fm = (id, v, who) => inter({ type: 5, channel_id: 'X', token: 'tok', data: { custom_id: id, components: Object.entries(v).map(([k, x]) => ({ type: 1, components: [{ type: 4, custom_id: k, value: x }] })) }, member: mem(who) });
+  assert.equal((await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'event' }, member: mem('ADMIN') })).type, 9);
+  assert.match(J(await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'event' }, member: mem('U1') })), /Keine Berechtigung/);
+  const soon = new Date(Date.now() + 20 * 60000); const pad = n => String(n).padStart(2, '0');
+  const b = C.berlin(Math.floor(soon / 1000)), when = `${pad(b.d)}.${pad(b.mo)}.${b.y} ${pad(b.h)}:${pad(b.mi)}`;
+  assert.match(J(await fm('modal_event', { f_title: 'Scrim', f_when: 'gestern', f_desc: '' }, 'ADMIN')), /Zeit nicht erkannt/);
+  assert.match(J(await fm('modal_event', { f_title: 'Scrim', f_when: when, f_desc: 'Duo' }, 'U1')), /Keine Berechtigung/);
+  assert.match(J(await fm('modal_event', { f_title: 'Scrim', f_when: when, f_desc: 'Duo' }, 'ADMIN')), /Event erstellt/);
+  const ev = db.prepare('SELECT * FROM events').get(); assert.ok(ev.message_id);
+  const yes = await inter({ type: 3, channel_id: 'EVCH', data: { custom_id: 'event_yes:' + ev.id }, member: mem('U70') }); assert.equal(yes.type, 7); assert.match(J(yes), /Dabei \(1\)/);
+  await inter({ type: 3, channel_id: 'EVCH', data: { custom_id: 'event_yes:' + ev.id }, member: mem('U71') });
+  const no = J(await inter({ type: 3, channel_id: 'EVCH', data: { custom_id: 'event_no:' + ev.id }, member: mem('U71') })); assert.match(no, /Dabei \(1\)/);
+  const d0 = S.dms.length; await C.eventSweep(await withCfg(env)); await C.eventSweep(await withCfg(env));
+  const rem = S.dms.slice(d0).filter(d => /Gleich geht/.test(JSON.stringify(d.body))); assert.equal(rem.length, 1); assert.equal(rem[0].to, 'U70');
+  await C.eventSweep(await withCfg(env), Math.floor(Date.now() / 1000) + 3 * 3600); assert.equal(db.prepare('SELECT status FROM events').get().status, 'done');
+  // Wochen-Sieger: Montag 19.10.2026 11:00 MESZ
+  const mon = Date.UTC(2026, 9, 19, 9) / 1000, ct = Math.floor(Date.now() / 1000);
+  db.prepare('DELETE FROM ranks').run();
+  for (const [id, sc] of [['W1', 80], ['W2', 91], ['W3', 70]]) db.prepare('INSERT INTO ranks (discord_id,name,games,avg_score,wins,kills,updated_at) VALUES (?,?,?,?,?,?,?)').run(id, 'Spieler' + id, 5, sc, 1, 3, mon - 86400);
+  const e2 = await withCfg(env);
+  assert.equal(await C.weeklySweep(e2, Date.UTC(2026, 9, 20, 9) / 1000), undefined); // Dienstag: nichts
+  const d1 = S.dms.length;
+  assert.equal(await C.weeklySweep(e2, mon), 'W2'); assert.equal(await C.weeklySweep(e2, mon + 3600), undefined); // nur einmal pro Woche
+  assert.ok(S.dms.slice(d1).some(d => d.to === 'W2' && /Spieler der Woche/.test(JSON.stringify(d.body))), 'DM an Sieger');
+  assert.equal(db.prepare("SELECT days FROM keys WHERE created_by='bonus' AND days=3").all().length >= 1, true);
+  // Newsletter: Sonntag 25.10.2026 18:30
+  const sun = Date.UTC(2026, 9, 25, 17, 30) / 1000, p0 = S.posts ? S.posts.length : 0;
+  await C.newsletterSweep(e2, sun - 7200); await C.newsletterSweep(e2, sun); await C.newsletterSweep(e2, sun + 60);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM config WHERE k LIKE 'news:%'").get().n, 1);
+});
 console.log(`\n${ok} Tests bestanden`); S.restore();
 

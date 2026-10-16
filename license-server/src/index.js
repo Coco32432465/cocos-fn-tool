@@ -12,6 +12,7 @@
 import { sha256hex, json, now, emb, eph, bad, noPerm, COL, PLANS, PLAN_ALL, fmtDate, normKey, KEY_RE } from './util.js';
 import { getCfg, setCfg, dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin, isTeam, isCodeManager } from './discord.js';
 import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statusOf, expireSweep } from './keys.js';
+import { openEventModal, submitEvent, eventButton, eventSweep, weeklySweep, newsletterSweep } from './community.js';
 import { startTrial, rate, openRewardModal, submitReward } from './growth.js';
 import { openTicket, selectPlan, closeTicket, confirmTicket, codeButton, submitCode } from './tickets.js';
 import { ensureSchema } from './schema.js';
@@ -58,6 +59,7 @@ const COMMANDS = [
     { type: 1, name: 'löschen', description: 'Erinnerung löschen', options: [{ type: 4, name: 'id', description: 'ID aus /erinnerung liste', required: true }] }] },
   { name: 'tipp', description: 'Zufälliger Pro-Tipp' },
   { name: 'datenschutz', description: 'Deine gespeicherten Daten ansehen und löschen' },
+  { name: 'event', description: 'Team: Event oder Scrim im Kalender anlegen (Formular)', options: [] },
   { name: 'belohnung', description: 'Team: Bonus-Tage als Belohnung vergeben (Formular)', options: [] },
   { name: 'code', description: 'Creator-Codes: Käufer bekommen Bonus-Tage, Creator werden belohnt', options: [
     { type: 1, name: 'mein', description: 'Dein Creator-Code und was er dir gebracht hat' },
@@ -151,6 +153,7 @@ async function handleInteraction(i, env, ctx) {
     if (id === 'ticket_buy' || id === 'ticket_open') return openTicket(i, env, uid, 'buy');
     if (id === 'ticket_support') return openTicket(i, env, uid, 'support');
     if (id === 'ticket_plan') return selectPlan(i, env, uid);
+    if (/^event_(yes|no):\d+$/.test(id)) return eventButton(i, env, uid, id.startsWith('event_yes'), id.split(':')[1]);
     if (id === 'trial_start') return startTrial(i, env, uid);
     if (id.startsWith('rate:')) { const [, n, ch] = id.split(':'); return rate(i, env, uid, n, ch); }
     if (id === 'ticket_close') return closeTicket(i, env, ctx, uid);
@@ -194,6 +197,7 @@ async function handleInteraction(i, env, ctx) {
     const id = i.data.custom_id;
     if (id === 'modal_feedback') return submitForm(i, env, uid, 'feedback');
     if (id === 'modal_bug') return submitForm(i, env, uid, 'bug');
+    if (id === 'modal_event') return submitEvent(i, env, uid);
     if (id === 'modal_reward') return submitReward(i, env, uid);
     if (id === 'modal_code') return submitCode(i, env, uid);
     if (id === 'modal_giveaway') return submitGiveaway(i, env, uid);
@@ -230,6 +234,7 @@ async function handleInteraction(i, env, ctx) {
     if (['umfrage', 'lfg', 'erinnerung', 'tipp'].includes(name)) return handleFun(i, env, uid);
     if (name === 'datenschutz') return handlePrivacy(i, env, uid);
     if (name === 'code') return handleCode(i, env, uid);
+    if (name === 'event') return (isTeam(env, i) || isCodeManager(env, i)) ? openEventModal() : noPerm(env);
     if (name === 'belohnung') return (isTeam(env, i) || isCodeManager(env, i)) ? openRewardModal() : noPerm(env);
     if (name === 'admin') {
       if (!isAdmin(env, i)) return noPerm(env);
@@ -318,10 +323,10 @@ export default {
       await safe(() => pingGateway(env0));
       await safe(() => syncCommands(env0));
       const env = await withCfg(env0), cron = String(event.cron || '');
-      if (cron === '* * * * *') { await safe(() => endSweep(env)); await safe(() => pollSweep(env)); await safe(() => reminderSweep(env)); if (Math.floor(Date.now() / 60000) % 5 === 0) await safe(() => syncStats(env)); }
+      if (cron === '* * * * *') { await safe(() => endSweep(env)); await safe(() => pollSweep(env)); await safe(() => reminderSweep(env)); await safe(() => eventSweep(env)); if (Math.floor(Date.now() / 60000) % 5 === 0) await safe(() => syncStats(env)); }
       else if (cron === '15,45 * * * *') { await safe(() => syncPatchnotes(env)); await safe(() => syncStatus(env)); }
       else if (cron === '30 * * * *') await safe(() => syncRank(env));
-      else { await expireSweep(env, notifyExpired(env)); await safe(() => remindSweep(env)); await safe(() => endSweep(env)); await cleanup(env0); }
+      else { await expireSweep(env, notifyExpired(env)); await safe(() => remindSweep(env)); await safe(() => weeklySweep(env)); await safe(() => newsletterSweep(env)); await safe(() => endSweep(env)); await cleanup(env0); }
     })());
   }
 };
