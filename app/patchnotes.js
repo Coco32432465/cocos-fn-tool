@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.10.3', date: '2026-10-16', tag: 'NEU', text: 'Neuer Modus „Patchnotes“: alle Neuerungen von Cocos Tool auf einen Blick, durchsuchbar und nach NEU, FIX oder FEATURE filterbar. Die installierte Version ist markiert.' },
   { v: '0.10.2', date: '2026-10-16', tag: 'NEU', text: 'Neuer Modus „Landung & Rotation“: Vergleich deiner Landeorte (Ø Note, Ø Platz, Elims, früher Tod) mit Karte, dazu die Rotation je Zonenzug, Sturmschaden und Team-Abstand mit konkreten Tipps.' },
   { v: '0.10.1', date: '2026-10-16', tag: 'NEU', text: 'Trainingsplan: Die App erstellt aus deinen häufigsten Fehlern einen Wochenplan mit Übungen zum Abhaken und zeigt, ob sich deine Fehlerquote seit Planstart verbessert. Dazu fünf fertige Pläne: Aim, Rotation, Endgame, Team-Play und Boxfights.' },
   { v: '0.10.0', date: '2026-10-16', tag: 'NEU', text: 'Neuer Modus „Fortschritt & Training“: Verlauf deiner Gesamtnote als Diagramm (7 Tage, 30 Tage, alle), Ø Platz, Elims und Siege im Vergleich zur Vorperiode, Stärken und Schwächen je Spielphase und deine häufigsten Fehler. Rangliste: Siege, Elims und Ø Platz wurden bisher nicht richtig übertragen, das ist behoben.' },
