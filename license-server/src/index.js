@@ -9,10 +9,10 @@
 //   POST /license/activate    Key einloesen   {session, key, device}
 //   POST /license/refresh     Ticket erneuern {session, device}
 //   POST /api/verify          {key, deviceId} -> {valid, expiresAt}
-import { json, now, emb, eph, bad, noPerm, COL, PLANS, PLAN_ALL, fmtDate, normKey, KEY_RE } from './util.js';
-import { dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin, isTeam } from './discord.js';
+import { sha256hex, json, now, emb, eph, bad, noPerm, COL, PLANS, PLAN_ALL, fmtDate, normKey, KEY_RE } from './util.js';
+import { getCfg, setCfg, dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin, isTeam } from './discord.js';
 import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statusOf, expireSweep } from './keys.js';
-import { openTicket, selectPlan, closeTicket, confirmTicket } from './tickets.js';
+import { openTicket, selectPlan, closeTicket, confirmTicket, codeButton, submitCode } from './tickets.js';
 import { ensureSchema } from './schema.js';
 import { remindSweep, RENEW_BUTTON } from './remind.js';
 import { rankSubmit, rankLeave, handleRank, syncRank } from './rank.js';
@@ -22,6 +22,8 @@ import { syncStatus, downloadTarget } from './panels.js';
 import { Gateway, pingGateway } from './gateway.js';
 import { handleGiveaway, joinGiveaway, endSweep, submitGiveaway } from './giveaway.js';
 import { handleFun, votePoll, lfgButton, lfgFullNote, pollSweep, reminderSweep, submitFun, openPollModal, openLfgModal } from './fun.js';
+import { handleCode } from './codes.js';
+import { handlePrivacy, askDelete, doDelete, cancelDelete } from './privacy.js';
 import { statsEmbed, statsRows, syncStats } from './stats.js';
 import { runSetup, setupEmbed } from './setup.js';
 import { syncPatchnotes } from './patchnotes.js';
@@ -54,6 +56,14 @@ const COMMANDS = [
     { type: 1, name: 'liste', description: 'Deine offenen Erinnerungen' },
     { type: 1, name: 'löschen', description: 'Erinnerung löschen', options: [{ type: 4, name: 'id', description: 'ID aus /erinnerung liste', required: true }] }] },
   { name: 'tipp', description: 'Zufälliger Pro-Tipp' },
+  { name: 'datenschutz', description: 'Deine gespeicherten Daten ansehen und löschen' },
+  { name: 'code', description: 'Creator-Codes: Käufer bekommen Bonus-Tage, Creator werden belohnt', options: [
+    { type: 1, name: 'mein', description: 'Dein Creator-Code und was er dir gebracht hat' },
+    { type: 1, name: 'erstellen', description: 'Code für einen Creator anlegen (Admin)', options: [
+      { type: 6, name: 'user', description: 'Inhaber', required: true },
+      { type: 3, name: 'code', description: 'Der Code, z. B. COCO (3–16 Zeichen)', required: true }] },
+    { type: 1, name: 'liste', description: 'Alle Codes (Admin)' },
+    { type: 1, name: 'löschen', description: 'Code löschen (Admin)', options: [{ type: 3, name: 'code', description: 'Code', required: true }] }] },
   { name: 'rank', description: 'Community-Rangliste', options: [
     { type: 1, name: 'top', description: 'Top 10 anzeigen' },
     { type: 1, name: 'ich', description: 'Deinen Rang anzeigen' },
@@ -154,6 +164,10 @@ async function handleInteraction(i, env, ctx) {
       if (r._full) { const f = r._full; delete r._full; ctx.waitUntil(new Promise(x => setTimeout(x, 700)).then(() => lfgFullNote(env, f))); }
       return r;
     }
+    if (id === 'ticket_code') return codeButton();
+    if (id === 'privacy_ask') return askDelete(env);
+    if (id === 'privacy_do') return doDelete(i, env, uid);
+    if (id === 'privacy_no') return cancelDelete(env);
     if (id === 'poll_new') return openPollModal();
     if (/^lfg_new_(duo|trio|squad)$/.test(id)) return openLfgModal(id.slice(8));
     if (id === 'stats_refresh') {
@@ -178,6 +192,7 @@ async function handleInteraction(i, env, ctx) {
     const id = i.data.custom_id;
     if (id === 'modal_feedback') return submitForm(i, env, uid, 'feedback');
     if (id === 'modal_bug') return submitForm(i, env, uid, 'bug');
+    if (id === 'modal_code') return submitCode(i, env, uid);
     if (id === 'modal_giveaway') return submitGiveaway(i, env, uid);
     const fr = await submitFun(i, env, uid); if (fr) return fr;
     return bad(env, 'Unbekanntes Formular', '');
@@ -209,6 +224,8 @@ async function handleInteraction(i, env, ctx) {
     if (name === 'giveaway') return handleGiveaway(i, env, uid);
     if (name === 'team') return handleTeam(i, env);
     if (['umfrage', 'lfg', 'erinnerung', 'tipp'].includes(name)) return handleFun(i, env, uid);
+    if (name === 'datenschutz') return handlePrivacy(i, env, uid);
+    if (name === 'code') return handleCode(i, env, uid);
     if (name === 'admin') {
       if (!isAdmin(env, i)) return noPerm(env);
       const sub = ((i.data.options || [])[0] || {}).name;
@@ -221,6 +238,16 @@ async function handleInteraction(i, env, ctx) {
 const notifyExpired = env => r => tryDM(env, r.discord_id, { embeds: [emb(env, { title: 'Deine Lizenz ist abgelaufen', color: COL.bad,
   desc: `Deine Lizenz (Key \`${r.key.slice(0, 4)}-••••-${r.key.slice(-4)}\`) ist am ${fmtDate(r.expires_at)} abgelaufen. Die Rolle Customer wurde entfernt.`,
   fields: [{ name: 'Verlängern', value: 'Klicke auf **Jetzt verlängern**, es öffnet sich ein Ticket mit dem PayPal-Link.' }] })], components: RENEW_BUTTON });
+
+// Befehle automatisch registrieren, sobald sich die Liste geaendert hat (kein /register mehr noetig)
+async function syncCommands(env) {
+  if (!env.DISCORD_APP_ID || !env.GUILD_ID) return false;
+  const h = (await sha256hex(JSON.stringify(COMMANDS))).slice(0, 16);
+  if ((await getCfg(env, 'cmdhash')) === h) return false;
+  const reg = await dapi(env, 'PUT', `/applications/${env.DISCORD_APP_ID}/guilds/${env.GUILD_ID}/commands`, COMMANDS);
+  if (reg.ok) await setCfg(env, 'cmdhash', h);
+  return reg.ok;
+}
 
 export default {
   async fetch(request, env0, ctx) {
@@ -284,6 +311,7 @@ export default {
     ctx.waitUntil((async () => {
       await ensureSchema(env0);
       await safe(() => pingGateway(env0));
+      await safe(() => syncCommands(env0));
       const env = await withCfg(env0), cron = String(event.cron || '');
       if (cron === '* * * * *') { await safe(() => endSweep(env)); await safe(() => pollSweep(env)); await safe(() => reminderSweep(env)); if (Math.floor(Date.now() / 60000) % 5 === 0) await safe(() => syncStats(env)); }
       else if (cron === '15,45 * * * *') { await safe(() => syncPatchnotes(env)); await safe(() => syncStatus(env)); }

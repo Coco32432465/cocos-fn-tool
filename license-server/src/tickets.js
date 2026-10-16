@@ -2,23 +2,25 @@
 import { now, emb, eph, bad, COL, PLANS, PLAN_ALL, price, priceNum, paypalUrl, fmtDateTime, fmtDate } from './util.js';
 import { dapi, dapiFile, adminIds, isTeam, tryDM } from './discord.js';
 import { createKeys, extendLicense, bestKey } from './keys.js';
+import { attachCode, payOut, rewards, openCodeModal } from './codes.js';
 
 const ALLOW = String(1024 + 2048 + 32768 + 65536); // sehen, schreiben, Dateien, Verlauf
 const TYPES = { buy: { prefix: 'kauf', label: 'Kauf-Ticket' }, renew: { prefix: 'verlaengern', label: 'Verlängerungs-Ticket' }, support: { prefix: 'support', label: 'Hilfe-Ticket' }, giveaway: { prefix: 'giveaway', label: 'Gewinn-Ticket' } };
 
-function components(env, type, plan) {
+function components(env, type, plan, code) {
   const rows = [];
   if (type === 'buy' || type === 'renew') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: 'Laufzeit wählen', options: Object.entries(PLANS).map(([id, p]) => ({ label: `${p.label} · ${price(env, id)}`, value: id, description: `${p.days} Tage Zugang`, default: id === plan })) }] });
   const btns = [];
   const pp = plan ? paypalUrl(env, plan) : '';
   if (pp) btns.push({ type: 2, style: 5, label: 'Mit PayPal bezahlen', url: pp, emoji: { name: '💳' } });
   if ((type === 'buy' || type === 'renew') && plan) btns.push({ type: 2, style: 3, label: 'Zahlung bestätigt (Team)', custom_id: 'ticket_confirm', emoji: { name: '✅' } });
+  if ((type === 'buy' || type === 'renew') && !code) btns.push({ type: 2, style: 2, label: 'Creator-Code', custom_id: 'ticket_code', emoji: { name: '🎁' } });
   btns.push({ type: 2, style: 2, label: 'Ticket schließen', custom_id: 'ticket_close' });
   rows.push({ type: 1, components: btns });
   return rows;
 }
 
-function payFields(env, type, plan, uname) {
+function payFields(env, type, plan, uname, code) {
   const p = PLAN_ALL[plan];
   const pay = paypalUrl(env, plan);
   const how = [
@@ -33,11 +35,12 @@ function payFields(env, type, plan, uname) {
     { name: '💳 So bezahlst du', value: how },
     { name: 'Verwendungszweck', value: `Dein Discord-Name${uname ? ` (\`${uname}\`)` : ''}`, inline: true },
     { name: 'Sicherheit', value: 'Zahle nur über den Link in diesem Ticket. Das Team schreibt dich nie zuerst privat an.', inline: true },
+    ...(code ? [{ name: '🎁 Creator-Code', value: `**${code}** · du bekommst **+${rewards(env).buyer} Bonustag${rewards(env).buyer === 1 ? '' : 'e'}**` }] : []),
     { name: 'Status', value: '⏳ Zahlung ausstehend' }
   ];
 }
 
-function ticketEmbed(env, type, uid, plan, uname) {
+function ticketEmbed(env, type, uid, plan, uname, code) {
   if (type === 'support') return emb(env, {
     title: 'Support-Ticket',
     desc: `Hallo <@${uid}>, beschreibe bitte kurz dein Anliegen. Das Team meldet sich hier.`,
@@ -48,7 +51,7 @@ function ticketEmbed(env, type, uid, plan, uname) {
   return emb(env, {
     title: renew ? 'Lizenz verlängern' : 'Lizenzbestellung',
     desc: `Hallo <@${uid}>, ${renew ? 'schön, dass du verlängern möchtest! Wähle unten die Laufzeit – sie wird an deine aktuelle Lizenz angehängt.' : 'wähle unten die gewünschte Laufzeit. Preis und Zahlungshinweis siehst du danach hier.'}`,
-    fields: p ? payFields(env, type, plan, uname) : [
+    fields: p ? payFields(env, type, plan, uname, code) : [
       { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` },
       { name: 'Status', value: 'Laufzeit noch nicht gewählt' }
     ]
@@ -103,7 +106,19 @@ export async function selectPlan(i, env, uid) {
   const plan = (i.data.values || [])[0];
   if (!PLANS[plan]) return bad(env, 'Unbekannte Laufzeit', '');
   await env.DB.prepare('UPDATE tickets SET plan=? WHERE channel_id=?').bind(plan, i.channel_id).run();
-  return { type: 7, data: { embeds: [ticketEmbed(env, t.type, t.user_id, plan, null)], components: components(env, t.type, plan) } };
+  return { type: 7, data: { embeds: [ticketEmbed(env, t.type, t.user_id, plan, null, t.code)], components: components(env, t.type, plan, t.code) } };
+}
+
+export const codeButton = () => openCodeModal();
+export async function submitCode(i, env, uid) {
+  const t = await env.DB.prepare('SELECT * FROM tickets WHERE channel_id=?').bind(i.channel_id).first();
+  if (!t) return bad(env, 'Kein Ticket', 'Codes gibst du in deinem Kauf-Ticket ein.');
+  if (t.user_id !== uid) return bad(env, 'Keine Berechtigung', 'Nur der Ersteller des Tickets kann einen Code eingeben.');
+  let raw = ''; for (const r of i.data.components || []) for (const c of r.components || []) if (c.custom_id === 'f_code') raw = c.value;
+  const r = await attachCode(env, t, uid, raw);
+  if (r.error) return bad(env, 'Code nicht angenommen', r.error);
+  const t2 = { ...t, code: r.code };
+  return { type: 7, data: { embeds: [ticketEmbed(env, t2.type, t2.user_id, t2.plan, null, r.code)], components: components(env, t2.type, t2.plan, r.code) } };
 }
 
 // Team: Zahlung geprueft -> Key erstellen bzw. Lizenz verlaengern
@@ -126,7 +141,20 @@ export async function confirmTicket(i, env, uid) {
     const [key] = await createKeys(env, t.plan, 1, uid); kind = 'new';
     fields = [{ name: 'Dein Key', value: '```\n' + key + '\n```' }, { name: 'Laufzeit', value: plan.label, inline: true }, { name: 'Einlösen', value: 'In der App: **Mit Discord verbinden**, dann den Key eingeben. Die Laufzeit startet erst beim Einlösen.' }];
   }
+  let codeNote = null;
+  if (t.code) { // Bonus-Tage fuer den Kaeufer, Belohnung fuer den Code-Inhaber
+    const bonus = rewards(env).buyer, po = await payOut(env, t, t.user_id);
+    if (po) {
+      if (bonus) {
+        const keyVal = (fields.find(f => f.name === 'Dein Key') || {}).value;
+        if (keyVal) await env.DB.prepare('UPDATE keys SET days=days+? WHERE key=?').bind(bonus, keyVal.replace(/`|\n/g, '').trim()).run();
+        else await env.DB.prepare("UPDATE keys SET expires_at=expires_at+? WHERE discord_id=? AND status='active' AND expires_at=(SELECT MAX(expires_at) FROM keys WHERE discord_id=? AND status='active')").bind(Math.round(bonus * 86400), t.user_id, t.user_id).run();
+      }
+      codeNote = { name: '🎁 Creator-Code', value: `**${po.code}** eingelöst: **+${bonus} Bonustag${bonus === 1 ? '' : 'e'}** für dich, danke an <@${po.owner}>!` };
+    }
+  }
   await env.DB.prepare('INSERT INTO sales (user_id,plan,amount,kind,created_at) VALUES (?,?,?,?,?)').bind(t.user_id, t.plan, priceNum(price(env, t.plan)), kind, now()).run();
+  if (codeNote) fields.push(codeNote);
   return { type: 4, data: { content: `<@${t.user_id}>`, embeds: [emb(env, { title: '✅ Zahlung bestätigt', color: COL.ok, desc: 'Vielen Dank! Dein Zugang ist freigeschaltet. Du kannst dieses Ticket jetzt schließen.', fields })] } };
 }
 
