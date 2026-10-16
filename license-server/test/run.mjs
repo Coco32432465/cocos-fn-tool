@@ -426,10 +426,18 @@ await T('Patchnotes: Embed im Kanal, nur einmal pro Version', async () => {
 });
 await T('Creator-Codes: Bonus-Tage für Käufer, Belohnung für Inhaber, nur einmal, Datenschutz', async () => {
   const cc = (sub, options, who = 'ADMIN') => inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'code', options: [{ type: 1, name: sub, options }] }, member: mem(who) });
-  assert.match(J(await cc('erstellen', [{ name: 'user', value: 'CR1' }, { name: 'code', value: 'coco' }], 'U1')), /Keine Berechtigung/);
-  assert.match(J(await cc('erstellen', [{ name: 'user', value: 'CR1' }, { name: 'code', value: 'coco' }])), /Code erstellt/);
-  assert.match(J(await cc('erstellen', [{ name: 'user', value: 'CR1' }, { name: 'code', value: 'COCO' }])), /Code vergeben/);
-  assert.match(J(await cc('mein', [], 'CR1')), /COCO/); assert.match(J(await cc('mein', [], 'NOBODY')), /noch keinen Code/);
+  const cmRole = db.prepare("SELECT v FROM config WHERE k='content_role'").get().v;
+  const CM = () => mem('CM1', { roles: [cmRole] });
+  const cform = (id, v, member) => inter({ type: 5, channel_id: 'X', token: 'tok', data: { custom_id: id, components: Object.entries(v).map(([k, x]) => ({ type: 1, components: [{ type: 4, custom_id: k, value: x }] })) }, member });
+  assert.match(J(await cc('neu', [], 'U1')), /Keine Berechtigung/);
+  assert.equal((await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'code', options: [{ type: 1, name: 'neu' }] }, member: CM() })).type, 9); // Content Manager: Formular
+  assert.match(J(await cform('modal_code_new', { f_owner: '<@123456789012345678>', f_code: 'coco', f_buyer: '2', f_week: '2', f_month: '5' }, mem('U1'))), /Keine Berechtigung/);
+  assert.match(J(await cform('modal_code_new', { f_owner: '<@123456789012345678>', f_code: 'coco', f_buyer: '99', f_week: '2', f_month: '5' }, CM())), /Belohnung ungültig/);
+  assert.match(J(await cform('modal_code_new', { f_owner: 'x', f_code: 'coco', f_buyer: '2', f_week: '2', f_month: '5' }, CM())), /Inhaber nicht gefunden/);
+  assert.match(J(await cform('modal_code_new', { f_owner: '<@123456789012345678>', f_code: 'coco', f_buyer: '2', f_week: '2', f_month: '5' }, CM())), /Code angelegt/);
+  assert.match(J(await cform('modal_code_new', { f_owner: '<@123456789012345678>', f_code: 'COCO', f_buyer: '2', f_week: '2', f_month: '5' }, CM())), /Code vergeben/);
+  assert.match(J(await cc('mein', [], '123456789012345678')), /COCO/); assert.match(J(await cc('mein', [], 'NOBODY')), /noch keinen Code/);
+  assert.match(J(await cc('liste', [], 'U1')), /Keine Berechtigung/); assert.match(J(await cc('liste', [], 'ADMIN')), /COCO/);
   // Käufer U30 öffnet Ticket, wählt Woche, gibt Code ein
   await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U30') });
   const ch = S.channels.find(c => c.name.startsWith('kauf-useru30-'));
@@ -440,9 +448,9 @@ await T('Creator-Codes: Bonus-Tage für Käufer, Belohnung für Inhaber, nur ein
   assert.match(J(await sub('COCO', 'U31')), /Keine Berechtigung/);
   const ok = await sub('coco', 'U30'); assert.equal(ok.type, 7); assert.match(J(ok), /Creator-Code/); assert.match(J(ok), /COCO/);
   const dm0 = S.dms.length;
-  const conf = J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })); const key = (conf.match(/[A-Z0-9]{4}(-[A-Z0-9]{4}){2}/) || [])[0]; assert.ok(key, 'Key im Ticket'); assert.match(conf, /Bonustag/); assert.equal(db.prepare('SELECT days FROM keys WHERE key=?').get(key).days, 8, '7 + 1 Bonustag');
-  const owner = db.prepare("SELECT * FROM keys WHERE created_by='code'").get(); assert.ok(owner && owner.days === 1, 'Inhaber ohne Lizenz bekommt einen Belohnungs-Key');
-  assert.ok(S.dms.slice(dm0).some(d => d.to === 'CR1' && /Code wurde genutzt/.test(JSON.stringify(d.body))), 'DM an Inhaber');
+  const conf = J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })); const key = (conf.match(/[A-Z0-9]{4}(-[A-Z0-9]{4}){2}/) || [])[0]; assert.ok(key, 'Key im Ticket'); assert.match(conf, /Bonustag/); assert.equal(db.prepare('SELECT days FROM keys WHERE key=?').get(key).days, 9, '7 + 2 Bonustage (beim Code eingestellt)');
+  const owner = db.prepare("SELECT * FROM keys WHERE created_by='code'").get(); assert.ok(owner && owner.days === 2, 'Inhaber ohne Lizenz bekommt einen Belohnungs-Key (2 Tage Wochen-Belohnung)');
+  assert.ok(S.dms.slice(dm0).some(d => d.to === '123456789012345678' && /Code wurde genutzt/.test(JSON.stringify(d.body))), 'DM an Inhaber');
   assert.equal(db.prepare("SELECT uses, earned_days FROM codes WHERE code='COCO'").get().uses, 1);
   // zweiter Kauf derselben Person: Code nicht mehr möglich
   db.prepare('DELETE FROM tickets WHERE channel_id=?').run(ch.id);
@@ -451,9 +459,16 @@ await T('Creator-Codes: Bonus-Tage für Käufer, Belohnung für Inhaber, nur ein
   await inter({ type: 3, channel_id: ch2.id, data: { custom_id: 'ticket_plan', values: ['week'] }, member: mem('U30') });
   assert.match(J(await inter({ type: 5, channel_id: ch2.id, message: { id: 'm' }, data: { custom_id: 'modal_code', components: [{ type: 1, components: [{ type: 4, custom_id: 'f_code', value: 'COCO' }] }] }, member: mem('U30') })), /schon einmal einen Code/);
   // eigener Code
-  await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('CR1') });
-  const ch3 = S.channels.find(c => c.name.startsWith('kauf-usercr1-'));
-  assert.match(J(await inter({ type: 5, channel_id: ch3.id, message: { id: 'm' }, data: { custom_id: 'modal_code', components: [{ type: 1, components: [{ type: 4, custom_id: 'f_code', value: 'COCO' }] }] }, member: mem('CR1') })), /eigenen Code/);
+  await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('123456789012345678') });
+  const ch3 = S.channels.find(c => c.name.startsWith('kauf-user1234567890123'));
+  assert.match(J(await inter({ type: 5, channel_id: ch3.id, message: { id: 'm' }, data: { custom_id: 'modal_code', components: [{ type: 1, components: [{ type: 4, custom_id: 'f_code', value: 'COCO' }] }] }, member: mem('123456789012345678') })), /eigenen Code/);
+  // Bearbeiten und Löschen per Formular
+  assert.match(J(await cform('modal_code_edit', { f_code: 'coco', f_buyer: '', f_week: '4', f_month: '', f_del: '' }, CM())), /Code aktualisiert/);
+  assert.equal(db.prepare("SELECT owner_week, buyer_days, owner_month FROM codes WHERE code='COCO'").get().owner_week, 4);
+  assert.equal(db.prepare("SELECT buyer_days FROM codes WHERE code='COCO'").get().buyer_days, 2);
+  assert.match(J(await cform('modal_code_edit', { f_code: 'nix', f_buyer: '', f_week: '', f_month: '', f_del: '' }, CM())), /nicht gefunden/);
+  assert.equal((await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'code', options: [{ type: 1, name: 'bearbeiten' }] }, member: CM() })).type, 9);
+  assert.match(J(await cform('modal_code_edit', { f_code: 'coco', f_buyer: '', f_week: '', f_month: '', f_del: 'LÖSCHEN' }, CM())), /Code gelöscht/); assert.equal(db.prepare("SELECT COUNT(*) AS n FROM codes WHERE code='COCO'").get().n, 0);
   // Datenschutz: Auskunft + Löschen
   const pr = id => inter({ type: 3, token: 'tk', data: { custom_id: id }, member: mem('U30') });
   db.prepare('INSERT INTO sessions (token_hash,discord_id,username,created_at) VALUES (?,?,?,?)').run('h-priv', 'U30', 'x', 1);

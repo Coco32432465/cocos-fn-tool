@@ -14,6 +14,7 @@ const ROLES = [
   { name: 'Moderator', key: 'mod_role', color: 0xe74c3c, hoist: true, perms: bits(PERM.KICK, PERM.AUDIT, PERM.PRIORITY, PERM.MSG_MANAGE, PERM.MUTE, PERM.DEAFEN, PERM.MOVE, PERM.NICK, PERM.THREADS, PERM.TIMEOUT) },
   { name: 'Supporter', key: 'support_role', color: 0x1abc9c, hoist: true, perms: bits(PERM.MSG_MANAGE, PERM.THREADS, PERM.TIMEOUT, PERM.MOVE) },
   { name: 'Developer', key: 'dev_role', color: 0x9b59b6, hoist: true, perms: bits(PERM.THREADS, PERM.MOVE, PERM.PRIORITY) },
+  { name: 'Content Manager', key: 'content_role', color: 0xe91e8c, hoist: true, perms: '0' },
   { name: 'Content Creator', key: 'creator_role', color: 0xff6ec7, hoist: true, perms: '0' },
   { name: 'Customer', key: 'customer_role', color: 0x2ecc71, hoist: true, perms: '0' },
   { name: 'Top 10', key: 'rank_role', color: 0xf1c40f, hoist: true, perms: '0' }, // vergibt der Bot automatisch an die Rangliste
@@ -23,7 +24,7 @@ const ROLES = [
 ];
 const STAFF = ['admin_role', 'mod_role', 'support_role', 'dev_role'];
 // Mit diesen Rollen sind die Kanaele sichtbar. Alle anderen (z. B. Freunde ohne Rolle) sehen nichts.
-const ACCESS = [...STAFF, 'creator_role', 'customer_role', 'rank_role', 'tester_role', 'member_role', 'user_role'];
+const ACCESS = [...STAFF, 'content_role', 'creator_role', 'customer_role', 'rank_role', 'tester_role', 'member_role', 'user_role'];
 // [name, Emoji, Beschreibung, nurTeamSchreibt, Art]   Art: leer = Text | 'voice' | 'forum'
 const FORUM_TAGS = ['💡 Idee', '🐛 Problem', '⏳ In Arbeit', '✅ Umgesetzt', '❌ Abgelehnt'].map(name => ({ name }));
 const STRUCT = [

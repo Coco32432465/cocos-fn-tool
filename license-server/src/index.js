@@ -22,7 +22,7 @@ import { syncStatus, downloadTarget } from './panels.js';
 import { Gateway, pingGateway } from './gateway.js';
 import { handleGiveaway, joinGiveaway, endSweep, submitGiveaway } from './giveaway.js';
 import { handleFun, votePoll, lfgButton, lfgFullNote, pollSweep, reminderSweep, submitFun, openPollModal, openLfgModal } from './fun.js';
-import { handleCode } from './codes.js';
+import { handleCode, submitCodeAdmin } from './codes.js';
 import { handlePrivacy, askDelete, doDelete, cancelDelete } from './privacy.js';
 import { statsEmbed, statsRows, syncStats } from './stats.js';
 import { runSetup, setupEmbed } from './setup.js';
@@ -59,11 +59,9 @@ const COMMANDS = [
   { name: 'datenschutz', description: 'Deine gespeicherten Daten ansehen und löschen' },
   { name: 'code', description: 'Creator-Codes: Käufer bekommen Bonus-Tage, Creator werden belohnt', options: [
     { type: 1, name: 'mein', description: 'Dein Creator-Code und was er dir gebracht hat' },
-    { type: 1, name: 'erstellen', description: 'Code für einen Creator anlegen (Admin)', options: [
-      { type: 6, name: 'user', description: 'Inhaber', required: true },
-      { type: 3, name: 'code', description: 'Der Code, z. B. COCO (3–16 Zeichen)', required: true }] },
-    { type: 1, name: 'liste', description: 'Alle Codes (Admin)' },
-    { type: 1, name: 'löschen', description: 'Code löschen (Admin)', options: [{ type: 3, name: 'code', description: 'Code', required: true }] }] },
+    { type: 1, name: 'neu', description: 'Neuen Code anlegen (Content Manager, öffnet ein Formular)' },
+    { type: 1, name: 'bearbeiten', description: 'Belohnung ändern oder Code löschen (Content Manager, Formular)' },
+    { type: 1, name: 'liste', description: 'Alle Codes ansehen (Content Manager)' }] },
   { name: 'rank', description: 'Community-Rangliste', options: [
     { type: 1, name: 'top', description: 'Top 10 anzeigen' },
     { type: 1, name: 'ich', description: 'Deinen Rang anzeigen' },
@@ -71,7 +69,7 @@ const COMMANDS = [
   { name: 'admin', description: 'Admin-Übersicht', options: [{ type: 1, name: 'stats', description: 'Lizenzen, Umsatz, Nutzer, Support' }, { type: 1, name: 'nutzer', description: 'Wer die App hat (mit Discord verbunden)' }, { type: 1, name: 'keys', description: 'Welche Keys wer eingelöst hat' }] },
   { name: 'team', description: 'Team-Rollen verwalten (Admin)', options: [
     { type: 6, name: 'user', description: 'Nutzer', required: true },
-    { type: 3, name: 'rolle', description: 'Rolle', required: true, choices: [{ name: 'Moderator', value: 'moderator' }, { name: 'Supporter', value: 'supporter' }, { name: 'Developer', value: 'developer' }, { name: 'Content Creator', value: 'creator' }, { name: 'Tester', value: 'tester' }] },
+    { type: 3, name: 'rolle', description: 'Rolle', required: true, choices: [{ name: 'Moderator', value: 'moderator' }, { name: 'Supporter', value: 'supporter' }, { name: 'Developer', value: 'developer' }, { name: 'Content Manager', value: 'manager' }, { name: 'Content Creator', value: 'creator' }, { name: 'Tester', value: 'tester' }] },
     { type: 5, name: 'entfernen', description: 'Rolle entziehen statt vergeben', required: false }] }
 ];
 
@@ -195,6 +193,7 @@ async function handleInteraction(i, env, ctx) {
     if (id === 'modal_code') return submitCode(i, env, uid);
     if (id === 'modal_giveaway') return submitGiveaway(i, env, uid);
     const fr = await submitFun(i, env, uid); if (fr) return fr;
+    if (id === 'modal_code_new' || id === 'modal_code_edit') return submitCodeAdmin(i, env, uid);
     return bad(env, 'Unbekanntes Formular', '');
   }
 
