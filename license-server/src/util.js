@@ -17,7 +17,7 @@ export const ADDONS = { tweaks: { ent: 'tw', label: 'Tweak-Paket (einmalig)' }, 
 export const TEAMS = { team: { base: 'month', count: 5, label: 'Team-Lizenz (5 Keys + Coach-Dashboard, 1 Monat)' } }; // Keys + Coach-Team, jeder Kauf = +30 Tage Team
 export const SHOP = { ...PLANS, ...TEAMS, ...ADDONS }; // PACKS (Duo/Squad) werden nicht mehr verkauft, alte Verkäufe bleiben über PLAN_ALL lesbar
 export const TEST_PLAN = { days: 10 / 1440, label: '10 Minuten (Test)' }; // nur Admin, nicht im Shop
-export const TRIAL_PLAN = { days: 1, label: '1 Tag (Probe)' }; // kostenlose Probe, nicht im Shop
+export const TRIAL_PLAN = { days: 3, label: '3 Tage (Probe)' }; // kostenlose Probe, nicht im Shop
 export const LIFETIME_PLAN = { days: 36500, label: 'Lifetime ♾️' }; // nur Admin, nicht im Shop (100 Jahre)
 export const PLAN_ALL = { ...PLANS, test: TEST_PLAN, trial: TRIAL_PLAN, lifetime: LIFETIME_PLAN, duo: { days: 30, label: PACKS.duo.label }, squad: { days: 30, label: PACKS.squad.label }, tweaks: { days: 0, label: ADDONS.tweaks.label }, pass: { days: 0, label: ADDONS.pass.label }, team: { days: 30, label: TEAMS.team.label } };
 export const KEY_RE = /^[A-Z0-9]{4}(-[A-Z0-9]{4}){2,3}$/; // neu: XXXX-XXXX-XXXX, aeltere 4er-Keys bleiben gueltig

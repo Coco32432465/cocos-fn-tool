@@ -147,6 +147,7 @@ aside,.col{display:flex;flex-direction:column;gap:24px;min-width:0}
 .games{list-style:none;display:flex;flex-direction:column;gap:8px}
 .games li{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;background:#ffffff05;border:1px solid #ffffff0a;cursor:pointer;transition:.2s}
 .games li:hover{border-color:var(--acc);background:rgba(var(--rgb),.05)}
+.panel h2 .hall{margin-left:auto;font:700 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--acc-light);background:transparent;border:1px solid rgba(var(--rgb),.35);border-radius:7px;padding:3px 9px;cursor:pointer}.panel h2 .hall:hover{border-color:var(--acc);box-shadow:0 0 10px rgba(var(--rgb),.35)}
 .grade{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-family:'Orbitron',sans-serif;font-weight:800;border:1px solid currentColor;flex:none}
 .g-a{color:#4ade80}.g-b{color:#facc15}.g-c{color:#fb923c}.g-d{color:var(--bad)}
 .games b{display:block;font-size:15px;line-height:1.15}.games small{color:var(--mute);font-size:13px}
@@ -851,7 +852,7 @@ header .mbtn{margin-right:14px}
   <!-- Linke Sidebar -->
   <aside>
     <section class="panel">
-      <h2 class="disp">Zuletzt analysiert</h2>
+      <h2 class="disp">Zuletzt analysiert <button class="hall" id="lastAll" title="Alle Replays durchsuchen">Alle →</button></h2>
       <ul class="games" id="lastg">
         <li><div class="grade g-a">A</div><div><b>Cash Cup – Runde 3</b><small>vor 2 Std.</small></div><span class="pl">#3</span></li>
         <li><div class="grade g-b">B</div><div><b>Ranked Duos</b><small>Gestern</small></div><span class="pl">#8</span></li>
@@ -1122,6 +1123,7 @@ header .mbtn{margin-right:14px}
 <script src="cft-import.js"></script>
 <script src="cft-fights.js"></script>
 <script src="cft-stats.js"></script>
+<script src="cft-share.js"></script>
 <script src="patchnotes.js"></script>
 <script src="config.js"></script>
 <script src="cft-modes.js"></script>
@@ -1238,7 +1240,7 @@ function profUpd(){
  var n=G.length,avg=n?G.reduce(function(a,g){return a+g.tot},0)/n:0,pl=G.filter(function(g){return g.m.pl>0}),wins=G.filter(function(g){return g.m.pl===1}).length;
  $('pf1').textContent=n||'–';$('pf2').textContent=n?(avg>=75?'A':avg>=55?'B':avg>=40?'C':'D'):'–';$('pf3').textContent=n?Math.round(100*wins/n)+'%':'–';
  $('pf4').textContent=pl.length?(pl.reduce(function(a,g){return a+g.m.pl},0)/pl.length).toFixed(1):'–';
- $('lastg').innerHTML=n?G.slice(-4).reverse().map(function(g){var m=g.m;return '<li><div class="grade '+(gc[m.g]||'g-c')+'">'+m.g+'</div><div><b>'+esc(g.real.meta.landPoi?'Landung: '+g.real.meta.landPoi:m.n)+'</b><small>'+esc(m.n)+'</small></div><span class="pl">'+(m.pl>0?'#'+m.pl:'–')+'</span></li>'}).join(''):'<li><div><b>Noch nichts analysiert</b><small>Replay wählen oder ablegen</small></div></li>';window.cftFocusRefresh&&window.cftFocusRefresh();}
+ var LG=G.slice(-4).reverse();$('lastg').innerHTML=n?LG.map(function(g,i){var m=g.m;return '<li data-lg="'+i+'" title="Replay öffnen"><div class="grade '+(gc[m.g]||'g-c')+'">'+m.g+'</div><div><b>'+esc(g.real.meta.landPoi?'Landung: '+g.real.meta.landPoi:m.n)+'</b><small>'+esc(m.n)+'</small></div><span class="pl">'+(m.pl>0?'#'+m.pl:'–')+'</span></li>'}).join(''):'<li><div><b>Noch nichts analysiert</b><small>Replay wählen oder ablegen</small></div></li>';[].forEach.call($('lastg').querySelectorAll('li[data-lg]'),function(l){l.onclick=function(e){e.stopPropagation();openViewer(LG[+l.dataset.lg].m)}});window.cftFocusRefresh&&window.cftFocusRefresh();}
 window.profUpd=profUpd;
 window.renderCups=renderCups;
 function refreshList(){if(!window.fn||!window.fn.listReplays){renderCups();return Promise.resolve()}
