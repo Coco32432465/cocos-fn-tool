@@ -1,6 +1,6 @@
 // Status-Panel: aktuelle App-Version (GitHub), Download-Button, Zahlen. Wird per Cron automatisch aktualisiert.
 import { now, emb } from './util.js';
-import { getCfg, editMsg } from './discord.js';
+import { getCfg, setCfg, editMsg } from './discord.js';
 
 const REPO = 'Coco32432465/cocos-fn-tool';
 
@@ -12,6 +12,18 @@ export async function latestRelease(env) {
     const exe = (j.assets || []).find(a => /\.exe$/i.test(a.name));
     return { tag: String(j.tag_name || '').replace(/^v/, ''), url: j.html_url, download: exe ? exe.browser_download_url : j.html_url, at: j.published_at ? Math.floor(Date.parse(j.published_at) / 1000) : null };
   } catch (e) { return null; }
+}
+
+// Button-Ziel: bevorzugt der eigene /download-Link (laedt direkt die Setup-Datei), sonst der GitHub-Direktlink
+export const dlLink = (env, rel) => (env.DOWNLOAD_URL && /\/download$/.test(env.DOWNLOAD_URL)) ? env.DOWNLOAD_URL : rel.download;
+
+// Direkt-Download-Ziel der neuesten Setup-Datei, 10 Minuten zwischengespeichert (GitHub-API-Limit schonen)
+export async function downloadTarget(env) {
+  const at = Number(await getCfg(env, 'dl_at')) || 0, url = await getCfg(env, 'dl_url');
+  if (url && now() - at < 600) return url;
+  const rel = await latestRelease(env);
+  if (rel && rel.download) { await setCfg(env, 'dl_url', rel.download); await setCfg(env, 'dl_at', now()); return rel.download; }
+  return url || `https://github.com/${REPO}/releases/latest`;
 }
 
 export const downloadComponents = url => [{ type: 1, components: [{ type: 2, style: 5, label: 'Download', url, emoji: { name: '📥' } }] }];
@@ -32,11 +44,11 @@ export async function syncStatus(env) {
         { name: 'Rangliste', value: `${ranked} Spieler`, inline: true },
         { name: 'Update', value: 'Die App lädt neue Versionen automatisch.', inline: true },
         { name: 'Aktualisiert', value: `<t:${t}:R>`, inline: true }] })],
-      components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Download', url: rel.download, emoji: { name: '📥' } }, { type: 2, style: 5, label: 'Alle Versionen', url: rel.url.replace(/\/tag\/.*$/, '') }] }]
+      components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Download', url: dlLink(env, rel), emoji: { name: '📥' } }, { type: 2, style: 5, label: 'Alle Versionen', url: rel.url.replace(/\/tag\/.*$/, '') }] }]
     });
   }
   // Download-Panel: Button immer auf die aktuelle Datei zeigen lassen
   const dmsg = await getCfg(env, 'posted:download');
-  if (dmsg && env.DOWNLOAD_CHANNEL_ID && /^\d+$/.test(dmsg)) await editMsg(env, env.DOWNLOAD_CHANNEL_ID, dmsg, { components: downloadComponents(rel.download) });
+  if (dmsg && env.DOWNLOAD_CHANNEL_ID && /^\d+$/.test(dmsg)) await editMsg(env, env.DOWNLOAD_CHANNEL_ID, dmsg, { components: downloadComponents(dlLink(env, rel)) });
   return true;
 }

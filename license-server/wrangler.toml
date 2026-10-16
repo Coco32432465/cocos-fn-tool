@@ -37,7 +37,7 @@ PRICE_MONTH = "15 €"
 # PayPal.me-Link (leer = Hinweis im Ticket, Team schickt Link)
 PAYPAL_URL = ""
 # Link fuer den Download-Button (Platzhalter, bitte deine Website eintragen)
-DOWNLOAD_URL = "https://github.com/Coco32432465/cocos-fn-tool/releases/latest"
+DOWNLOAD_URL = "https://cft-license.cocotool.workers.dev/download"
 # Erlaubte Website-Adressen fuer Login/API aus dem Browser (kommagetrennt, leer = keine)
 ALLOWED_ORIGINS = ""
 PAYMENT_TEXT = "Zahlungsart klaerst du im Ticket mit dem Team (z. B. PayPal)."
