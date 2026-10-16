@@ -106,6 +106,10 @@ await T('OAuth + App: Discord verbinden, unbenutzten Key in der App einlösen', 
   assert.deepEqual(pl(rf.body.ticket).ents, []);
   db.prepare("INSERT INTO entitlements (user_id,ent,created_at) VALUES ('U1','tw',1)").run();
   assert.deepEqual(pl((await post('/license/refresh', { session: p.body.session, device: 'device-CCCCCCCC' })).body.ticket).ents, ['tw']);
+  db.prepare("UPDATE keys SET plan='lifetime' WHERE key=?").run(K2);
+  const lt = pl((await post('/license/refresh', { session: p.body.session, device: 'device-CCCCCCCC' })).body.ticket).ents;
+  assert.ok(['tw', 'coach'].every(x => lt.includes(x)) && lt.some(x => /^pass:\d{4}-\d{2}$/.test(x)), 'Lifetime = Vollzugriff: ' + lt);
+  assert.ok(db.prepare("SELECT 1 FROM teams WHERE owner_id='U1'").get(), 'Lifetime bekommt ein eigenes Team');
 });
 await T('Website-Rücksprung nur für erlaubte Adressen', async () => {
   const e2 = { ...env, ALLOWED_ORIGINS: 'https://meine-seite.de' }; const cid = 'abcdefghijklmnop5678';
