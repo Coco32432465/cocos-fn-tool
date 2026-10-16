@@ -182,7 +182,7 @@ function create(sys, { userDataDir }) {
     }
     bk.time = Date.now(); bk.tier = tier;
     try { sys.mkdir(bdir); sys.write(bfile, JSON.stringify(bk)); } catch (e) { /* Sicherung nicht schreibbar */ }
-    return { ok: true, applied, failed, restore, notes: want.filter(f => applied.includes(f.id) && f.note).map(f => f.title + ': ' + f.note) };
+    return { ok: true, applied, failed, restore, restart: applied.some(id => ['mouse', 'dvr', 'gmode'].includes(id)), notes: want.filter(f => applied.includes(f.id) && f.note).map(f => f.title + ': ' + f.note) };
   }
 
   async function revert() {
