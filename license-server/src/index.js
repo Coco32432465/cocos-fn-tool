@@ -19,6 +19,7 @@ import { openForm, submitForm, setBugStatus } from './forms.js';
 import { adminStats, handleTeam } from './admin.js';
 import { syncStatus } from './panels.js';
 import { Gateway, pingGateway } from './gateway.js';
+import { handleGiveaway, joinGiveaway, endSweep } from './giveaway.js';
 import { runSetup, setupEmbed } from './setup.js';
 import { syncPatchnotes } from './patchnotes.js';
 import { authStart, authCallback, authPoll, licenseActivate, licenseRefresh, apiVerify, hit, blocked, cleanup, corsHeaders } from './auth.js';
@@ -38,6 +39,15 @@ const COMMANDS = [
     { type: 1, name: 'sperren', description: 'Key sperren (Admin)', options: [{ type: 3, name: 'key', description: 'Lizenz-Key', required: true }] },
     { type: 1, name: 'liste', description: 'Keys anzeigen (Admin)', options: [{ type: 6, name: 'user', description: 'Nur Keys dieses Nutzers', required: false }] }
   ] },
+  { name: 'giveaway', description: 'Giveaways verwalten (Team)', options: [
+    { type: 1, name: 'start', description: 'Giveaway starten', options: [
+      { type: 3, name: 'preis', description: 'Was gibt es zu gewinnen?', required: true },
+      { type: 3, name: 'dauer', description: 'z. B. 30m, 2h, 3d', required: true },
+      { type: 4, name: 'gewinner', description: 'Anzahl Gewinner (1–10)', required: false, min_value: 1, max_value: 10 },
+      { type: 7, name: 'kanal', description: 'Kanal (Standard: dieser)', required: false, channel_types: [0, 5] }] },
+    { type: 1, name: 'ende', description: 'Jetzt beenden und auslosen', options: [{ type: 4, name: 'id', description: 'Giveaway-ID', required: true }] },
+    { type: 1, name: 'reroll', description: 'Neu auslosen', options: [{ type: 4, name: 'id', description: 'Giveaway-ID', required: true }, { type: 4, name: 'anzahl', description: 'Wie viele neu (Standard 1)', required: false, min_value: 1, max_value: 10 }] },
+    { type: 1, name: 'liste', description: 'Letzte Giveaways' }] },
   { name: 'rank', description: 'Community-Rangliste', options: [
     { type: 1, name: 'top', description: 'Top 10 anzeigen' },
     { type: 1, name: 'ich', description: 'Deinen Rang anzeigen' },
@@ -127,6 +137,11 @@ async function handleInteraction(i, env, ctx) {
     if (id === 'ticket_plan') return selectPlan(i, env, uid);
     if (id === 'ticket_close') return closeTicket(i, env, ctx, uid);
     if (id === 'ticket_confirm') return confirmTicket(i, env, uid);
+    if (id === 'gw_join') {
+      const r = await joinGiveaway(i, env, uid);
+      if (r._note) { const note = r._note; delete r._note; ctx.waitUntil(new Promise(r => setTimeout(r, 900)).then(() => fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ flags: 64, content: note === 'joined' ? '🎉 Du bist dabei! Viel Glück. (Nochmal klicken = austragen)' : 'Du bist nicht mehr dabei.' }) }))); }
+      return r;
+    }
     if (id === 'renew_open') return openTicket(i, env, uid, 'renew');
     if (id === 'form_feedback') return openForm('feedback');
     if (id === 'form_bug') return openForm('bug');
@@ -171,6 +186,7 @@ async function handleInteraction(i, env, ctx) {
     }
     if (name === 'key') return handleKey(i, env, ctx, uid);
     if (name === 'rank') return handleRank(i, env, uid);
+    if (name === 'giveaway') return handleGiveaway(i, env, uid);
     if (name === 'team') return handleTeam(i, env);
     if (name === 'admin') {
       if (!isAdmin(env, i)) return noPerm(env);
@@ -242,9 +258,10 @@ export default {
       await ensureSchema(env0);
       await safe(() => pingGateway(env0));
       const env = await withCfg(env0), cron = String(event.cron || '');
-      if (cron === '15,45 * * * *') { await safe(() => syncPatchnotes(env)); await safe(() => syncStatus(env)); }
+      if (cron === '* * * * *') await safe(() => endSweep(env));
+      else if (cron === '15,45 * * * *') { await safe(() => syncPatchnotes(env)); await safe(() => syncStatus(env)); }
       else if (cron === '30 * * * *') await safe(() => syncRank(env));
-      else { await expireSweep(env, notifyExpired(env)); await safe(() => remindSweep(env)); await cleanup(env0); }
+      else { await expireSweep(env, notifyExpired(env)); await safe(() => remindSweep(env)); await safe(() => endSweep(env)); await cleanup(env0); }
     })());
   }
 };

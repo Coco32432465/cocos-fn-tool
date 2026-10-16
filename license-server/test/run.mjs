@@ -38,13 +38,13 @@ await T('Signatur: Ping ok, falsche abgelehnt, /register nur mit Secret', async 
 });
 await T('Kauf-Ticket: privater Kanal, einmal je Nutzer, Support separat', async () => {
   const a = await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U1') }); assert.match(J(a), /<#C\d+>/);
-  const ch = S.channels.find(c => c.name === 'kauf-useru1'); assert.ok(ch); assert.ok(ch.permission_overwrites.some(o => o.id === 'G' && o.deny === '1024'));
+  const ch = S.channels.find(c => c.name.startsWith('kauf-useru1-')); assert.ok(ch); assert.ok(ch.permission_overwrites.some(o => o.id === 'G' && o.deny === '1024'));
   assert.match(J(await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U1') })), /bereits/);
   assert.match(J(await inter({ type: 3, data: { custom_id: 'ticket_support' }, member: mem('U1') })), /<#C\d+>/);
   const first = S.msgs[ch.id][0]; assert.equal(first.components[0].components[0].type, 3); // Dropdown vorhanden
 });
 await T('Dropdown Laufzeit zeigt Preis + Zahlungshinweis, Fremde nicht', async () => {
-  const ch = S.channels.find(c => c.name === 'kauf-useru1');
+  const ch = S.channels.find(c => c.name.startsWith('kauf-useru1-'));
   const r = await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', component_type: 3, values: ['month'] }, member: mem('U1') });
   assert.equal(r.type, 7); assert.match(J(r), /15 €/); assert.match(J(r), /Zahlung/);
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['week'] }, member: mem('U5') })), /Keine Berechtigung/);
@@ -56,7 +56,7 @@ await T('/key erstellen: nur Admin, Anzahl, Format XXXX-XXXX-XXXX, im Ticket sic
   const ks = J(r).match(KEYRE); assert.equal(ks.length, 3); assert.equal(new Set(ks).size, 3); assert.equal(r.data.flags, 64);
   K1 = ks[0]; K2 = ks[1];
   assert.equal(db.prepare("SELECT status,days FROM keys WHERE key=?").get(K1).status, 'unused');
-  const t = S.channels.find(c => c.name === 'kauf-useru1');
+  const t = S.channels.find(c => c.name.startsWith('kauf-useru1-'));
   const rt = await cmd('erstellen', [{ name: 'dauer', value: 'month' }], 'ADMIN', t.id); assert.match(rt.data.content, /<@U1>/); assert.equal(rt.data.flags, undefined);
 });
 await T('/key einlösen: bindet, setzt Ablauf ab jetzt, vergibt Customer; Fremdnutzung abgelehnt', async () => {
@@ -157,7 +157,7 @@ await T('/setup: Rollen-Beitritt per Regel-Button + Limit-Fortsetzung', async ()
   S2.restore();
 });
 await T('Ticket schließen: Transkript im Log-Kanal, Kanal gelöscht, Fremde nicht', async () => {
-  const ch = S.channels.find(c => c.name === 'kauf-useru1'); const logId = S.channels.find(c => c.name.endsWith('ticket-logs')).id;
+  const ch = S.channels.find(c => c.name.startsWith('kauf-useru1-')); const logId = S.channels.find(c => c.name.endsWith('ticket-logs')).id;
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_close' }, member: mem('U9') })), /Keine Berechtigung/);
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_close' }, member: mem('U1') })), /geschlossen/);
   await flush();
@@ -187,7 +187,7 @@ await T('Verlängern: Erinnerung 3 Tage vorher (einmal) -> Button -> Renew-Ticke
   assert.equal(S.dms.filter(d => d.to === 'U7' && /läuft bald ab/.test(JSON.stringify(d.body))).length, 1); // nur einmal
   const r = await inter({ type: 3, data: { custom_id: 'renew_open' }, user: { id: 'U7', username: 'user7' } }); // aus der DM, ohne member
   assert.match(J(r), /<#C\d+>/);
-  const ch = S.channels.find(c => c.name.startsWith('verlaengern-') && c.name.endsWith('user7')); assert.ok(ch, 'Renew-Kanal fehlt');
+  const ch = S.channels.find(c => /^verlaengern-user7-\d+$/.test(c.name)); assert.ok(ch, 'Renew-Kanal fehlt');
   assert.equal(db.prepare('SELECT plan FROM tickets WHERE channel_id=?').get(ch.id).plan, 'week'); // Laufzeit vorbelegt
   const first = JSON.stringify(S.msgs[ch.id][0]); assert.match(first, /paypal|PayPal/i); assert.match(first, /Screenshot/);
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('U7') })), /Keine Berechtigung/);
@@ -199,7 +199,7 @@ await T('Verlängern: Erinnerung 3 Tage vorher (einmal) -> Button -> Renew-Ticke
 });
 await T('Kauf-Ticket bestätigen: neuer Key im Ticket', async () => {
   await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U8') });
-  const ch = S.channels.find(c => c.name === 'kauf-useru8');
+  const ch = S.channels.find(c => c.name.startsWith('kauf-useru8-'));
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), /Laufzeit fehlt/);
   await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['month'] }, member: mem('U8') });
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), KEYRE);
@@ -279,6 +279,36 @@ await T('Gateway: Identify mit Präsenz, Heartbeat, Neuverbindung, Abschalten', 
     g.env.GATEWAY = 'off'; await g.ensure(); assert.equal(g.status, 'off'); assert.equal(ws.readyState, 3);
     assert.equal(await pingGateway({ GATEWAY: 'off' }), null);
   } finally { globalThis.fetch = real; }
+});
+await T('Giveaway: Start, Teilnahme, automatische Ziehung, Gewinner-Ticket mit Nummer, Reroll', async () => {
+  const gwc = (sub, options, who = 'ADMIN') => inter({ type: 2, channel_id: 'GWCH', token: 'tok', data: { name: 'giveaway', options: [{ type: 1, name: sub, options }] }, member: mem(who) });
+  assert.match(J(await gwc('start', [{ name: 'preis', value: 'Key' }, { name: 'dauer', value: '1h' }], 'U1')), /Keine Berechtigung/);
+  assert.match(J(await gwc('start', [{ name: 'preis', value: 'Key' }, { name: 'dauer', value: 'xyz' }])), /Dauer ungültig/);
+  const r = await gwc('start', [{ name: 'preis', value: '1 Monat Lizenz' }, { name: 'dauer', value: '1h' }, { name: 'gewinner', value: 2 }]);
+  assert.match(J(r), /Giveaway gestartet/); const gw = db.prepare('SELECT * FROM giveaways ORDER BY id DESC').get(); assert.equal(gw.winners, 2);
+  const post_ = S.msgs.GWCH[0]; assert.equal(post_.components[0].components[0].custom_id, 'gw_join');
+  const join = who => inter({ type: 3, token: 'tk', message: { id: gw.message_id }, data: { custom_id: 'gw_join' }, member: mem(who) });
+  for (const u of ['U1', 'U2', 'U3']) assert.equal((await join(u)).type, 7);
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM gw_entries WHERE gw_id=?').get(gw.id).n, 3);
+  await join('U3'); assert.equal(db.prepare('SELECT COUNT(*) AS n FROM gw_entries WHERE gw_id=?').get(gw.id).n, 2); // erneut klicken = austragen
+  await join('U3');
+  db.prepare('UPDATE giveaways SET ends_at=1 WHERE id=?').run(gw.id);
+  await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush();
+  const done = db.prepare('SELECT * FROM giveaways WHERE id=?').get(gw.id); assert.equal(done.status, 'ended');
+  const won = JSON.parse(done.winner_ids); assert.equal(won.length, 2); assert.equal(new Set(won).size, 2);
+  const tk = S.channels.filter(c => /^giveaway-user[a-z0-9]+-0[12]$/.test(c.name)); assert.equal(tk.length, 2, 'Gewinner-Tickets: ' + S.channels.map(c => c.name).join(','));
+  assert.deepEqual(tk.map(c => c.name.slice(-2)).sort(), ['01', '02']);
+  assert.ok(won.every(u => db.prepare("SELECT 1 FROM tickets WHERE user_id=? AND type='giveaway'").get(u)));
+  assert.ok(S.dms.some(d => won.includes(d.to) && /gewonnen/.test(JSON.stringify(d.body))));
+  assert.match(JSON.stringify(S.msgs.GWCH.at(-1)), /Glückwunsch/);
+  assert.equal(S.msgs.GWCH[0].components[0].components[0].disabled, true);
+  assert.match(J(await join('U2')), /beendet/);
+  await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush(); assert.equal(db.prepare("SELECT COUNT(*) AS n FROM tickets WHERE type='giveaway'").get().n, 2); // nur einmal
+  const rr = J(await gwc('reroll', [{ name: 'id', value: gw.id }])); assert.match(rr, /Neu ausgelost/);
+  const won2 = JSON.parse(db.prepare('SELECT winner_ids FROM giveaways WHERE id=?').get(gw.id).winner_ids); assert.equal(won2.length, 3); assert.equal(new Set(won2).size, 3);
+  assert.ok(S.channels.some(c => /^giveaway-.*-03$/.test(c.name)));
+  await inter({ type: 3, data: { custom_id: 'ticket_support' }, member: mem('U1') });
+  assert.ok(S.channels.some(c => /^support-useru1-0\d$/.test(c.name)), 'Support-Name');
 });
 await T('Patchnotes: Embed im Kanal, nur einmal pro Version', async () => {
   const S = makeDiscord(); try {
