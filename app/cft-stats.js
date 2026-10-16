@@ -86,6 +86,66 @@
     return d >= 2 ? { dir: 'up', d: d } : d <= -2 ? { dir: 'down', d: d } : { dir: 'flat', d: d };
   };
 
+  /* ---------- Landeorte ---------- */
+  var hasKind = function (g, k) { return (g.mis || (g.m && g.m.mis) || []).some(function (x) { return x && x.kind === k; }); };
+  var meta = function (g) { return (g.real && g.real.meta) || {}; };
+
+  /** Landeorte gruppiert: Anzahl, Ø Note, Ø Platz, Elims, Früh-Tod-Quote, Koordinaten für die Karte */
+  S.drops = function (G) {
+    var M = {};
+    G.forEach(function (g) {
+      var me = meta(g), n = me.landName; if (!n) return;
+      var o = M[n] || (M[n] = { name: n, c: 0, tot: 0, pl: [], k: 0, early: 0, wins: 0, pts: [], near: me.landNear !== false });
+      o.c++; o.tot += g.tot || 0; o.k += (g.m && g.m.k) || 0;
+      if (pl(g) > 0) o.pl.push(pl(g));
+      if (pl(g) === 1) o.wins++;
+      if (hasKind(g, 'early')) o.early++;
+      if (me.landPt) o.pts.push(me.landPt);
+    });
+    return Object.keys(M).map(function (k) {
+      var o = M[k];
+      return { name: o.name, c: o.c, score: r1(o.tot / o.c), place: o.pl.length ? r1(avg(o.pl)) : 0, kpg: r1(o.k / o.c), wins: o.wins, earlyPct: Math.round(100 * o.early / o.c), pts: o.pts, near: o.near };
+    }).sort(function (a, b) { return b.c - a.c || b.score - a.score; });
+  };
+  /** Beste/schwächste Landung (ab 2 Landungen) und Textempfehlung */
+  S.dropAdvice = function (L) {
+    var pool = L.filter(function (x) { return x.c >= 2; });
+    if (pool.length < 2) return { best: null, worst: null, text: L.length ? 'Landungen werden aussagekräftig, sobald du an einem Ort mindestens zweimal gelandet bist.' : '' };
+    var by = pool.slice().sort(function (a, b) { return b.score - a.score; }), best = by[0], worst = by[by.length - 1];
+    var t = 'Dein stärkster Landeort ist <b>' + best.name + '</b> (Ø Note ' + r1(best.score / 10) + (best.place ? ', Ø Platz #' + Math.round(best.place) : '') + ').';
+    if (worst.name !== best.name && best.score - worst.score >= 5) t += ' Am schwächsten läuft es bei <b>' + worst.name + '</b>' + (worst.earlyPct >= 40 ? ': dort stirbst du in ' + worst.earlyPct + ' % der Games früh. Probier einen ruhigeren Ort.' : ' (Ø Note ' + r1(worst.score / 10) + ').');
+    return { best: best, worst: worst, text: t };
+  };
+
+  /** Rotation: je Zonenzug Anteil der Games, in denen du rechtzeitig in der nächsten Zone warst */
+  S.rotation = function (G) {
+    var Z = {}, any = 0, okAll = 0, storm = 0, stormSec = 0, stormN = 0, team = 0;
+    G.forEach(function (g) {
+      (g.rot || []).forEach(function (r) {
+        if (r.ok == null) return;
+        var z = Z[r.k] || (Z[r.k] = { k: r.k, n: 0, ok: 0, gap: 0, gapN: 0 });
+        z.n++; any++; if (r.ok) { z.ok++; okAll++; }
+        if (r.gap != null && r.gap > 0) { z.gap += r.gap; z.gapN++; }
+      });
+      if (hasKind(g, 'storm')) storm++;
+      var ss = meta(g).stormSec; if (ss > 0) { stormSec += ss; stormN++; }
+      if (hasKind(g, 'team') || hasKind(g, 'spread')) team++;
+    });
+    var zones = Object.keys(Z).map(function (k) { var z = Z[k]; return { k: z.k, n: z.n, okPct: Math.round(100 * z.ok / z.n), gapM: z.gapN ? Math.round(z.gap / z.gapN / 100) : 0 }; }).sort(function (a, b) { return a.k - b.k; });
+    var weak = zones.filter(function (z) { return z.n >= 2; }).sort(function (a, b) { return a.okPct - b.okPct; })[0] || null;
+    var tips = [];
+    if (any) {
+      var early = zones.filter(function (z) { return z.k <= 3 && z.n >= 2; }), late = zones.filter(function (z) { return z.k >= 6 && z.n >= 2; });
+      var lowE = early.length && avg(early.map(function (z) { return z.okPct; })) < 60, lowL = late.length && avg(late.map(function (z) { return z.okPct; })) < 60;
+      if (lowE) tips.push('Du rotierst in den frühen Zonen oft zu spät. Starte direkt, wenn die neue Zone erscheint, und nutze die Zeit zum Looten unterwegs.');
+      if (lowL) tips.push('In den späten Zonen bist du oft außerhalb der nächsten Zone. Lege vor Zone 6 deine Endposition fest und gehe früh Richtung Innenseite.');
+      if (storm >= Math.max(2, G.length * 0.3)) tips.push('In ' + Math.round(100 * storm / G.length) + ' % deiner Games nimmst du Sturmschaden. Fülle vor jedem Zonenzug Heilung auf und plane den Weg zuerst.');
+      if (team >= Math.max(2, G.length * 0.3)) tips.push('Dein Team ist oft zu weit auseinander (' + Math.round(100 * team / G.length) + ' % der Games). Rotiert gemeinsam und sagt den Weg an.');
+      if (!tips.length) tips.push('Deine Rotation ist solide. Achte weiter auf den hohen Layer in den späten Zonen.');
+    }
+    return { n: any, okPct: any ? Math.round(100 * okAll / any) : 0, zones: zones, weak: weak, stormPct: G.length ? Math.round(100 * storm / G.length) : 0, stormSecAvg: stormN ? Math.round(stormSec / stormN) : 0, teamPct: G.length ? Math.round(100 * team / G.length) : 0, tips: tips };
+  };
+
   /* ---------- Training: Übungen je Fehlerart, fertige Pläne, Auto-Plan ---------- */
   S.DRILLS = {
     rot: { goal: 'Rechtzeitig in der nächsten Zone sein', tasks: ['Öffne bei jedem Zonenzug sofort die Map und lege dein nächstes Ziel fest', 'Starte die Rotation, wenn die neue Zone erscheint, nicht erst wenn der Sturm näher kommt', 'Spiele 3 Games und peile immer die Innenseite des Kreises an', 'Schau nach jedem Game im Replay, bei welchem Zonenzug du zu spät warst'] },

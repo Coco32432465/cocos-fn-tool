@@ -56,6 +56,13 @@
     + '#cm .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}#cm .pbtn{font:800 14px Orbitron,sans-serif;letter-spacing:.12em;padding:12px 18px;border-radius:9px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer;box-shadow:0 0 18px rgba(var(--rgb),.35)}'
     + '#cm .pbtn.gh{background:transparent;color:var(--acc-light);box-shadow:none;border-color:rgba(var(--rgb),.4)}#cm .pbtn:hover{filter:brightness(1.15)}'
     + '#cm .gr{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}#cm .gr .pi{display:flex;flex-direction:column;gap:6px}#cm .gr .pi .btns{margin-top:auto;padding-top:8px}'
+    + '#cm table.tb{width:100%;border-collapse:collapse;font-size:16px}#cm .tb th{text-align:left;color:var(--mute);font:700 12px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid #ffffff1a}'
+    + '#cm .tb td{padding:11px 10px;border-bottom:1px solid #ffffff0d}#cm .tb tr.cl{cursor:pointer}#cm .tb tr.cl:hover td{background:rgba(var(--rgb),.08)}#cm .tb td b{color:#fff}#cm .tb .hl{color:#4ade80}#cm .tb .lw{color:#ff5a67}'
+    + '#cm .cmw{position:relative;width:100%;aspect-ratio:1;border-radius:12px;overflow:hidden;border:1px solid rgba(var(--rgb),.25)}#cm .cmw img{position:absolute;inset:0;width:100%;height:100%}'
+    + '#cm .cmw i{position:absolute;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;background:var(--acc);border:2px solid #fff;box-shadow:0 0 10px var(--acc);opacity:.9}'
+    + '#cm .zb{display:flex;align-items:flex-end;gap:10px;height:170px;padding:10px 4px 0}#cm .zb div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;font-size:13px;color:var(--mute)}'
+    + '#cm .zb div i{display:block;width:100%;max-width:56px;border-radius:7px 7px 0 0;background:linear-gradient(180deg,var(--acc),var(--acc2));min-height:3px}#cm .zb div.bd i{background:linear-gradient(180deg,#ff5a67,#a3182a)}#cm .zb div b{color:#fff;font:700 13px Orbitron,sans-serif}'
+    + '#cm .tip{border-left:3px solid var(--acc);padding:8px 14px;margin:8px 0;background:rgba(var(--rgb),.07);border-radius:0 8px 8px 0;font-size:17px;line-height:1.35}'
     + '#cm .leg{display:flex;gap:18px;flex-wrap:wrap;color:var(--mute);font-size:14px;margin-top:6px}#cm .leg i{display:inline-block;width:18px;height:3px;border-radius:3px;vertical-align:middle;margin-right:6px}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -79,7 +86,7 @@
     root.querySelector('.cbody').scrollTop = 0;
   }
   $('cmb').onclick = close;
-  document.addEventListener('keydown', function (e) { if (e.code === 'Escape' && root.classList.contains('on')) { e.stopPropagation(); close(); } }, true);
+  document.addEventListener('keydown', function (e) { if (e.code === 'Escape' && root.classList.contains('on')) { var pm = $('poimap'); if (pm && !pm.hidden) return; e.stopPropagation(); close(); } }, true);
   window.cftModes = { open: open, close: close, register: function (id, M) { MODES[id] = M; } };
   function bind(btnId, mode) { var b = $(btnId); if (b) b.addEventListener('click', function (e) { e.stopPropagation(); open(mode); }); }
   CFT.modes = { bind: bind, esc: esc, fmt1: fmt1, store: store, fdate: fdate };
@@ -187,4 +194,36 @@
 
   MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['train', 'Trainingsplan']], render: function (t, w) { if (t === 'train') renderTrain(w); else renderTrend(w); } };
   bind('mtFort', 'fort');
+  /* ---------- Landung & Rotation ---------- */
+  function renderDrops(w) {
+    var G = ST.sorted(games()).filter(function (g) { return g.real; });
+    if (!G.length) return empty(w);
+    var L = ST.drops(G), adv = ST.dropAdvice(L);
+    if (!L.length) { w.innerHTML = '<div class="emp"><b>Keine Landeorte erkannt</b>Bei deinen Replays konnte kein Landepunkt bestimmt werden.</div>'; return; }
+    var all = []; L.forEach(function (x) { x.pts.forEach(function (q) { all.push(q); }); });
+    var h = '<div class="two"><div class="pn"><h3>Deine Landeorte</h3>' + (adv.text ? '<p class="s">' + adv.text + '</p>' : '') + '<table class="tb"><tr><th>Ort</th><th>Landungen</th><th>Ø Note</th><th>Ø Platz</th><th>Elims</th><th>Früh tot</th></tr>'
+      + L.map(function (x, i) {
+        var cls = adv.best && x.name === adv.best.name ? 'hl' : adv.worst && x.name === adv.worst.name && adv.worst.name !== adv.best.name ? 'lw' : '';
+        return '<tr class="cl" data-i="' + i + '"><td><b class="' + cls + '">' + esc(x.name) + '</b></td><td>' + x.c + '</td><td>' + fmt1(x.score / 10) + '</td><td>' + (x.place ? '#' + Math.round(x.place) : '–') + '</td><td>' + fmt1(x.kpg) + '</td><td>' + x.earlyPct + ' %</td></tr>';
+      }).join('') + '</table><p class="s" style="margin-top:10px">Klicke auf einen Ort, um die Landepunkte auf der Karte zu sehen.</p></div>'
+      + '<div class="pn"><h3>Alle Landungen</h3>' + (window.cftMapSrc ? '<div class="cmw"><img alt="Karte" src="' + window.cftMapSrc + '">' + all.map(function (q) { return '<i style="left:' + q[0] * 100 + '%;top:' + q[1] * 100 + '%"></i>'; }).join('') + '</div>' : '<p class="s">Karte nicht verfügbar.</p>') + '</div></div>';
+    w.innerHTML = h;
+    [].forEach.call(w.querySelectorAll('tr.cl'), function (r) { r.onclick = function () { var x = L[+r.dataset.i]; if (window.cftPoiMap) window.cftPoiMap({ n: x.name, pts: x.pts, near: x.near }); }; });
+  }
+  function renderRot(w) {
+    var G = ST.sorted(games()).filter(function (g) { return g.real; });
+    if (!G.length) return empty(w);
+    var R = ST.rotation(G);
+    if (!R.n) { w.innerHTML = '<div class="emp"><b>Keine Rotationsdaten</b>In deinen Replays gibt es noch keine ausgewerteten Zonenwechsel.</div>'; return; }
+    var h = '<div class="kp">' + kpiS('Rechtzeitig rotiert', R.okPct + ' %', 'über alle Zonenzüge') + kpiS('Schwächster Zonenzug', R.weak ? 'Zone ' + (R.weak.k + 1) : '–', R.weak ? R.weak.okPct + ' % rechtzeitig' : 'noch zu wenig Daten')
+      + kpiS('Sturmschaden', R.stormPct + ' %', 'der Games' + (R.stormSecAvg ? ' · Ø ' + R.stormSecAvg + ' s im Sturm' : '')) + kpiS('Team zu weit weg', R.teamPct + ' %', 'der Games') + '</div>';
+    h += '<div class="pn"><h3>Rechtzeitig in der nächsten Zone</h3><p class="s">Anteil der Games, in denen du beim Zonenstart schon in der nächsten Zone warst. Rot = unter 60 %.</p><div class="zb">'
+      + R.zones.map(function (z) { return '<div class="' + (z.okPct < 60 ? 'bd' : '') + '"><b>' + z.okPct + '%</b><i style="height:' + Math.max(3, z.okPct * 1.1) + 'px" title="' + z.n + ' Games' + (z.gapM ? ' · Ø ' + z.gapM + ' m außerhalb' : '') + '"></i>Z' + (z.k + 1) + '</div>'; }).join('') + '</div></div>';
+    h += '<div class="pn"><h3>Das solltest du ändern</h3>' + R.tips.map(function (t) { return '<div class="tip">' + esc(t) + '</div>'; }).join('') + '</div>';
+    w.innerHTML = h;
+  }
+  function kpiS(l, v, sub) { return '<div class="k"><small>' + l + '</small><b>' + v + '</b><i>' + esc(sub) + '</i></div>'; }
+  MODES.drop = { title: 'Landung & Rotation', tabs: [['land', 'Landeorte'], ['rot', 'Rotation']], render: function (t, w) { if (t === 'rot') renderRot(w); else renderDrops(w); } };
+  bind('mtDrop', 'drop');
+
 })();
