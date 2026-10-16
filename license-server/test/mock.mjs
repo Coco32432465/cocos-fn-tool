@@ -35,6 +35,7 @@ export function makeDiscord() {
     if (m === 'POST' && p === '/guilds/G/channels') { const b = JSON.parse(opt.body); const c = { id: 'C' + (++S.n), ...b }; S.channels.push(c); return R(c); }
     if (m === 'PATCH' && (x = p.match(/^\/channels\/(\w+)$/))) { const c = S.channels.find(c => c.id === x[1]); Object.assign(c, JSON.parse(opt.body)); S.chPatched = (S.chPatched || 0) + 1; return R(c); }
     if (m === 'DELETE' && (x = p.match(/^\/channels\/(\w+)$/))) { S.deleted.push(x[1]); S.channels = S.channels.filter(c => c.id !== x[1]); return R({}); }
+    if (m === 'DELETE' && (x = p.match(/^\/channels\/(\w+)\/messages\/(\w+)$/))) { S.msgs[x[1]] = (S.msgs[x[1]] || []).filter(q => q.id !== x[2]); return new Response(null, { status: 204 }); }
     if (m === 'PATCH' && (x = p.match(/^\/channels\/(\w+)\/messages\/(\w+)$/))) { const msg = (S.msgs[x[1]] || []).find(q => q.id === x[2]); if (!msg) return R({}, 404); const b = JSON.parse(opt.body); if (b.embeds) msg.embeds = b.embeds; if (b.components) msg.components = b.components; S.edited = (S.edited || 0) + 1; return R(msg); }
     if ((x = p.match(/^\/channels\/(\w+)\/messages(\?.*)?$/))) {
       const id = x[1];
