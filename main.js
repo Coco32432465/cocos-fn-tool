@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 const license = require('./license');
+const pctweak = require('./pctweak');
 
 const parserExe = () =>
   app.isPackaged
@@ -118,6 +119,11 @@ ipcMain.handle('parse-replay', (_e, file) => new Promise((resolve, reject) => {
 
 app.whenReady().then(() => {
   const L = license.register(ipcMain, { userDataDir: app.getPath('userData'), appDir: __dirname, openExternal: u => shell.openExternal(u) });
+  const PC = pctweak.create(null, { userDataDir: app.getPath('userData') });
+  ipcMain.handle('pc-scan', () => PC.scan().catch(e => ({ ok: false, error: String(e && e.message || e) })));
+  // Anwenden nur mit Tweak-Paket (Prüfung hier im Hauptprozess gegen das signierte Ticket); Zurücksetzen geht immer
+  ipcMain.handle('pc-apply', async (_e, ids) => (await L.hasEnt('tw')) ? PC.apply(Array.isArray(ids) ? ids.map(String) : null).catch(e => ({ ok: false, error: String(e && e.message || e) })) : { ok: false, locked: true, error: 'Dafür brauchst du das Tweak-Paket.' });
+  ipcMain.handle('pc-revert', () => PC.revert().catch(e => ({ ok: false, error: String(e && e.message || e) })));
   createWindow(); initUpdater(); L.start();
 });
 app.on('window-all-closed', () => app.quit());

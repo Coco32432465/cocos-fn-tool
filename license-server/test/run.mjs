@@ -102,6 +102,10 @@ await T('OAuth + App: Discord verbinden, unbenutzten Key in der App einlösen', 
   const a = await post('/license/activate', { session: p.body.session, key: K2, device: 'device-CCCCCCCC' }, '1.1.1.1'); assert.ok(a.body.ok, J(a));
   assert.equal(db.prepare('SELECT discord_id,status FROM keys WHERE key=?').get(K2).status, 'active');
   const rf = await post('/license/refresh', { session: p.body.session, device: 'device-CCCCCCCC' }); assert.ok(rf.body.ok, JSON.stringify(rf));
+  const pl = t => JSON.parse(Buffer.from(t.split('.')[0], 'base64url').toString());
+  assert.deepEqual(pl(rf.body.ticket).ents, []);
+  db.prepare("INSERT INTO entitlements (user_id,ent,created_at) VALUES ('U1','tw',1)").run();
+  assert.deepEqual(pl((await post('/license/refresh', { session: p.body.session, device: 'device-CCCCCCCC' })).body.ticket).ents, ['tw']);
 });
 await T('Website-Rücksprung nur für erlaubte Adressen', async () => {
   const e2 = { ...env, ALLOWED_ORIGINS: 'https://meine-seite.de' }; const cid = 'abcdefghijklmnop5678';
@@ -592,6 +596,17 @@ await T('Pakete: Duo/Squad liefern mehrere Keys, nicht fuer Verlaengerung', asyn
   await inter({ type: 3, data: { custom_id: 'renew_open' }, user: { id: 'U61', username: 'useru61' } });
   const rc = S.channels.find(c => /^verlaengern-useru61-\d+$/.test(c.name)); assert.ok(rc);
   assert.match(J(await inter({ type: 3, channel_id: rc.id, data: { custom_id: 'ticket_plan', values: ['squad'] }, member: mem('U61') })), /Unbekannte Laufzeit/);
+});
+await T('Tweak-Paket: Einmalkauf schaltet Freigabe im Ticket frei, nicht fuer Verlaengerung', async () => {
+  await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U62') });
+  const ch = S.channels.find(c => c.name.startsWith('kauf-useru62-')); assert.ok(ch);
+  await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['tweaks'] }, member: mem('U62') });
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), /Freigeschaltet/);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM entitlements WHERE user_id='U62' AND ent='tw'").get().n, 1);
+  assert.equal(db.prepare("SELECT SUM(amount) s FROM sales WHERE user_id='U62'").get().s, 9);
+  await inter({ type: 3, data: { custom_id: 'renew_open' }, user: { id: 'U63', username: 'useru63' } });
+  const rc = S.channels.find(c => /^verlaengern-useru63-\d+$/.test(c.name));
+  assert.match(J(await inter({ type: 3, channel_id: rc.id, data: { custom_id: 'ticket_plan', values: ['tweaks'] }, member: mem('U63') })), /Unbekannte Laufzeit/);
 });
 console.log(`\n${ok} Tests bestanden`); S.restore();
 
