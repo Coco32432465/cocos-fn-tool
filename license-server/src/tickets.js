@@ -2,7 +2,8 @@
 import { now, emb, eph, bad, COL, PLANS, PLAN_ALL, price, priceNum, paypalUrl, fmtDateTime, fmtDate } from './util.js';
 import { dapi, dapiFile, adminIds, isTeam, tryDM } from './discord.js';
 import { createKeys, extendLicense, bestKey } from './keys.js';
-import { attachCode, payOut, rewards, openCodeModal } from './codes.js';
+import { attachCode, payOut, rewards, codeRow, openCodeModal } from './codes.js';
+const codeInfo = async (env, c) => { if (!c) return null; const row = await codeRow(env, c); return row ? { code: row.code, buyer: rewards(env, row).buyer } : null; };
 
 const ALLOW = String(1024 + 2048 + 32768 + 65536); // sehen, schreiben, Dateien, Verlauf
 const TYPES = { buy: { prefix: 'kauf', label: 'Kauf-Ticket' }, renew: { prefix: 'verlaengern', label: 'Verlängerungs-Ticket' }, support: { prefix: 'support', label: 'Hilfe-Ticket' }, giveaway: { prefix: 'giveaway', label: 'Gewinn-Ticket' } };
@@ -35,7 +36,7 @@ function payFields(env, type, plan, uname, code) {
     { name: '💳 So bezahlst du', value: how },
     { name: 'Verwendungszweck', value: `Dein Discord-Name${uname ? ` (\`${uname}\`)` : ''}`, inline: true },
     { name: 'Sicherheit', value: 'Zahle nur über den Link in diesem Ticket. Das Team schreibt dich nie zuerst privat an.', inline: true },
-    ...(code ? [{ name: '🎁 Creator-Code', value: `**${code}** · du bekommst **+${rewards(env).buyer} Bonustag${rewards(env).buyer === 1 ? '' : 'e'}**` }] : []),
+    ...(code ? [{ name: '🎁 Creator-Code', value: `**${code.code}** · du bekommst **+${code.buyer} Bonustag${code.buyer === 1 ? '' : 'e'}**` }] : []),
     { name: 'Status', value: '⏳ Zahlung ausstehend' }
   ];
 }
@@ -106,7 +107,8 @@ export async function selectPlan(i, env, uid) {
   const plan = (i.data.values || [])[0];
   if (!PLANS[plan]) return bad(env, 'Unbekannte Laufzeit', '');
   await env.DB.prepare('UPDATE tickets SET plan=? WHERE channel_id=?').bind(plan, i.channel_id).run();
-  return { type: 7, data: { embeds: [ticketEmbed(env, t.type, t.user_id, plan, null, t.code)], components: components(env, t.type, plan, t.code) } };
+  const ci = await codeInfo(env, t.code);
+  return { type: 7, data: { embeds: [ticketEmbed(env, t.type, t.user_id, plan, null, ci)], components: components(env, t.type, plan, ci) } };
 }
 
 export const codeButton = () => openCodeModal();
@@ -117,8 +119,8 @@ export async function submitCode(i, env, uid) {
   let raw = ''; for (const r of i.data.components || []) for (const c of r.components || []) if (c.custom_id === 'f_code') raw = c.value;
   const r = await attachCode(env, t, uid, raw);
   if (r.error) return bad(env, 'Code nicht angenommen', r.error);
-  const t2 = { ...t, code: r.code };
-  return { type: 7, data: { embeds: [ticketEmbed(env, t2.type, t2.user_id, t2.plan, null, r.code)], components: components(env, t2.type, t2.plan, r.code) } };
+  const ci = { code: r.code, buyer: r.buyer };
+  return { type: 7, data: { embeds: [ticketEmbed(env, t.type, t.user_id, t.plan, null, ci)], components: components(env, t.type, t.plan, ci) } };
 }
 
 // Team: Zahlung geprueft -> Key erstellen bzw. Lizenz verlaengern
@@ -143,7 +145,7 @@ export async function confirmTicket(i, env, uid) {
   }
   let codeNote = null;
   if (t.code) { // Bonus-Tage fuer den Kaeufer, Belohnung fuer den Code-Inhaber
-    const bonus = rewards(env).buyer, po = await payOut(env, t, t.user_id);
+    const po = await payOut(env, t, t.user_id), bonus = po ? po.buyer : 0;
     if (po) {
       if (bonus) {
         const keyVal = (fields.find(f => f.name === 'Dein Key') || {}).value;

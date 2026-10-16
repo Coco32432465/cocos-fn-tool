@@ -25,7 +25,7 @@ export async function adminStats(env) {
     { name: 'Stand', value: fmtDateTime(t), inline: true }] });
 }
 
-const TEAM_ROLES = { moderator: ['MOD_ROLE_ID', 'Moderator'], supporter: ['SUPPORTER_ROLE_ID', 'Supporter'], developer: ['DEV_ROLE_ID', 'Developer'], creator: ['CREATOR_ROLE_ID', 'Content Creator'], tester: ['TESTER_ROLE_ID', 'Tester'] };
+const TEAM_ROLES = { moderator: ['MOD_ROLE_ID', 'Moderator'], supporter: ['SUPPORTER_ROLE_ID', 'Supporter'], developer: ['DEV_ROLE_ID', 'Developer'], creator: ['CREATOR_ROLE_ID', 'Content Creator'], manager: ['CONTENT_ROLE_ID', 'Content Manager'], tester: ['TESTER_ROLE_ID', 'Tester'] };
 
 export async function handleTeam(i, env) {
   if (!isAdmin(env, i)) return bad(env, 'Keine Berechtigung', 'Dieser Befehl ist dem Admin vorbehalten.');
