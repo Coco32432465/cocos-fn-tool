@@ -24,5 +24,7 @@ window.CFT_CONFIG = {
   /* Neue Replays im Fortnite-Ordner automatisch im Hintergrund analysieren */
   autoAnalyze: true,
   /* Wie viele der neuesten Replays maximal automatisch analysiert werden (jedes dauert beim ersten Mal 1–2 Min.) */
-  autoAnalyzeMax: 5
+  autoAnalyzeMax: 5,
+  /* Wie viele schon gespeicherte Replays beim Start automatisch geladen werden (schnell, kein neues Parsen) */
+  autoLoadMax: 60
 };

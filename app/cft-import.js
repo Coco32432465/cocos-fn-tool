@@ -67,6 +67,7 @@
     return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
   }
   CFT.fmt = fmt;
+  CFT.mapAll = function () { try { return localStorage.getItem('cft_mapall') === '1'; } catch (e) { return false; } };
   function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
   function lerp(a, b, u) { return a + (b - a) * u; }
 
@@ -363,7 +364,9 @@
         if (high ? (mp.pts[i][3] < 4000 && !(mp.pts[i][4] & (F_BUS | F_SKY))) : (i > iSky && !(mp.pts[i][4] & F_AIR))) { landT = mp.pts[i][0]; break; }
       }
     }
-    var landPos = landT != null ? posAt(mp, landT + 3) : null, landPoi = landPos ? CFT.poiAt(landPos[0], landPos[1]) : null;
+    /* Modus erkennen: die Orte/Karte gelten nur fuer Reload. Andere Modi (oder Schalter in den Einstellungen aus) = keine Orte, Karte aus. */
+    var plRaw = String(meta.playlist || ''), isReload = /reload|respawn/i.test(plRaw), mapOn = !plRaw || isReload || CFT.mapAll();
+    var landPos = landT != null ? posAt(mp, landT + 3) : null, landPoi = landPos && mapOn ? CFT.poiAt(landPos[0], landPos[1]) : null;
     function nearestMate(t) {
       var best = null, me0 = posAt(mp, t);
       if (!me0) return null;
@@ -778,7 +781,7 @@
     var pls = String(meta.playlist || '').replace(/^Playlist_/i, '').replace(/_/g, ' ').trim();
     var title = (when ? when : base) + (pls ? ' · ' + pls : '') + (num(meta.round, 0) > 0 ? ' · Runde ' + meta.round : '');
 
-    R.meta = { me: me.name, teamSize: tn, players: P.length, positions: O.reduce(function (s, p) { return s + p.pts.length; }, 0), kills: ev.length, zones: Zs.length,
+    R.meta = { mode: plRaw ? (isReload ? 'Reload' : pls || 'Anderer Modus') : '', mapOn: mapOn, me: me.name, teamSize: tn, players: P.length, positions: O.reduce(function (s, p) { return s + p.pts.length; }, 0), kills: ev.length, zones: Zs.length,
       place: place > 0 ? place : null, mis: mis.length, landT: landT, landPoi: landPoi ? landPoi.label : null, landName: landPoi ? (landPoi.near ? landPoi.name : 'Freies Gelände bei ' + landPoi.name) : null, landNear: landPoi ? !!landPoi.near : null, landPt: landPoi ? [Math.round(landPoi.x * 1000) / 1000, Math.round(landPoi.y * 1000) / 1000] : null, stormSec: Math.round(stormSec), playlist: pls };
     var kills = num(me.kills, 0);
     var m = { n: title, pl: place > 0 ? place : 0, pts: 0, k: kills, g: L, s: 7, real: R, ph: ph, mis: mis };
