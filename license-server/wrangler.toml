@@ -37,6 +37,7 @@ PRICE_MONTH = "15 €"
 PRICE_DUO = "25 €"    # 2 Keys à 1 Monat (statt 30 €)
 PRICE_SQUAD = "45 €"  # 4 Keys à 1 Monat (statt 60 €)
 PRICE_TWEAKS = "9 €"  # Tweak-Paket, Einmalkauf
+PRICE_PASS = "5 €"    # Season-Pass Premium, gilt für eine Season (Kalendermonat)
 PRICE_TEAM = "59 €"   # Team-Lizenz: 5 Keys à 1 Monat + Coach-Dashboard (statt 75 €)
 # PayPal.me-Link (leer = Hinweis im Ticket, Team schickt Link)
 PAYPAL_URL = ""

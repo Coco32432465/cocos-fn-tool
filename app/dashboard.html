@@ -22,8 +22,12 @@
     gruen:mk('Schwarz · Grün',1,'#19E36B'),
     gold:mk('Schwarz · Gold',1,'#FFB800'),
     bl:mk('Blau · Lila',2,'#3B82F6','#A855F7'),
-    gb:mk('Grün · Blau',2,'#10E5A0','#2F7BFF')
+    gb:mk('Grün · Blau',2,'#10E5A0','#2F7BFF'),
+    neon:mk('Neon · Pink',1,'#FF2BD6'),cyan:mk('Season · Cyan',1,'#00E5FF'),toxic:mk('Toxic · Lime',1,'#B6FF00'),
+    sunset:mk('Sunset',2,'#FF7A18','#FF2BD6'),ice:mk('Ice',2,'#7DD3FC','#E0F2FE'),prism:mk('Prism',2,'#A855F7','#00E5FF')
   };
+  ['neon','cyan','toxic','sunset','ice','prism'].forEach(function(k){T[k].lock=1}); // Season-Pass-Belohnungen
+  window.cftUnlocked=function(k){if(!T[k]||!T[k].lock)return true;try{return((JSON.parse(localStorage.getItem('cft_unl'))||{}).themes||[]).indexOf(k)>=0}catch(e){return false}};
   function apply(n,save){
     if(!T[n])n='rot';var t=T[n],s=document.documentElement.style;
     s.setProperty('--acc',t.acc);s.setProperty('--acc2',t.acc2);s.setProperty('--rgb',t.rgb);s.setProperty('--rgb2',t.rgb2);
@@ -34,6 +38,7 @@
   }
   window.THEMES=T;window.applyTheme=function(n){apply(n,true)};
   var n='blau';try{n=localStorage.getItem('cft_theme')||'blau'}catch(e){}
+  if(!window.cftUnlocked(n))n='blau';
   apply(n,false);
 })();
 </script>
@@ -1955,7 +1960,8 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
     [1,2].forEach(function(g){
       h+='<h4 class="thg">'+G[g]+'</h4>';
       Object.keys(T).filter(function(k){return(T[k].grp||1)===g}).forEach(function(k){var t=T[k];
-        h+='<button data-t="'+k+'" class="'+(k===cur?'on':'')+'"><span class="sw" style="background:linear-gradient(135deg,#0A0A0C 40%,rgb('+t.deep+'))"><b style="background:linear-gradient(135deg,'+t.acc+','+t.acc2+');box-shadow:0 0 14px '+t.acc+'"></b><i style="background:linear-gradient(90deg,'+(g===2?t.acc+','+t.acc2:t.dark+','+t.acc+','+t.light)+')"></i></span>'+t.name+'</button>'})});
+        var lk=!window.cftUnlocked(k);
+        h+='<button data-t="'+k+'"'+(lk?' disabled title="Season-Pass-Belohnung"':'')+' class="'+(k===cur?'on':'')+'"'+(lk?' style="opacity:.38;cursor:not-allowed"':'')+'><span class="sw" style="background:linear-gradient(135deg,#0A0A0C 40%,rgb('+t.deep+'))"><b style="background:linear-gradient(135deg,'+t.acc+','+t.acc2+');box-shadow:0 0 14px '+t.acc+'"></b><i style="background:linear-gradient(90deg,'+(g===2?t.acc+','+t.acc2:t.dark+','+t.acc+','+t.light)+')"></i></span>'+(lk?'🔒 ':'')+t.name+'</button>'})});
     $('stgt').innerHTML=h;
     [].forEach.call($('stgt').querySelectorAll('button'),function(b){b.onclick=function(){window.applyTheme(b.dataset.t);cards()}});
   }
@@ -1970,7 +1976,7 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
   function mapUI(){var on=false;try{on=localStorage.getItem('cft_mapall')==='1'}catch(e){}$('mapst').textContent=on?'· an':'· nur Reload';return on}
   $('mapb').onclick=function(){var on=!mapUI();try{localStorage.setItem('cft_mapall',on?'1':'0')}catch(e){}mapUI();$('mapm').textContent=on?'Karte wird jetzt in allen Modi gezeigt. Bitte die App neu starten, damit die Replays neu ausgewertet werden.':'Karte nur bei Reload. Bitte die App neu starten, damit die Replays neu ausgewertet werden.'};
   var rkT=0;
-  window.cftRankSync=function(){clearTimeout(rkT);if(window.cftTeamSync)window.cftTeamSync();rkT=setTimeout(function(){var s=rankStats();if(s&&window.fn&&window.fn.rankSync)window.fn.rankSync(s)},4000)};
+  window.cftRankSync=function(){clearTimeout(rkT);if(window.cftTeamSync)window.cftTeamSync();if(window.cftSeasonRefresh)window.cftSeasonRefresh();rkT=setTimeout(function(){var s=rankStats();if(s&&window.fn&&window.fn.rankSync)window.fn.rankSync(s)},4000)};
   $('rkb').onclick=function(){
     if(!window.fn||!window.fn.rankSet){$('rkm').textContent='Nur in der installierten App verfügbar.';return}
     window.fn.licState().then(function(st){

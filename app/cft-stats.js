@@ -259,5 +259,71 @@
       rising: M.map(function (m) { return { m: m, d: slope(m.stats.trend) }; }).sort(function (a, b) { return b.d - a.d; })[0] };
   };
 
+  /* ---------- Season-Pass: Aufgaben, XP, Level (kalendermonatlich, Berlin-Zeit). Belohnungs-Tage holt der Server ab. ---------- */
+  var BERLIN = null;
+  function berlinParts(t) {
+    try {
+      BERLIN = BERLIN || new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' });
+      var p = {}; BERLIN.formatToParts(new Date(t)).forEach(function (x) { p[x.type] = x.value; });
+      return { y: +p.year, m: +p.month, d: +p.day };
+    } catch (e) { var d = new Date(t); return { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() }; }
+  }
+  S.seasonId = function (t) { var b = berlinParts(t == null ? Date.now() : t); return b.y + '-' + (b.m < 10 ? '0' : '') + b.m; };
+  S.seasonDaysLeft = function (t) { var b = berlinParts(t == null ? Date.now() : t); return new Date(Date.UTC(b.y, b.m, 0)).getUTCDate() - b.d + 1; };
+  S.LEVEL_XP = 100; S.MAX_LEVEL = 10; S.PASS_BOOST = 1.25;
+  S.PASS = [ // Level -> Belohnung. days = Bonustage (Server), theme/title = Kosmetik (bleibt dauerhaft)
+    { lvl: 1, free: { type: 'title', id: 'Rookie' } },
+    { lvl: 2, free: { type: 'theme', id: 'neon', label: 'Neon Pink' }, prem: { type: 'theme', id: 'sunset', label: 'Sunset' } },
+    { lvl: 3, free: { type: 'days', days: 1 } },
+    { lvl: 4, free: { type: 'title', id: 'Grinder' }, prem: { type: 'title', id: 'Season Elite' } },
+    { lvl: 5, free: { type: 'theme', id: 'cyan', label: 'Cyan' } },
+    { lvl: 6, free: { type: 'days', days: 1 }, prem: { type: 'theme', id: 'ice', label: 'Ice' } },
+    { lvl: 7, free: { type: 'title', id: 'Veteran' } },
+    { lvl: 8, free: { type: 'theme', id: 'toxic', label: 'Toxic' }, prem: { type: 'title', id: 'Legende' } },
+    { lvl: 9, free: { type: 'title', id: 'Elite' } },
+    { lvl: 10, free: { type: 'days', days: 2 }, prem: { type: 'theme', id: 'prism', label: 'Prism' } }
+  ];
+  S.SEASON_TASKS = [
+    { id: 'analyze', title: 'Replays analysieren', unit: 'Replays', tiers: [[10, 60], [25, 100], [50, 140]] },
+    { id: 'wins', title: 'Siege holen', unit: 'Siege', tiers: [[1, 60], [3, 100], [6, 140]] },
+    { id: 'top10', title: 'Top-10-Platzierungen', unit: 'Top 10', tiers: [[5, 40], [15, 80], [30, 120]] },
+    { id: 'elims', title: 'Elims sammeln', unit: 'Elims', tiers: [[20, 40], [60, 80], [120, 120]] },
+    { id: 'score', title: 'Ø Note der letzten 10 Games', unit: 'Ø Note', tiers: [[55, 50], [65, 80], [75, 120]] },
+    { id: 'streak', title: 'Tage in Folge gespielt', unit: 'Tage', tiers: [[2, 40], [4, 70], [7, 110]] },
+    { id: 'clean', title: 'Games ohne erkannten Fehler', unit: 'Games', tiers: [[3, 50], [8, 90], [15, 130]] },
+    { id: 'team', title: 'Einem Team beitreten', unit: '', tiers: [[1, 50]] }
+  ];
+  /** Fortschritt in der aktuellen Season. opts: { now, premium, teamIn } */
+  S.season = function (games, opts) {
+    opts = opts || {}; var now = opts.now == null ? Date.now() : opts.now, id = S.seasonId(now);
+    var G = S.sorted((games || []).filter(function (g) { return g && g.real && g.m && S.seasonId(ts(g)) === id; }));
+    var days = {}; G.forEach(function (g) { var b = berlinParts(ts(g)); days[b.y * 10000 + b.m * 100 + b.d] = Date.UTC(b.y, b.m - 1, b.d); });
+    var keys = Object.keys(days).map(function (k) { return days[k]; }).sort(function (a, b) { return a - b; }), best = 0, run = 0;
+    keys.forEach(function (d, i) { run = i && d - keys[i - 1] === DAY ? run + 1 : 1; if (run > best) best = run; });
+    var last10 = G.slice(-10), V = {
+      analyze: G.length, wins: G.filter(function (g) { return pl(g) === 1; }).length, top10: G.filter(function (g) { return pl(g) > 0 && pl(g) <= 10; }).length,
+      elims: G.reduce(function (s, g) { return s + ((g.m && g.m.k) || 0); }, 0), score: last10.length >= 5 ? r1(avg(last10.map(function (g) { return g.tot || 0; }))) : 0,
+      streak: best, clean: G.filter(function (g) { var m = g.mis || (g.m && g.m.mis); return Array.isArray(m) && m.length === 0; }).length, team: opts.teamIn ? 1 : 0
+    };
+    var base = 0, tasks = S.SEASON_TASKS.map(function (t) {
+      var v = V[t.id] || 0, xp = 0, next = null;
+      var tiers = t.tiers.map(function (x) { var done = v >= x[0]; if (done) xp += x[1]; else if (!next) next = x; return { need: x[0], xp: x[1], done: done }; });
+      base += xp; return { id: t.id, title: t.title, unit: t.unit, value: v, tiers: tiers, xp: xp, next: next ? { need: next[0], xp: next[1] } : null };
+    });
+    var xp = Math.round(base * (opts.premium ? S.PASS_BOOST : 1)), cap = S.MAX_LEVEL * S.LEVEL_XP;
+    var level = Math.min(S.MAX_LEVEL, Math.floor(xp / S.LEVEL_XP));
+    return { id: id, daysLeft: S.seasonDaysLeft(now), games: G.length, tasks: tasks, base: base, xp: xp, level: level, premium: !!opts.premium,
+      into: level >= S.MAX_LEVEL ? S.LEVEL_XP : xp - level * S.LEVEL_XP, pct: Math.min(100, Math.round(100 * xp / cap)), max: level >= S.MAX_LEVEL };
+  };
+  /** Kosmetik, die zu Level/Premium freigeschaltet ist: { themes: [...], titles: [...] } */
+  S.passCosmetics = function (level, premium) {
+    var out = { themes: [], titles: [] };
+    S.PASS.forEach(function (r) {
+      if (r.lvl > level) return;
+      [r.free, premium ? r.prem : null].forEach(function (x) { if (!x) return; if (x.type === 'theme') out.themes.push(x.id); if (x.type === 'title') out.titles.push(x.id); });
+    });
+    return out;
+  };
+
   if (typeof module !== 'undefined' && module.exports) module.exports = CFT;
 })(typeof window !== 'undefined' ? window : globalThis);

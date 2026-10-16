@@ -4,6 +4,7 @@ import { dapi, dapiFile, adminIds, isTeam, tryDM } from './discord.js';
 import { createKeys, extendLicense, bestKey } from './keys.js';
 import { askRating } from './growth.js';
 import { createOrExtendTeam } from './team.js';
+import { seasonId } from './season.js';
 import { attachCode, payOut, rewards, codeRow, openCodeModal } from './codes.js';
 const codeInfo = async (env, c) => { if (!c) return null; const row = await codeRow(env, c); return row ? { code: row.code, buyer: rewards(env, row).buyer } : null; };
 
@@ -12,7 +13,7 @@ const TYPES = { buy: { prefix: 'kauf', label: 'Kauf-Ticket' }, renew: { prefix: 
 
 function components(env, type, plan, code) {
   const rows = [];
-  if (type === 'buy' || type === 'renew') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: 'Laufzeit wählen', options: Object.entries(type === 'renew' ? PLANS : SHOP).map(([id, p]) => ({ label: `${p.label} · ${price(env, id)}`, value: id, description: TEAMS[id] ? '5 Keys + Coach-Dashboard für dein Team' : ADDONS[id] ? 'Einmalkauf · PC-Tweaks in der App' : PACKS[id] ? `${PACKS[id].count} Keys · je ${PLANS[PACKS[id].base].days} Tage Zugang` : `${p.days} Tage Zugang`, default: id === plan })) }] });
+  if (type === 'buy' || type === 'renew') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: 'Laufzeit wählen', options: Object.entries(type === 'renew' ? PLANS : SHOP).map(([id, p]) => ({ label: `${p.label} · ${price(env, id)}`, value: id, description: TEAMS[id] ? '5 Keys + Coach-Dashboard für dein Team' : ADDONS[id] ? (id === 'pass' ? 'Premium-Belohnungen + 25 % XP für diese Season' : 'Einmalkauf · PC-Tweaks in der App') : PACKS[id] ? `${PACKS[id].count} Keys · je ${PLANS[PACKS[id].base].days} Tage Zugang` : `${p.days} Tage Zugang`, default: id === plan })) }] });
   const btns = [];
   const pp = plan ? paypalUrl(env, plan) : '';
   if (pp) btns.push({ type: 2, style: 5, label: 'Mit PayPal bezahlen', url: pp, emoji: { name: '💳' } });
@@ -55,7 +56,7 @@ function ticketEmbed(env, type, uid, plan, uname, code) {
     title: renew ? 'Lizenz verlängern' : 'Lizenzbestellung',
     desc: `Hallo <@${uid}>, ${renew ? 'schön, dass du verlängern möchtest! Wähle unten die Laufzeit – sie wird an deine aktuelle Lizenz angehängt.' : 'wähle unten die gewünschte Laufzeit. Preis und Zahlungshinweis siehst du danach hier.'}`,
     fields: p ? payFields(env, type, plan, uname, code) : [
-      { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` + (renew ? '' : `\n${PACKS.duo.label} · **${price(env, 'duo')}**\n${PACKS.squad.label} · **${price(env, 'squad')}**\n${TEAMS.team.label} · **${price(env, 'team')}**\n${ADDONS.tweaks.label} · **${price(env, 'tweaks')}**`) },
+      { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` + (renew ? '' : `\n${PACKS.duo.label} · **${price(env, 'duo')}**\n${PACKS.squad.label} · **${price(env, 'squad')}**\n${TEAMS.team.label} · **${price(env, 'team')}**\n${ADDONS.tweaks.label} · **${price(env, 'tweaks')}**\n${ADDONS.pass.label} · **${price(env, 'pass')}**`) },
       { name: 'Status', value: 'Laufzeit noch nicht gewählt' }
     ]
   });
@@ -146,9 +147,11 @@ export async function confirmTicket(i, env, uid) {
       ? [{ name: 'Dein Key', value: '```\n' + r.key + '\n```' }, { name: 'Einlösen', value: 'In der App (Mit Discord verbinden → Key eingeben).' }]
       : [{ name: 'Neues Ablaufdatum', value: `**${fmtDate(r.expires_at)}**`, inline: true }, { name: 'Laufzeit', value: `+ ${plan.label}`, inline: true }, { name: 'Hinweis', value: 'Du musst nichts neu eingeben – die App aktualisiert sich automatisch.' }];
   } else if (ADDONS[t.plan]) {
-    await env.DB.prepare('INSERT OR IGNORE INTO entitlements (user_id,ent,created_at) VALUES (?,?,?)').bind(t.user_id, ADDONS[t.plan].ent, now()).run();
+    await env.DB.prepare('INSERT OR IGNORE INTO entitlements (user_id,ent,created_at) VALUES (?,?,?)').bind(t.user_id, t.plan === 'pass' ? 'pass:' + seasonId() : ADDONS[t.plan].ent, now()).run();
     kind = 'addon';
-    fields = [{ name: 'Freigeschaltet', value: `**${plan.label}**`, inline: true }, { name: 'So geht’s', value: 'In der App auf **Aktualisieren** klicken (oder neu starten), dann im Modus **PC-Check** die Tweaks anwenden.' }];
+    fields = t.plan === 'pass'
+      ? [{ name: 'Freigeschaltet', value: `**${plan.label}** · Season ${seasonId()}`, inline: true }, { name: 'So geht’s', value: 'In der App unter **Fortschritt → Season** auf **Aktualisieren** klicken. Premium-Belohnungen und +25 % XP gelten ab sofort.' }]
+      : [{ name: 'Freigeschaltet', value: `**${plan.label}**`, inline: true }, { name: 'So geht’s', value: 'In der App auf **Aktualisieren** klicken (oder neu starten), dann im Modus **PC-Check** die Tweaks anwenden.' }];
   } else {
     const pk = PACKS[t.plan] || TEAMS[t.plan], keys = await createKeys(env, pk ? pk.base : t.plan, pk ? pk.count : 1, uid); kind = 'new'; firstKey = keys[0];
     const team = TEAMS[t.plan] ? await createOrExtendTeam(env, t.user_id) : null;

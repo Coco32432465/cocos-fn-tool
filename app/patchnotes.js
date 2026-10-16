@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.14.0', date: '2026-10-17', tag: 'NEU', vod: 0, text: 'Season-Pass: Jeden Monat neue Season mit Aufgaben (Replays, Siege, Top 10, Elims, Note, Serien) und 10 Leveln. Belohnungen: Bonustage auf deinen Key, neue Farbschemata und Titel. Mit dem Premium-Pass gibt es Extra-Belohnungen und 25 % mehr XP. Zu finden unter Fortschritt → Season' },
   { v: '0.13.0', date: '2026-10-17', tag: 'FEATURE', text: 'Team-Lizenz: Unter Fortschritt gibt es den neuen Tab „Team“. Spieler treten mit dem Team-Code ihres Coaches bei und teilen freiwillig ihre Gesamtwerte. Der Coach sieht alle im Dashboard: Ø Note, Verlauf, häufigste Fehler und die gemeinsame Team-Schwäche' },
   { v: '0.12.0', date: '2026-10-17', tag: 'NEU', vod: 0, text: 'Neuer Modus „PC-Check & Tweaks“: Der Check ist gratis und zeigt, was dich FPS und Aim-Präzision kostet (Energiesparplan, Game-Aufnahme, Mausbeschleunigung, Fortnite-Grafik). Mit dem Tweak-Paket (Einmalkauf im Discord) setzt die App alles per Klick, sichert vorher die alten Werte und stellt sie mit „Zurücksetzen“ wieder her' },
   { v: '0.11.0', date: '2026-10-16', tag: 'FEATURE', text: 'Fortschritt: Session-Zusammenfassung mit Momentum-Kurve und Ziel für die nächste Session, Vergleich mit der Community und den Top 10. Replay Viewer: Clip-Marker mit Taste M (Rechtsklick löscht)' },
