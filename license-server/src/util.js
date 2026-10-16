@@ -46,7 +46,7 @@ export const noPerm = env => bad(env, 'Keine Berechtigung', 'Dieser Befehl ist d
 
 // PayPal-Link mit Betrag (paypal.me/name -> paypal.me/name/5EUR); andere Links bleiben unveraendert
 export function paypalUrl(env, planId) {
-  const per = String(planId === 'week' ? env.PAYPAL_URL_WEEK : planId === 'month' ? env.PAYPAL_URL_MONTH : '' || '').trim();
+  const per = String((planId === 'week' ? env.PAYPAL_URL_WEEK : planId === 'month' ? env.PAYPAL_URL_MONTH : '') || '').trim();
   if (per) return per; // eigener Link je Laufzeit (Betrag steckt im Link)
   const u = String(env.PAYPAL_URL || '').trim();
   if (!u) return '';
