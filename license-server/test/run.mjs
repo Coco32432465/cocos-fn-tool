@@ -580,5 +580,18 @@ await T('Rangliste: Community-Durchschnitt erst ab 5 Teilnehmern, ohne Namen', a
   for (let k = 4; k < 12; k++) db.prepare('INSERT INTO ranks (discord_id,name,games,avg_score,wins,kills,avg_place,updated_at) VALUES (?,?,?,?,?,?,?,?)').run('A' + k, 'n' + k, 10, 50 + k, 1, 20, 10, 1);
   r = await get(); assert.equal(r.all.n, 12); assert.equal(r.top.n, 10); assert.ok(r.top.avgScore > r.all.avgScore); assert.equal(r.all.kpg, 2); assert.ok(!JSON.stringify(r).includes('n1'));
 });
+await T('Pakete: Duo/Squad liefern mehrere Keys, nicht fuer Verlaengerung', async () => {
+  await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U60') });
+  const ch = S.channels.find(c => c.name.startsWith('kauf-useru60-')); assert.ok(ch);
+  const k0 = db.prepare("SELECT COUNT(*) n FROM keys WHERE plan='month' AND status='unused'").get().n;
+  await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['duo'] }, member: mem('U60') });
+  const conf = J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') }));
+  assert.match(conf, /Deine Keys/);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM keys WHERE plan='month' AND status='unused'").get().n - k0, 2);
+  assert.equal(db.prepare("SELECT SUM(amount) s FROM sales WHERE user_id='U60'").get().s, 25);
+  await inter({ type: 3, data: { custom_id: 'renew_open' }, user: { id: 'U61', username: 'useru61' } });
+  const rc = S.channels.find(c => /^verlaengern-useru61-\d+$/.test(c.name)); assert.ok(rc);
+  assert.match(J(await inter({ type: 3, channel_id: rc.id, data: { custom_id: 'ticket_plan', values: ['squad'] }, member: mem('U61') })), /Unbekannte Laufzeit/);
+});
 console.log(`\n${ok} Tests bestanden`); S.restore();
 
