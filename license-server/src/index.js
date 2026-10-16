@@ -37,7 +37,7 @@ const COMMANDS = [
     { type: 5, name: 'entfernen', description: 'Zugang entziehen statt vergeben', required: false }] },
   { name: 'key', description: 'Lizenz-Keys', options: [
     { type: 1, name: 'erstellen', description: 'Keys erzeugen (Admin)', options: [
-      { type: 3, name: 'dauer', description: 'Laufzeit', required: true, choices: [{ name: '1 Woche', value: 'week' }, { name: '1 Monat', value: 'month' }, { name: '10 Minuten (Test)', value: 'test' }] },
+      { type: 3, name: 'dauer', description: 'Laufzeit', required: true, choices: [{ name: '1 Woche', value: 'week' }, { name: '1 Monat', value: 'month' }, { name: '10 Minuten (Test)', value: 'test' }, { name: 'Lifetime ♾️', value: 'lifetime' }] },
       { type: 4, name: 'anzahl', description: 'Wie viele Keys (1–25)', required: false, min_value: 1, max_value: 25 }] },
     { type: 1, name: 'einlösen', description: 'Key an dein Konto binden und freischalten', options: [{ type: 3, name: 'key', description: 'XXXX-XXXX-XXXX', required: true }] },
     { type: 1, name: 'info', description: 'Deine Lizenz anzeigen' },

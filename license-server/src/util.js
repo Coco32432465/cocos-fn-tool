@@ -14,7 +14,8 @@ export async function sha256hex(s) {
 export const PLANS = { week: { days: 7, label: '1 Woche' }, month: { days: 30, label: '1 Monat' } };
 export const TEST_PLAN = { days: 10 / 1440, label: '10 Minuten (Test)' }; // nur Admin, nicht im Shop
 export const TRIAL_PLAN = { days: 1, label: '1 Tag (Probe)' }; // kostenlose Probe, nicht im Shop
-export const PLAN_ALL = { ...PLANS, test: TEST_PLAN, trial: TRIAL_PLAN };
+export const LIFETIME_PLAN = { days: 36500, label: 'Lifetime ♾️' }; // nur Admin, nicht im Shop (100 Jahre)
+export const PLAN_ALL = { ...PLANS, test: TEST_PLAN, trial: TRIAL_PLAN, lifetime: LIFETIME_PLAN };
 export const KEY_RE = /^[A-Z0-9]{4}(-[A-Z0-9]{4}){2,3}$/; // neu: XXXX-XXXX-XXXX, aeltere 4er-Keys bleiben gueltig
 const KEY_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 Zeichen, ohne 0/O/1/I
 export function newKey() {
@@ -24,8 +25,8 @@ export function newKey() {
 export const normKey = k => String(k || '').trim().toUpperCase();
 
 const TZ = 'Europe/Berlin';
-export const fmtDate = ts => new Date(ts * 1000).toLocaleDateString('de-DE', { timeZone: TZ });
-export const fmtDateTime = ts => new Date(ts * 1000).toLocaleString('de-DE', { timeZone: TZ, dateStyle: 'short', timeStyle: 'short' });
+export const fmtDate = ts => ts > 3000000000 ? 'Lifetime ♾️' : new Date(ts * 1000).toLocaleDateString('de-DE', { timeZone: TZ });
+export const fmtDateTime = ts => ts > 3000000000 ? 'Lifetime ♾️' : new Date(ts * 1000).toLocaleString('de-DE', { timeZone: TZ, dateStyle: 'short', timeStyle: 'short' });
 export const priceNum = s => parseFloat(String(s || '').replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
 export const price = (env, planId) => (planId === 'week' ? env.PRICE_WEEK : env.PRICE_MONTH) || '';
 
