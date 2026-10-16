@@ -1243,13 +1243,16 @@ function analyze(paths,openFirst,quiet){
  return run.then(function(){
   if(!done.length)return;
   var g=done[done.length-1];
-  if(quiet){toast(done.length+' neue'+(done.length===1?'s Replay':' Replays')+' analysiert');return g}
+  if(quiet){toast(done.length+(done.length===1?' Replay':' Replays')+' geladen');return g}
   if(done.length>1)toast(done.length+' Replays analysiert – '+cftReportName().cap+' ist bereit');
   else toast('Fertig: '+(g.m.pl>0?'Platz #'+g.m.pl+' · ':'')+g.m.k+' Elims · Note '+g.m.g);
   if(openFirst)openViewer(g.m);return g})}
 /* neue Replays im Ordner automatisch im Hintergrund analysieren (Einstellung: config.js) */
 function autoRun(){var C=window.CFT_CONFIG||{};if(!window.fn||C.autoAnalyze===false||!$('sw').classList.contains('on'))return;
- var todo=RL.slice(0,C.autoAnalyzeMax||5).map(rpath).filter(function(p){return !byPath[p]&&!failed[p]&&!busy[p]});
+ /* Schon gespeicherte (zwischengespeicherte) Replays werden alle beim Start geladen, neue maximal autoAnalyzeMax auf einmal */
+ var cand=RL.map(function(r){return{p:rpath(r),c:!!r.cached}}).filter(function(x){return !byPath[x.p]&&!failed[x.p]&&!busy[x.p]});
+ var saved=cand.filter(function(x){return x.c}).slice(0,C.autoLoadMax||60).map(function(x){return x.p}),fresh=cand.filter(function(x){return !x.c}).slice(0,C.autoAnalyzeMax||5).map(function(x){return x.p});
+ var todo=saved.concat(fresh);
  if(todo.length)analyze(todo,false,true)}
 window.analyzeReplay=function(p,o){return analyze([p],o!==false)};
 function addJson(list){
@@ -1458,8 +1461,8 @@ window.openViewer=function(i){
  setTimeout(function(){
   V.pin=null;V.t=0;V.sp=1;V.zoom=1;V.cx=V.cy=.5;V.follow=false;zUI();cur=-2;build(m);feed();fightsUI(m);grades(m);hideMis();HUDC={};if(!GEN)GEN=genMap();if(MAP_SRC&&!MAPIMG)setImg(MAP_SRC);
   [].forEach.call($('spds').children,function(b){b.classList.toggle('on',b.dataset.s==='1')});
-  $('vt').textContent=m.n;V.m=m;window.__lastM=m;V.laK=null;renderLeft();scoreUpd();
-  $('vs').textContent=m.real?(m.pl>0?'Platz #'+m.pl+' · ':'')+m.k+' Elims · '+m.real.nPlayers+' Spieler'+(m.real.meta.landPoi?' · gelandet: '+m.real.meta.landPoi:''):'Platz #'+m.pl+' · '+m.pts+' Pkt · '+m.k+' Elims';
+  V.map=!(m.real&&m.real.meta&&m.real.meta.mapOn===false);$('mb').textContent=V.map?'Karte ausblenden':'Karte anzeigen';$('vt').textContent=m.n;V.m=m;window.__lastM=m;V.laK=null;renderLeft();scoreUpd();
+  $('vs').textContent=m.real?(m.pl>0?'Platz #'+m.pl+' · ':'')+m.k+' Elims · '+m.real.nPlayers+' Spieler'+(m.real.meta.landPoi?' · gelandet: '+m.real.meta.landPoi:'')+(m.real.meta.mode?' · '+m.real.meta.mode:''):'Platz #'+m.pl+' · '+m.pts+' Pkt · '+m.k+' Elims';
   $('status').classList.toggle('real',!!m.real);$('mc').hidden=!m.real;$('cal').hidden=true;$('mg').textContent=m.g;$('mg').className=gc[m.g];
   $('sc').max=DUR;document.body.classList.remove('rp');document.body.classList.add('vw');size();setPlay(true);last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
   v.classList.remove('on')},400)};
@@ -1926,6 +1929,9 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
     <h3>App</h3>
     <div class="row"><span>Version <b id="stgv">–</b></span><button id="stgu">Nach Updates suchen</button></div>
     <div class="um" id="stgm"></div>
+    <h3>Karte</h3>
+    <div class="row"><span>Karte in allen Modi zeigen <b id="mapst">–</b></span><button id="mapb">Umschalten</button></div>
+    <div class="um" id="mapm">Normal wird die Karte nur bei Reload-Replays gezeigt, bei anderen Modi bleibt sie aus. Die Änderung gilt nach einem Neustart der App.</div>
     <h3>Rangliste</h3>
     <div class="row"><span>Community-Rangliste im Discord <b id="rkst">–</b></span><button id="rkb">Teilnehmen</button></div>
     <div class="um" id="rkm">Freiwillig: Es werden nur Name, Ø Note, Runden, Siege und Kills geteilt. Jederzeit abschaltbar.</div>
@@ -1952,6 +1958,8 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
   function rankUI(st){
     var on=st&&st.rank,b=$('rkb');$('rkst').textContent=!st||!st.connected?'(nicht verbunden)':on?'· aktiv':'· aus';
     b.textContent=on?'Austragen':'Teilnehmen';b.disabled=!st||!st.connected;if(st&&st.error)$('rkm').textContent=st.error}
+  function mapUI(){var on=false;try{on=localStorage.getItem('cft_mapall')==='1'}catch(e){}$('mapst').textContent=on?'· an':'· nur Reload';return on}
+  $('mapb').onclick=function(){var on=!mapUI();try{localStorage.setItem('cft_mapall',on?'1':'0')}catch(e){}mapUI();$('mapm').textContent=on?'Karte wird jetzt in allen Modi gezeigt. Bitte die App neu starten, damit die Replays neu ausgewertet werden.':'Karte nur bei Reload. Bitte die App neu starten, damit die Replays neu ausgewertet werden.'};
   var rkT=0;
   window.cftRankSync=function(){clearTimeout(rkT);rkT=setTimeout(function(){var s=rankStats();if(s&&window.fn&&window.fn.rankSync)window.fn.rankSync(s)},4000)};
   $('rkb').onclick=function(){
@@ -1961,7 +1969,7 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
       if(on&&!s){$('rkm').textContent='Analysiere zuerst ein paar Replays, dann kannst du teilnehmen.';return}
       window.fn.rankSet(on,s).then(function(r){rankUI(r);if(!r.error)$('rkm').textContent=on?'Du bist dabei! Die Rangliste steht im Discord-Kanal #rangliste (mind. 3 Runden).':'Du wurdest aus der Rangliste entfernt.'})})};
   window.openSettings=function(){
-    cards();$('stgm').textContent='';box.classList.add('on');
+    cards();mapUI();$('stgm').textContent='';box.classList.add('on');
     if(window.fn&&window.fn.licState)window.fn.licState().then(rankUI);
     if(window.fn&&window.fn.version)window.fn.version().then(function(v){$('stgv').textContent='v'+v});
   };

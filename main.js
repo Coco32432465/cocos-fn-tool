@@ -66,7 +66,8 @@ ipcMain.handle('list-replays', () => {
     const p = path.join(dir, f);
     try {
       const st = fs.statSync(p);
-      out.push({ path: p, name: f, mtime: st.mtimeMs, size: st.size });
+      let cached = false; try { cached = fs.existsSync(cacheName(f, st.size, st.mtimeMs)); } catch (_) {}
+      out.push({ path: p, name: f, mtime: st.mtimeMs, size: st.size, cached });
     } catch (_) { /* Datei verschwunden */ }
   }
   return out.sort((a, b) => b.mtime - a.mtime);
@@ -78,11 +79,14 @@ const cacheDir = () => {
   fs.mkdirSync(d, { recursive: true });
   return d;
 };
-const CACHE_VERSION = 'p4'; // erhöhen, wenn sich der Parser ändert
+const CACHE_VERSION = 'p4'; // nur erhöhen, wenn sich der Parser ändert (App-Updates behalten den Cache)
+function cacheName(name, size, mtimeMs) {
+  const key = (name + '_' + size + '_' + Math.round(mtimeMs)).replace(/[^\w.-]+/g, '_');
+  return path.join(cacheDir(), CACHE_VERSION + '_' + key + '.json');
+}
 function cacheFile(file) {
   const st = fs.statSync(file);
-  const key = (path.basename(file) + '_' + st.size + '_' + Math.round(st.mtimeMs)).replace(/[^\w.-]+/g, '_');
-  return path.join(cacheDir(), CACHE_VERSION + '_' + key + '.json');
+  return cacheName(path.basename(file), st.size, st.mtimeMs);
 }
 
 // Replay mit ReplayDump.exe in die schlanke JSON (cft-1) umwandeln und zurückgeben
