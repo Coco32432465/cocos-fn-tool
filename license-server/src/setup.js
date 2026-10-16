@@ -1,6 +1,7 @@
 // /setup: baut Kategorien, Kanaele, Rollen und Start-Embeds auf. Bereits Vorhandenes wird uebersprungen.
 // Cloudflare Free erlaubt ~50 Discord-Aufrufe je Ausfuehrung: bei grossen Aufbauten einfach /setup noch einmal ausfuehren.
 import { emb, COL, price, eph, bits, PERM } from './util.js';
+import { statsEmbed, statsRows } from './stats.js';
 import { dapi, setCfg, getCfg } from './discord.js';
 import { boardEmbed } from './rank.js';
 import { downloadComponents } from './panels.js';
@@ -26,9 +27,9 @@ const ACCESS = [...STAFF, 'creator_role', 'customer_role', 'rank_role', 'tester_
 const FORUM_TAGS = ['💡 Idee', '🐛 Problem', '⏳ In Arbeit', '✅ Umgesetzt', '❌ Abgelehnt'].map(name => ({ name }));
 const STRUCT = [
   { cat: 'START', emoji: '🚀', ch: [['welcome', '👋', 'Willkommen und erste Schritte', 1], ['rules', '📜', 'Server-Regeln', 1], ['announcements', '📢', 'Ankündigungen', 1], ['patchnotes', '🧩', "Patchnotes zu Cocos Tool", 1], ['status', '📊', 'Live-Status: aktuelle Version und Download', 1], ['download', '📥', 'Download der App', 1], ['free-tips', '💡', 'Kostenlose Fortnite-Tipps', 0]] },
-  { cat: 'COMMUNITY', emoji: '💬', ch: [['general', '💬', 'Allgemeiner Austausch', 0], ['placements', '🏆', 'Eure Platzierungen und Ergebnisse', 0], ['rangliste', '🥇', 'Community-Rangliste (per App freiwillig)', 1], ['giveaways', '🎉', 'Giveaways: mitmachen und gewinnen', 1], ['lfg', '🎮', 'Mitspieler suchen', 0], ['questions', '❓', 'Fragen zu Fortnite und zum Tool', 0]] },
+  { cat: 'COMMUNITY', emoji: '💬', ch: [['general', '💬', 'Allgemeiner Austausch', 0], ['placements', '🏆', 'Eure Platzierungen und Ergebnisse', 0], ['rangliste', '🥇', 'Community-Rangliste (per App freiwillig)', 1], ['giveaways', '🎉', 'Giveaways: mitmachen und gewinnen', 1], ['umfragen', '📊', 'Umfragen: starte eigene Abstimmungen per Button', 1], ['lfg', '🎮', 'Mitspieler suchen: Duo, Trio oder Squad per Button', 1], ['questions', '❓', 'Fragen zu Fortnite und zum Tool', 0]] },
   { cat: 'TOOL', emoji: '🛠️', ch: [['how-to-use', '📖', 'So nutzt du das Tool', 1], ['feedback', '💌', 'Dein Feedback zum Tool (Button unten)', 1], ['bug-reports', '🐛', 'Fehler melden (Button unten)', 1], ['support', '🎫', 'Hilfe per Ticket', 1], ['key-kaufen', '🔑', 'Lizenz erwerben', 1], ['impressum', '⚖️', 'Impressum', 1]] },
-  { cat: 'WORKSPACE', emoji: '🧰', ch: [['arbeit', '🎧', 'Team-Call – nur für das Team', 0, 'voice'], ['vorschläge', '💡', 'Dein Vorschlag fürs Tool: ein Beitrag pro Idee, mit Tag und Beschreibung. Mit 👍 abstimmen.', 0, 'forum']] },
+  { cat: 'WORKSPACE', emoji: '🧰', ch: [['arbeit', '🎧', 'Team-Call – nur für das Team', 0, 'voice'], ['live-stats', '📈', 'Live-Stats: Keys, Nutzer, Umsatz (nur Team)', 1, '', 'admin'], ['vorschläge', '💡', 'Dein Vorschlag fürs Tool: ein Beitrag pro Idee, mit Tag und Beschreibung. Mit 👍 abstimmen.', 0, 'forum']] },
   { cat: 'INTERN', emoji: '🔒', priv: 'staff', ch: [['team-chat', '💼', 'Interner Team-Chat', 1, '', 'staff'], ['ticket-logs', '🗂️', 'Ticket-Transkripte (nur Team)', 1, '', 'admin']] }
 ];
 const TYPE = { '': 0, voice: 2, forum: 15 };
@@ -110,23 +111,33 @@ export async function runSetup(env, renew) {
         ids[name] = c.data.id; L(`#${name}: erstellt`);
       }
     }
-    for (const [name, key] of [['ticket-logs', 'log_channel'], ['key-kaufen', 'key_channel'], ['support', 'support_channel'], ['feedback', 'feedback_channel'], ['bug-reports', 'bug_channel'], ['status', 'status_channel'], ['rangliste', 'rank_channel'], ['giveaways', 'giveaway_channel'], ['general', 'general_channel'], ['download', 'download_channel']]) {
+    for (const [name, key] of [['ticket-logs', 'log_channel'], ['key-kaufen', 'key_channel'], ['support', 'support_channel'], ['feedback', 'feedback_channel'], ['bug-reports', 'bug_channel'], ['status', 'status_channel'], ['rangliste', 'rank_channel'], ['giveaways', 'giveaway_channel'], ['umfragen', 'poll_channel'], ['lfg', 'lfg_channel'], ['live-stats', 'stats_channel'], ['general', 'general_channel'], ['download', 'download_channel']]) {
       if (ids[name]) await setCfg(env, key, ids[name]);
     }
 
     const M = n => ids[n] ? `<#${ids[n]}>` : `#${n}`;
     const posts = [
-      ['welcome', 'welcome', { embeds: [emb(env, { title: "Willkommen bei Cocos Tool", desc: "Cocos Tool ist das VOD-Review-Tool für Fortnite: Replays analysieren, Fehler erkennen und dein Gameplay auf das nächste Level bringen.", fields: [
+      ['welcome', 'welcome', { embeds: [emb(env, { banner: true, title: "Willkommen bei Cocos Tool", desc: "Cocos Tool ist das VOD-Review-Tool für Fortnite: Replays analysieren, Fehler erkennen und dein Gameplay auf das nächste Level bringen.", fields: [
         { name: 'Erste Schritte', value: `1. Regeln lesen: ${M('rules')}\n2. Anleitung: ${M('how-to-use')}\n3. App laden: ${M('download')}` },
         { name: 'Lizenz', value: `Für die VOD-Analyse brauchst du einen Key: ${M('key-kaufen')}` },
         { name: 'Community', value: `Rangliste: ${M('rangliste')} · Ideen einreichen: ${M('vorschläge')}` },
         { name: 'Hilfe', value: `Fragen: ${M('questions')} · Support per Ticket: ${M('support')}` }] })] }],
       ['rules', 'rules', { embeds: [emb(env, { title: 'Regeln', desc: '**1. Respekt** – Geh respektvoll mit allen um. Keine Beleidigungen, Diskriminierung oder Hetze.\n**2. Kein Spam** – Keine Werbung, Fremd-Links oder Mehrfach-Posts.\n**3. Keys sind persönlich** – Ein Key ist an dein Discord-Konto und ein Gerät gebunden. Weitergabe führt zur Sperre ohne Erstattung.\n**4. Zahlung nur im Ticket** – Bezahlt wird ausschließlich im Ticket-Kanal. Das Team schreibt dich nie zuerst privat an.\n**5. Discord-Richtlinien** – Es gelten die Nutzungsbedingungen und Community-Richtlinien von Discord.\n\nMit dem Button bestätigst du die Regeln und erhältst die Rolle **Member**.' })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Regeln akzeptieren', custom_id: 'rules_accept' }] }] }],
-      ['download', 'download', { embeds: [emb(env, { title: 'Download', desc: "Lade die aktuelle Version von Cocos Tool herunter. Updates installiert die App danach automatisch.", fields: [
+      ['download', 'download', { embeds: [emb(env, { banner: true, title: 'Download', desc: "Lade die aktuelle Version von Cocos Tool herunter. Updates installiert die App danach automatisch.", fields: [
         { name: 'System', value: 'Windows 10/11 (64-Bit)', inline: true }, { name: 'Lizenz', value: `Für die VOD-Analyse nötig – ${M('key-kaufen')}`, inline: true }] })], components: downloadComponents(env.DOWNLOAD_URL || 'https://github.com/Coco32432465/cocos-fn-tool/releases/latest') }],
-      ['key-kaufen', 'key-panel', { embeds: [emb(env, { title: "Cocos Tool – Lizenz erwerben", desc: 'Eröffne ein Ticket, um eine Lizenz zu bestellen.', fields: [
+      ['key-kaufen', 'key-panel', { embeds: [emb(env, { banner: true, title: "Cocos Tool – Lizenz erwerben", desc: 'Eröffne ein Ticket, um eine Lizenz zu bestellen.', fields: [
         { name: '1 Woche', value: price(env, 'week'), inline: true }, { name: '1 Monat', value: price(env, 'month'), inline: true }, { name: 'Umfang', value: 'VOD-Analyse · 1 Gerät pro Key', inline: true },
         { name: 'Ablauf', value: '1. Ticket eröffnen und Laufzeit wählen\n2. Bezahlen\n3. Nach Bestätigung erhältst du deinen Key\n4. In der App mit Discord verbinden und Key eingeben' }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Key kaufen', custom_id: 'ticket_buy' }] }] }],
+      ['umfragen', 'poll-panel', { embeds: [emb(env, { title: '📊 Umfrage starten', desc: 'Du willst die Community etwas fragen? Klicke auf den Button, schreib deine Frage und die Optionen (eine pro Zeile) und fertig. Alle stimmen per Klick ab, nochmal klicken zieht die Stimme zurück.', fields: [{ name: 'Gut zu wissen', value: 'Bis zu 5 Optionen · Dauer frei wählbar (Standard 24 Stunden) · Das Ergebnis erscheint automatisch am Ende.' }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Neue Umfrage', custom_id: 'poll_new', emoji: { name: '📊' } }] }] }],
+      ['lfg', 'lfg-panel', { embeds: [emb(env, { title: '🎮 Mitspieler suchen', desc: 'Such dir ein Duo, Trio oder Squad. Klicke auf eine Größe, schreib optional kurz dazu, worum es geht (Ranked, Zero Build, Scrims, Uhrzeit), und deine Suche erscheint hier. Wer mitspielen will, klickt auf **Beitreten**.', fields: [{ name: 'Ablauf', value: 'Sobald alle Plätze belegt sind, meldet sich der Bot mit einer Erwähnung. Mit **Verlassen** trittst du aus oder schließt deine Suche.' }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Duo', custom_id: 'lfg_new_duo', emoji: { name: '2️⃣' } }, { type: 2, style: 1, label: 'Trio', custom_id: 'lfg_new_trio', emoji: { name: '3️⃣' } }, { type: 2, style: 1, label: 'Squad', custom_id: 'lfg_new_squad', emoji: { name: '4️⃣' } }] }] }],
+      ['how-to-use', 'howto', { embeds: [emb(env, { title: '📖 Erste Schritte', desc: 'In fünf Schritten von der Installation zur ersten Analyse.', fields: [
+        { name: '1 · App laden', value: `Lade Cocos Tool in ${M('download')} herunter und installiere es. Updates kommen danach automatisch.` },
+        { name: '2 · Mit Discord verbinden', value: 'Starte die App und klicke auf **Mit Discord verbinden**. Es öffnet sich kurz der Browser, danach bist du verbunden.' },
+        { name: '3 · Key holen und einlösen', value: `Hol dir einen Key über ein Ticket in ${M('key-kaufen')}. In der App gibst du ihn ein, die Laufzeit startet erst beim Einlösen. Ein Key gilt für ein Gerät.` },
+        { name: '4 · Replays laden', value: 'Die App überwacht deinen Replay-Ordner und analysiert neue Replays automatisch. Du kannst auch Replays oder JSON-Dateien per Upload oder Drag and Drop laden.' },
+        { name: '5 · Dein Gameplay verbessern', value: 'Im Replay Viewer siehst du Fehler und Kämpfe. **Fortschritt & Training** zeigt deinen Trend und baut dir einen Trainingsplan, **Landung & Rotation** wertet deine Landeorte und Rotationen aus.' },
+        { name: 'Hilfe', value: `Fragen: ${M('questions')} · Fehler melden: ${M('bug-reports')} · Support: ${M('support')}` }] })] }],
+      ['live-stats', 'stats-panel', { embeds: [await statsEmbed(env)], components: statsRows() }],
       ['status', 'status', { embeds: [emb(env, { title: '📊 Cocos Tool · Status', desc: 'Der Status wird in wenigen Minuten automatisch aktualisiert.' })] }],
       ['rangliste', 'rankboard', { embeds: [boardEmbed(env, [], 0)] }],
       ['feedback', 'feedback-panel', { embeds: [emb(env, { title: '💌 Feedback senden', desc: 'Dir gefällt etwas, du vermisst etwas oder hast eine Idee? Klicke auf den Button und schreib uns – dein Feedback landet direkt beim Team.', fields: [{ name: 'Größere Ideen', value: `Poste sie im Forum ${M('vorschläge')}, dort kann die Community abstimmen.` }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Feedback senden', custom_id: 'form_feedback', emoji: { name: '💌' } }] }] }],

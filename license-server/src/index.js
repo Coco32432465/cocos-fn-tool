@@ -20,11 +20,12 @@ import { openForm, submitForm, setBugStatus } from './forms.js';
 import { adminStats, adminUsers, adminKeys, handleTeam } from './admin.js';
 import { syncStatus, downloadTarget } from './panels.js';
 import { Gateway, pingGateway } from './gateway.js';
-import { handleGiveaway, joinGiveaway, endSweep } from './giveaway.js';
-import { handleFun, votePoll, lfgButton, lfgFullNote, pollSweep, reminderSweep } from './fun.js';
+import { handleGiveaway, joinGiveaway, endSweep, submitGiveaway } from './giveaway.js';
+import { handleFun, votePoll, lfgButton, lfgFullNote, pollSweep, reminderSweep, submitFun, openPollModal, openLfgModal } from './fun.js';
+import { statsEmbed, statsRows, syncStats } from './stats.js';
 import { runSetup, setupEmbed } from './setup.js';
 import { syncPatchnotes } from './patchnotes.js';
-import { authStart, authCallback, authPoll, licenseActivate, licenseRefresh, apiVerify, hit, blocked, cleanup, corsHeaders } from './auth.js';
+import { authStart, authCallback, authPoll, licenseActivate, licenseRefresh, licensePing, apiVerify, hit, blocked, cleanup, corsHeaders } from './auth.js';
 
 const COMMANDS = [
   { name: 'setup', description: 'Server automatisch aufbauen (Admin)', options: [{ type: 5, name: 'erneuern', description: 'Start-Embeds und Panels neu posten', required: false }] },
@@ -42,25 +43,14 @@ const COMMANDS = [
     { type: 1, name: 'liste', description: 'Keys anzeigen (Admin)', options: [{ type: 6, name: 'user', description: 'Nur Keys dieses Nutzers', required: false }] }
   ] },
   { name: 'giveaway', description: 'Giveaways verwalten (Team)', options: [
-    { type: 1, name: 'start', description: 'Giveaway starten', options: [
-      { type: 3, name: 'preis', description: 'Was gibt es zu gewinnen?', required: true },
-      { type: 3, name: 'dauer', description: 'z. B. 30m, 2h, 3d', required: true },
-      { type: 4, name: 'gewinner', description: 'Anzahl Gewinner (1–10)', required: false, min_value: 1, max_value: 10 },
-      { type: 7, name: 'kanal', description: 'Kanal (Standard: #giveaways)', required: false, channel_types: [0, 5] }] },
+    { type: 1, name: 'start', description: 'Giveaway starten (öffnet ein Formular)' },
     { type: 1, name: 'ende', description: 'Jetzt beenden und auslosen', options: [{ type: 4, name: 'id', description: 'Giveaway-ID', required: true }] },
     { type: 1, name: 'reroll', description: 'Neu auslosen', options: [{ type: 4, name: 'id', description: 'Giveaway-ID', required: true }, { type: 4, name: 'anzahl', description: 'Wie viele neu (Standard 1)', required: false, min_value: 1, max_value: 10 }] },
     { type: 1, name: 'liste', description: 'Letzte Giveaways' }] },
-  { name: 'umfrage', description: 'Umfrage starten (2–5 Optionen)', options: [
-    { type: 3, name: 'frage', description: 'Die Frage', required: true },
-    { type: 3, name: 'optionen', description: 'Optionen mit Semikolon trennen: Duo; Trio; Squad', required: true },
-    { type: 3, name: 'dauer', description: 'z. B. 30m, 2h, 3d (Standard 24h)', required: false }] },
-  { name: 'lfg', description: 'Mitspieler suchen', options: [
-    { type: 3, name: 'modus', description: 'Wie viele Spieler?', required: true, choices: [{ name: 'Duo (2)', value: 'duo' }, { name: 'Trio (3)', value: 'trio' }, { name: 'Squad (4)', value: 'squad' }] },
-    { type: 3, name: 'info', description: 'z. B. Ranked, Zero Build, Scrims, Uhrzeit', required: false }] },
+  { name: 'umfrage', description: 'Neue Umfrage (öffnet ein Formular)' },
+  { name: 'lfg', description: 'Mitspieler suchen: Duo, Trio oder Squad' },
   { name: 'erinnerung', description: 'Private Erinnerung per DM', options: [
-    { type: 1, name: 'setzen', description: 'Erinnerung anlegen', options: [
-      { type: 3, name: 'in', description: 'z. B. 30m, 2h, 3d', required: true },
-      { type: 3, name: 'text', description: 'Woran soll ich dich erinnern?', required: true }] },
+    { type: 1, name: 'neu', description: 'Neue Erinnerung (öffnet ein Formular)' },
     { type: 1, name: 'liste', description: 'Deine offenen Erinnerungen' },
     { type: 1, name: 'löschen', description: 'Erinnerung löschen', options: [{ type: 4, name: 'id', description: 'ID aus /erinnerung liste', required: true }] }] },
   { name: 'tipp', description: 'Zufälliger Pro-Tipp' },
@@ -164,6 +154,12 @@ async function handleInteraction(i, env, ctx) {
       if (r._full) { const f = r._full; delete r._full; ctx.waitUntil(new Promise(x => setTimeout(x, 700)).then(() => lfgFullNote(env, f))); }
       return r;
     }
+    if (id === 'poll_new') return openPollModal();
+    if (/^lfg_new_(duo|trio|squad)$/.test(id)) return openLfgModal(id.slice(8));
+    if (id === 'stats_refresh') {
+      if (!isTeam(env, i)) return noPerm(env);
+      return { type: 7, data: { embeds: [await statsEmbed(env)], components: statsRows() } };
+    }
     if (id === 'renew_open') return openTicket(i, env, uid, 'renew');
     if (id === 'form_feedback') return openForm('feedback');
     if (id === 'form_bug') return openForm('bug');
@@ -182,6 +178,8 @@ async function handleInteraction(i, env, ctx) {
     const id = i.data.custom_id;
     if (id === 'modal_feedback') return submitForm(i, env, uid, 'feedback');
     if (id === 'modal_bug') return submitForm(i, env, uid, 'bug');
+    if (id === 'modal_giveaway') return submitGiveaway(i, env, uid);
+    const fr = await submitFun(i, env, uid); if (fr) return fr;
     return bad(env, 'Unbekanntes Formular', '');
   }
 
@@ -260,16 +258,17 @@ export default {
       }
       if (url.pathname === '/auth/start') return authStart(url, env0);
       if (url.pathname === '/auth/callback') return authCallback(url, env0);
-      const API = ['/auth/poll', '/license/activate', '/license/refresh', '/api/verify'];
+      const API = ['/auth/poll', '/license/activate', '/license/refresh', '/license/ping', '/api/verify'];
       if (request.method === 'POST' && API.includes(url.pathname)) {
         if (!(await hit(env0, 'ip:' + ip, 40, 60))) return json({ ok: false, valid: false, error: 'rate', message: 'Zu viele Anfragen. Bitte kurz warten.' }, 429, cors);
-        if (url.pathname !== '/auth/poll' && url.pathname !== '/license/refresh' && await blocked(env0, ip)) return json({ ok: false, valid: false, error: 'blocked', message: 'Zu viele Fehlversuche. Bitte später erneut versuchen.' }, 429, cors);
+        if (url.pathname !== '/auth/poll' && url.pathname !== '/license/refresh' && url.pathname !== '/license/ping' && await blocked(env0, ip)) return json({ ok: false, valid: false, error: 'blocked', message: 'Zu viele Fehlversuche. Bitte später erneut versuchen.' }, 429, cors);
         let body; try { body = await request.json(); } catch (e) { return json({ ok: false, error: 'json' }, 400, cors); }
         const env = await withCfg(env0);
         let res;
         if (url.pathname === '/auth/poll') res = await authPoll(body, env);
         else if (url.pathname === '/license/activate') res = await licenseActivate(body, env, ip);
         else if (url.pathname === '/license/refresh') res = await licenseRefresh(body, env);
+        else if (url.pathname === '/license/ping') res = await licensePing(body, env);
         else res = await apiVerify(body, env, ip);
         for (const [k, v] of Object.entries(cors)) res.headers.set(k, v);
         return res;
@@ -286,7 +285,7 @@ export default {
       await ensureSchema(env0);
       await safe(() => pingGateway(env0));
       const env = await withCfg(env0), cron = String(event.cron || '');
-      if (cron === '* * * * *') { await safe(() => endSweep(env)); await safe(() => pollSweep(env)); await safe(() => reminderSweep(env)); }
+      if (cron === '* * * * *') { await safe(() => endSweep(env)); await safe(() => pollSweep(env)); await safe(() => reminderSweep(env)); if (Math.floor(Date.now() / 60000) % 5 === 0) await safe(() => syncStats(env)); }
       else if (cron === '15,45 * * * *') { await safe(() => syncPatchnotes(env)); await safe(() => syncStatus(env)); }
       else if (cron === '30 * * * *') await safe(() => syncRank(env));
       else { await expireSweep(env, notifyExpired(env)); await safe(() => remindSweep(env)); await safe(() => endSweep(env)); await cleanup(env0); }

@@ -2,6 +2,7 @@
 import { now, emb, eph, bad, COL, fmtDateTime } from './util.js';
 import { dapi, isTeam } from './discord.js';
 import { hit } from './auth.js';
+import { bumpPanel } from './panelkit.js';
 
 const row = (id, label, style, max, ph, req = true) => ({ type: 1, components: [{ type: 4, custom_id: id, label, style, max_length: max, required: req, placeholder: ph }] });
 
@@ -31,6 +32,7 @@ export async function submitForm(i, env, uid, kind) {
   if (bug) payload.components = [{ type: 1, components: [{ type: 2, style: 2, label: 'In Arbeit', custom_id: 'rep_prog', emoji: { name: '🛠️' } }, { type: 2, style: 3, label: 'Erledigt', custom_id: 'rep_done', emoji: { name: '✅' } }] }];
   const r = await dapi(env, 'POST', `/channels/${ch}/messages`, payload);
   if (!r.ok) return bad(env, 'Nicht gesendet', 'Die Meldung konnte nicht gepostet werden. Bitte versuche es später erneut.');
+  await bumpPanel(env, ch, bug ? 'bug-panel' : 'feedback-panel'); // Panel wieder ganz unten
   await env.DB.prepare('INSERT INTO reports (kind,user_id,title,created_at) VALUES (?,?,?,?)').bind(kind, uid, title, now()).run();
   return eph(env, { title: bug ? 'Fehler gemeldet' : 'Danke für dein Feedback', color: COL.ok, desc: `Deine Meldung wurde gepostet: <#${ch}>` });
 }

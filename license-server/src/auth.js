@@ -124,6 +124,12 @@ export async function licenseActivate(body, env, ip) {
   if (!KEY_RE.test(key)) return json({ ok: false, error: 'format', message: 'Ungültiges Key-Format.' }, 400);
   return grant(env, sess, key, body.device, ip, body.appVersion);
 }
+export async function licensePing(body, env) {
+  const sess = await getSession(env, body.session);
+  if (!sess) return json({ ok: false, error: 'session' }, 401);
+  await env.DB.prepare('UPDATE sessions SET last_seen=?, app_version=COALESCE(NULLIF(?,\'\'), app_version) WHERE token_hash=?').bind(now(), String(body.appVersion || '').slice(0, 20), sess.token_hash).run();
+  return json({ ok: true });
+}
 export async function licenseRefresh(body, env) {
   const sess = await getSession(env, body.session);
   if (!sess) return json({ ok: false, error: 'session', message: 'Bitte verbinde dein Discord-Konto erneut.' }, 401);
