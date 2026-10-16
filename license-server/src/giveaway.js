@@ -28,13 +28,20 @@ function giveEmbed(env, g, count, ended, winners) {
 
 const countOf = async (env, id) => (await env.DB.prepare('SELECT COUNT(*) AS n FROM gw_entries WHERE gw_id=?').bind(id).first()).n;
 
-async function start(i, env, uid) {
-  const o = n => ((i.data.options[0].options || []).find(x => x.name === n) || {}).value;
-  const prize = String(o('preis') || '').trim().slice(0, 200), sec = parseDuration(o('dauer'));
+const mrow = (id, label, style, max, ph, req = true) => ({ type: 1, components: [{ type: 4, custom_id: id, label, style, max_length: max, required: req, placeholder: ph }] });
+const mval = (i, id) => { for (const r of i.data.components || []) for (const c of r.components || []) if (c.custom_id === id) return String(c.value || '').trim(); return ''; };
+export const openGiveawayModal = () => ({ type: 9, data: { custom_id: 'modal_giveaway', title: 'Giveaway starten', components: [
+  mrow('f_prize', 'Was gibt es zu gewinnen?', 1, 200, 'z. B. 1 Monat Cocos Tool Lizenz'),
+  mrow('f_dur', 'Dauer (z. B. 30m, 2h, 3d)', 1, 6, '3d'),
+  mrow('f_win', 'Anzahl Gewinner (1 bis 10)', 1, 2, '1', false)] } });
+
+export async function submitGiveaway(i, env, uid) {
+  if (!isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Giveaways kann nur das Team verwalten.');
+  const prize = mval(i, 'f_prize').slice(0, 200), sec = parseDuration(mval(i, 'f_dur'));
   if (!prize) return bad(env, 'Preis fehlt', '');
   if (!sec) return bad(env, 'Dauer ungültig', 'Beispiele: `30m`, `2h`, `3d` (1 Minute bis 30 Tage).');
-  const winners = Math.min(10, Math.max(1, Number(o('gewinner')) || 1));
-  const ch = o('kanal') || env.GIVEAWAY_CHANNEL_ID || i.channel_id, ends = now() + sec;
+  const winners = Math.min(10, Math.max(1, Number(mval(i, 'f_win')) || 1));
+  const ch = env.GIVEAWAY_CHANNEL_ID || i.channel_id, ends = now() + sec;
   const g = { prize, winners, ends_at: ends, host: uid };
   const msg = await dapi(env, 'POST', `/channels/${ch}/messages`, { embeds: [giveEmbed(env, g, 0)], components: JOIN() });
   if (!msg.ok) return bad(env, 'Giveaway nicht gepostet', 'Dem Bot fehlt die Berechtigung im Kanal.');
@@ -103,7 +110,7 @@ export async function endSweep(env, max = 3) {
 export async function handleGiveaway(i, env, uid) {
   if (!isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Giveaways kann nur das Team verwalten.');
   const sub = i.data.options[0], o = n => ((sub.options || []).find(x => x.name === n) || {}).value;
-  if (sub.name === 'start') return start(i, env, uid);
+  if (sub.name === 'start') return openGiveawayModal();
   if (sub.name === 'liste') {
     const rows = (await env.DB.prepare('SELECT * FROM giveaways ORDER BY id DESC LIMIT 8').all()).results || [];
     if (!rows.length) return eph(env, { title: 'Giveaways', desc: 'Noch keine Giveaways.', color: COL.neutral });

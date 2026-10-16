@@ -2,8 +2,12 @@
 import { now, emb, eph, bad, COL } from './util.js';
 import { dapi, tryDM, editMsg } from './discord.js';
 import { parseDuration } from './giveaway.js';
+import { bumpPanel } from './panelkit.js';
+import { hit } from './auth.js';
 
 const userOf = i => (i.member && i.member.user) || i.user || {};
+const mrow = (id, label, style, max, ph, req = true, val) => ({ type: 1, components: [{ type: 4, custom_id: id, label, style, max_length: max, required: req, placeholder: ph, ...(val ? { value: val } : {}) }] });
+export const mval = (i, id) => { for (const r of i.data.components || []) for (const c of r.components || []) if (c.custom_id === id) return String(c.value || '').trim(); return ''; };
 const opt = (i, n) => ((i.data.options || []).find(x => x.name === n) || {}).value;
 
 /* ---------- Umfragen ---------- */
@@ -29,18 +33,26 @@ export function pollEmbed(env, p, counts, ended) {
     fields: [{ name: ended ? 'Beendet' : 'Endet', value: `<t:${p.ends_at}:${ended ? 'f' : 'R'}>`, inline: true }, { name: 'Stimmen', value: String(total), inline: true }, { name: 'Von', value: `<@${p.host}>`, inline: true }] });
 }
 
+export const openPollModal = () => ({ type: 9, data: { custom_id: 'modal_poll', title: 'Neue Umfrage', components: [
+  mrow('f_q', 'Frage', 1, 200, 'z. B. Welchen Modus spielen wir heute?'),
+  mrow('f_opts', 'Optionen (eine pro Zeile, 2 bis 5)', 2, 400, 'Duo\nTrio\nSquad'),
+  mrow('f_dur', 'Dauer (z. B. 30m, 2h, 3d)', 1, 6, 'Standard: 24h', false)] } });
+
 async function pollStart(i, env, uid) {
-  const q = String(opt(i, 'frage') || '').trim().slice(0, 200);
-  const opts = String(opt(i, 'optionen') || '').split(/[;|]/).map(s => s.trim()).filter(Boolean).slice(0, 5);
+  if (!(await hit(env, 'poll:' + uid, 5, 3600))) return bad(env, 'Zu viele Umfragen', 'Bitte warte kurz, bevor du die nächste startest.');
+  const q = mval(i, 'f_q').slice(0, 200);
+  const opts = mval(i, 'f_opts').split(/[\n;|]/).map(x => x.trim()).filter(Boolean).slice(0, 5);
   if (!q) return bad(env, 'Frage fehlt', '');
-  if (opts.length < 2) return bad(env, 'Zu wenige Optionen', 'Gib 2 bis 5 Optionen an, getrennt mit Semikolon: `Duo; Trio; Squad`.');
-  const sec = opt(i, 'dauer') ? parseDuration(opt(i, 'dauer')) : 86400;
-  if (!sec) return bad(env, 'Dauer ungültig', 'Beispiele: `30m`, `2h`, `3d`. Standard ist 24 Stunden.');
+  if (opts.length < 2) return bad(env, 'Zu wenige Optionen', 'Schreib mindestens 2 Optionen, eine pro Zeile.');
+  const sec = mval(i, 'f_dur') ? parseDuration(mval(i, 'f_dur')) : 86400;
+  if (!sec) return bad(env, 'Dauer ungültig', 'Beispiele: `30m`, `2h`, `3d`. Leer lassen = 24 Stunden.');
+  const ch = env.POLL_CHANNEL_ID || i.channel_id;
   const p = { question: q, options: JSON.stringify(opts), ends_at: now() + sec, host: uid };
-  const msg = await dapi(env, 'POST', `/channels/${i.channel_id}/messages`, { embeds: [pollEmbed(env, p, {}, false)], components: pollRows(p) });
+  const msg = await dapi(env, 'POST', `/channels/${ch}/messages`, { embeds: [pollEmbed(env, p, {}, false)], components: pollRows(p) });
   if (!msg.ok) return bad(env, 'Umfrage nicht gepostet', 'Dem Bot fehlt die Berechtigung im Kanal.');
-  await env.DB.prepare('INSERT INTO polls (channel_id,message_id,question,options,ends_at,host,status,created_at) VALUES (?,?,?,?,?,?,?,?)').bind(i.channel_id, msg.data.id, q, p.options, p.ends_at, uid, 'active', now()).run();
-  return eph(env, { title: 'Umfrage gestartet', color: COL.ok, desc: `Endet <t:${p.ends_at}:R>. Teilnehmer ändern ihre Stimme, indem sie eine andere Option anklicken; dieselbe Option nochmal = Stimme zurückziehen.` });
+  await env.DB.prepare('INSERT INTO polls (channel_id,message_id,question,options,ends_at,host,status,created_at) VALUES (?,?,?,?,?,?,?,?)').bind(ch, msg.data.id, q, p.options, p.ends_at, uid, 'active', now()).run();
+  await bumpPanel(env, ch, 'poll-panel');
+  return eph(env, { title: 'Umfrage gestartet', color: COL.ok, desc: `<#${ch}> · endet <t:${p.ends_at}:R>` });
 }
 
 export async function votePoll(i, env, uid, k) {
@@ -78,15 +90,24 @@ export function lfgEmbed(env, g) {
     fields: [{ name: 'Plätze', value: `${mem.length}/${g.slots}`, inline: true }, { name: 'Host', value: `<@${g.host}>`, inline: true }] });
 }
 
-async function lfgStart(i, env, uid) {
-  const mode = LFG_NAME[opt(i, 'modus')] || 'Duo', slots = LFG_SLOTS[opt(i, 'modus')] || 2;
-  const note = String(opt(i, 'info') || '').trim().slice(0, 140);
+export const openLfgModal = key => ({ type: 9, data: { custom_id: 'modal_lfg_' + key, title: `${LFG_NAME[key] || 'Duo'} suchen`, components: [
+  mrow('f_info', 'Worum geht es? (optional)', 2, 140, 'z. B. Ranked, Zero Build, Scrims, heute 20 Uhr', false)] } });
+
+async function lfgStart(i, env, uid, key) {
+  if (!(await hit(env, 'lfg:' + uid, 4, 3600))) return bad(env, 'Zu viele Suchen', 'Bitte warte kurz, bevor du erneut suchst.');
+  const mode = LFG_NAME[key] || 'Duo', slots = LFG_SLOTS[key] || 2, note = mval(i, 'f_info').slice(0, 140);
+  const ch = env.LFG_CHANNEL_ID || i.channel_id;
   const g = { mode, slots, note, host: uid, members: JSON.stringify([uid]), status: 'open' };
-  const msg = await dapi(env, 'POST', `/channels/${i.channel_id}/messages`, { embeds: [lfgEmbed(env, g)], components: lfgRows(false, false) });
+  const msg = await dapi(env, 'POST', `/channels/${ch}/messages`, { embeds: [lfgEmbed(env, g)], components: lfgRows(false, false) });
   if (!msg.ok) return bad(env, 'Suche nicht gepostet', 'Dem Bot fehlt die Berechtigung im Kanal.');
-  await env.DB.prepare('INSERT INTO lfg (channel_id,message_id,host,mode,slots,note,members,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(i.channel_id, msg.data.id, uid, mode, slots, note, g.members, 'open', now()).run();
-  return eph(env, { title: 'Suche gepostet', color: COL.ok, desc: `Du bekommst eine Nachricht im Kanal, sobald alle Plätze belegt sind. Du schließt die Suche mit **Verlassen**.` });
+  await env.DB.prepare('INSERT INTO lfg (channel_id,message_id,host,mode,slots,note,members,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(ch, msg.data.id, uid, mode, slots, note, g.members, 'open', now()).run();
+  await bumpPanel(env, ch, 'lfg-panel');
+  return eph(env, { title: 'Suche gepostet', color: COL.ok, desc: `<#${ch}> · Sobald alle Plätze belegt sind, meldet sich der Bot dort. Du schließt die Suche mit **Verlassen**.` });
 }
+
+// /lfg: drei Buttons (nur fuer dich sichtbar), Klick oeffnet das Formular
+export const lfgChooser = env => ({ type: 4, data: { embeds: [emb(env, { title: '🎮 Mitspieler suchen', desc: 'Wie viele Spieler seid ihr?' })], flags: 64, components: [{ type: 1, components: [
+    { type: 2, style: 1, label: 'Duo', custom_id: 'lfg_new_duo', emoji: { name: '2️⃣' } }, { type: 2, style: 1, label: 'Trio', custom_id: 'lfg_new_trio', emoji: { name: '3️⃣' } }, { type: 2, style: 1, label: 'Squad', custom_id: 'lfg_new_squad', emoji: { name: '4️⃣' } }] }] } });
 
 export async function lfgButton(i, env, uid, join) {
   const g = await env.DB.prepare('SELECT * FROM lfg WHERE message_id=?').bind(i.message && i.message.id).first();
@@ -115,8 +136,12 @@ export const lfgFullNote = (env, f) => dapi(env, 'POST', `/channels/${f.channel}
   message_reference: { message_id: f.msg, fail_if_not_exists: false }, allowed_mentions: { users: f.members } });
 
 /* ---------- Erinnerungen ---------- */
+export const openRemindModal = () => ({ type: 9, data: { custom_id: 'modal_remind', title: 'Neue Erinnerung', components: [
+  mrow('f_in', 'In wie vielen Minuten/Stunden/Tagen?', 1, 6, 'z. B. 30m, 2h, 3d'),
+  mrow('f_text', 'Woran soll ich dich erinnern?', 2, 300, 'z. B. Scrim um 20 Uhr')] } });
+
 async function remindSet(i, env, uid) {
-  const sec = parseDuration(opt(i, 'in')), text = String(opt(i, 'text') || '').trim().slice(0, 300);
+  const sec = parseDuration(mval(i, 'f_in')), text = mval(i, 'f_text').slice(0, 300);
   if (!sec) return bad(env, 'Zeit ungültig', 'Beispiele: `30m`, `2h`, `3d` (1 Minute bis 30 Tage).');
   if (!text) return bad(env, 'Text fehlt', '');
   const open = (await env.DB.prepare('SELECT COUNT(*) AS n FROM reminders WHERE user_id=? AND sent=0').bind(uid).first()).n;
@@ -143,12 +168,10 @@ async function remindList(i, env, uid) {
 
 export async function handleRemind(i, env, uid) {
   const sub = i.data.options[0].name;
+  if (sub === 'neu') return openRemindModal();
   if (sub === 'liste') return remindList(i, env, uid);
-  if (sub === 'löschen') {
-    const r = await env.DB.prepare('DELETE FROM reminders WHERE id=? AND user_id=? AND sent=0').bind(opt({ data: i.data.options[0] }, 'id'), uid).run();
-    return r.meta && r.meta.changes ? eph(env, { title: 'Erinnerung gelöscht', color: COL.ok }) : bad(env, 'Nicht gefunden', 'Prüfe die ID mit `/erinnerung liste`.');
-  }
-  return remindSet({ data: i.data.options[0] }, env, uid);
+  const r = await env.DB.prepare('DELETE FROM reminders WHERE id=? AND user_id=? AND sent=0').bind(opt({ data: i.data.options[0] }, 'id'), uid).run();
+  return r.meta && r.meta.changes ? eph(env, { title: 'Erinnerung gelöscht', color: COL.ok }) : bad(env, 'Nicht gefunden', 'Prüfe die ID mit `/erinnerung liste`.');
 }
 
 /* ---------- Pro-Tipps ---------- */
@@ -170,10 +193,17 @@ export function handleTipp(env) { const b = new Uint32Array(1); crypto.getRandom
 /* ---------- Routing ---------- */
 export async function handleFun(i, env, uid) {
   const n = i.data.name;
-  if (n === 'umfrage') return pollStart(i, env, uid);
-  if (n === 'lfg') return lfgStart(i, env, uid);
+  if (n === 'umfrage') return openPollModal();
+  if (n === 'lfg') return lfgChooser(env);
   if (n === 'erinnerung') return handleRemind(i, env, uid);
   if (n === 'tipp') return handleTipp(env);
   return null;
 }
-export const _userOf = userOf;
+// Formular-Absendungen (Typ 5)
+export async function submitFun(i, env, uid) {
+  const id = i.data.custom_id;
+  if (id === 'modal_poll') return pollStart(i, env, uid);
+  if (id.startsWith('modal_lfg_')) return lfgStart(i, env, uid, id.slice(10));
+  if (id === 'modal_remind') return remindSet(i, env, uid);
+  return null;
+}

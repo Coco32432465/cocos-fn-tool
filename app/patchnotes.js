@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.10.5', date: '2026-10-16', tag: 'UPDATE', text: 'Die App meldet sich alle paar Minuten beim Lizenz-Server, damit das Team sieht, wie viele Nutzer gerade online sind. Dazu im Discord: animiertes Banner, Umfragen und Mitspielersuche per Button und Formular, Erste-Schritte-Anleitung und Live-Stats für das Team.', vod: 0 },
   { v: '0.10.4', date: '2026-10-16', tag: 'FEATURE', text: 'Die App meldet ihre Version beim Lizenz-Check. Admins sehen im Discord mit /admin nutzer, wer die App hat und wann sie zuletzt genutzt wurde, und mit /admin keys, wer welchen Key eingelöst hat.', vod: 0 },
   { v: '0.10.3', date: '2026-10-16', tag: 'NEU', text: 'Neuer Modus „Patchnotes“: alle Neuerungen von Cocos Tool auf einen Blick, durchsuchbar und nach NEU, FIX oder FEATURE filterbar. Die installierte Version ist markiert.' },
   { v: '0.10.2', date: '2026-10-16', tag: 'NEU', text: 'Neuer Modus „Landung & Rotation“: Vergleich deiner Landeorte (Ø Note, Ø Platz, Elims, früher Tod) mit Karte, dazu die Rotation je Zonenzug, Sturmschaden und Team-Abstand mit konkreten Tipps.' },

@@ -145,8 +145,15 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
 
   function logout() { try { fs.unlinkSync(file); } catch (e) { /* weg */ } return state(); }
 
-  function start() { refresh(); timer = setInterval(refresh, REFRESH_EVERY); }
-  function stop() { clearInterval(timer); }
+  // Lebenszeichen alle 5 Min (nur mit Discord-Sitzung): der Server zeigt damit, wie viele die App gerade nutzen
+  async function ping() {
+    const s = load();
+    if (!enabled() || !s.session) return;
+    try { await post('/license/ping', { session: s.session, appVersion: appVer() }); } catch (e) { /* offline */ }
+  }
+  let pingTimer;
+  function start() { refresh(); ping(); timer = setInterval(refresh, REFRESH_EVERY); pingTimer = setInterval(ping, 5 * 60 * 1000); }
+  function stop() { clearInterval(timer); clearInterval(pingTimer); }
 
   return { rankSet, rankSync, state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
 }

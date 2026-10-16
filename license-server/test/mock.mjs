@@ -29,6 +29,8 @@ export function makeDiscord() {
     if (u.startsWith('https://api.github.com/repos/') && u.endsWith('/releases/latest')) return new Response(JSON.stringify({ tag_name: 'v9.9.9', html_url: 'https://github.com/x/y/releases/tag/v9.9.9', published_at: '2026-10-15T10:00:00Z', assets: [{ name: 'Setup.exe', browser_download_url: 'https://github.com/x/y/releases/download/v9.9.9/Setup.exe' }] }), { status: 200 });
     const m = opt.method || 'GET', p = u.replace('https://discord.com/api/v10', ''); S.calls++;
     let x;
+    if (m === 'GET' && p.startsWith('/guilds/G?')) return R({ approximate_member_count: 42, approximate_presence_count: 7 });
+    if (m === 'GET' && (x = p.match(/^\/channels\/(\w+)\/messages\/(\w+)$/))) { const msg = (S.msgs[x[1]] || []).find(q => q.id === x[2]); return msg ? R(msg) : R({}, 404); }
     if (m === 'GET' && p === '/guilds/G/roles') return R(S.roles);
     if (m === 'POST' && p === '/guilds/G/roles') { const b = JSON.parse(opt.body); const r = { id: 'R' + (++S.n), ...b }; S.roles.push(r); return R(r); }
     if (m === 'GET' && p === '/guilds/G/channels') return R(S.channels);

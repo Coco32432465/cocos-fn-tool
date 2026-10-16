@@ -128,7 +128,10 @@ await T('/setup: baut Struktur, überspringt Vorhandenes, 2. Lauf ändert nichts
   const r = await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); assert.equal(r.type, 5); await flush();
   for (let g = 0; g < 6 && /Limit erreicht/.test(JSON.stringify(S.patched.at(-1))); g++) { await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); await flush(); }
   const names = S.channels.map(c => c.name.replace(/^[^a-z0-9]+/i, '').toLowerCase());
-  for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs', 'status', 'rangliste', 'giveaways', 'arbeit', 'vorschläge', 'team-chat']) assert.ok(names.includes(n), n);
+  for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs', 'status', 'rangliste', 'giveaways', 'umfragen', 'live-stats', 'arbeit', 'vorschläge', 'team-chat']) assert.ok(names.includes(n), n);
+    const hid = S.channels.find(c => /how-to-use$/.test(c.name)).id; assert.match(JSON.stringify(S.msgs[hid]), /Erste Schritte/);
+    const pid = S.channels.find(c => /umfragen$/.test(c.name)).id; assert.equal(S.msgs[pid][0].components[0].components[0].custom_id, 'poll_new');
+    assert.match(JSON.stringify(S.msgs[S.channels.find(c => /welcome$/.test(c.name)).id]), /banner\.gif/);
   assert.equal(names.filter(n => n === 'key-kaufen').length, 1); // vorhanden, nicht doppelt
   for (const n of ['Admin', 'Moderator', 'Supporter', 'Developer', 'Content Creator', 'Top 10', 'Customer', 'Member', 'Tester', 'User']) assert.equal(S.roles.filter(x => x.name === n).length, 1, n);
   globalThis.byBase = b => S.channels.find(c => c.name.replace(/^[^a-z0-9]+/i, '') === b);
@@ -222,7 +225,7 @@ await T('Formulare: Feedback + Bug (Modal -> Embed), Team setzt Status', async (
   assert.match(JSON.stringify(S.msgs[env.FEEDBACK_CHANNEL_ID || (await (async () => { const e = await (await import('../src/discord.js')).withCfg(env); return e.FEEDBACK_CHANNEL_ID; })())]), /Mehr Statistiken/);
   const e2 = await (await import('../src/discord.js')).withCfg(env);
   assert.match(J(await inter(modal('modal_bug', 'Crash', 'App stürzt ab'))), /Fehler gemeldet/);
-  const bm = S.msgs[e2.BUG_CHANNEL_ID].at(-1); assert.equal(bm.components[0].components[0].custom_id, 'rep_prog');
+  const bm = S.msgs[e2.BUG_CHANNEL_ID].filter(m => m.components && m.components[0] && m.components[0].components[0].custom_id === 'rep_prog').at(-1); assert.ok(bm, 'Bug-Meldung mit Statusbuttons');
   const asMsg = member => ({ type: 3, data: { custom_id: 'rep_prog' }, member, message: { embeds: bm.embeds, components: bm.components } });
   assert.match(J(await inter(asMsg(mem('U1')))), /Keine Berechtigung/);
   const up = await inter(asMsg(mem('ADMIN'))); assert.equal(up.type, 7); assert.match(J(up), /In Arbeit/);
@@ -292,9 +295,12 @@ await T('Gateway: Identify mit Präsenz, Heartbeat, Neuverbindung, Abschalten', 
 });
 await T('Giveaway: Start, Teilnahme, automatische Ziehung, Gewinner-Ticket mit Nummer, Reroll', async () => {
   const gwc = (sub, options, who = 'ADMIN') => inter({ type: 2, channel_id: 'GWCH', token: 'tok', data: { name: 'giveaway', options: [{ type: 1, name: sub, options }] }, member: mem(who) });
-  assert.match(J(await gwc('start', [{ name: 'preis', value: 'Key' }, { name: 'dauer', value: '1h' }], 'U1')), /Keine Berechtigung/);
-  assert.match(J(await gwc('start', [{ name: 'preis', value: 'Key' }, { name: 'dauer', value: 'xyz' }])), /Dauer ungültig/);
-  const r = await gwc('start', [{ name: 'preis', value: '1 Monat Lizenz' }, { name: 'dauer', value: '1h' }, { name: 'gewinner', value: 2 }, { name: 'kanal', value: 'GWCH' }]);
+  db.prepare("INSERT OR REPLACE INTO config (k,v) VALUES ('giveaway_channel','GWCH')").run();
+  const gsub = (v, who = 'ADMIN') => inter({ type: 5, channel_id: 'GWCH', token: 'tok', data: { custom_id: 'modal_giveaway', components: Object.entries(v).map(([k, x]) => ({ type: 1, components: [{ type: 4, custom_id: k, value: x }] })) }, member: mem(who) });
+  assert.equal((await gwc('start', [])).type, 9); // Formular
+  assert.match(J(await gsub({ f_prize: 'Key', f_dur: '1h' }, 'U1')), /Keine Berechtigung/);
+  assert.match(J(await gsub({ f_prize: 'Key', f_dur: 'xyz' })), /Dauer ungültig/);
+  const r = await gsub({ f_prize: '1 Monat Lizenz', f_dur: '1h', f_win: '2' });
   assert.match(J(r), /Giveaway gestartet/); const gw = db.prepare('SELECT * FROM giveaways ORDER BY id DESC').get(); assert.equal(gw.winners, 2);
   const post_ = S.msgs.GWCH[0]; assert.equal(post_.components[0].components[0].custom_id, 'gw_join');
   const join = who => inter({ type: 3, token: 'tk', message: { id: gw.message_id }, data: { custom_id: 'gw_join' }, member: mem(who) });
@@ -320,45 +326,78 @@ await T('Giveaway: Start, Teilnahme, automatische Ziehung, Gewinner-Ticket mit N
   await inter({ type: 3, data: { custom_id: 'ticket_support' }, member: mem('U1') });
   assert.ok(S.channels.some(c => /^support-useru1-0\d$/.test(c.name)), 'Support-Name');
 });
-await T('Extras: Umfrage, Duo-Suche, Erinnerung, Tipp', async () => {
+await T('Extras: Umfrage, Duo-Suche, Erinnerung, Tipp (Formulare)', async () => {
   const slash = (name, options, who = 'U5') => inter({ type: 2, channel_id: 'FUNCH', token: 'tok', data: { name, options }, member: mem(who) });
-  const btn = (id, msgId, who) => inter({ type: 3, token: 'tk', message: { id: msgId }, data: { custom_id: id }, member: mem(who) });
-  // Umfrage
-  assert.match(J(await slash('umfrage', [{ name: 'frage', value: 'Modus?' }, { name: 'optionen', value: 'nur eine' }])), /Zu wenige Optionen/);
-  assert.match(J(await slash('umfrage', [{ name: 'frage', value: 'Modus?' }, { name: 'optionen', value: 'a;b' }, { name: 'dauer', value: 'x' }])), /Dauer ungültig/);
-  assert.match(J(await slash('umfrage', [{ name: 'frage', value: 'Modus?' }, { name: 'optionen', value: 'Duo; Trio; Squad' }, { name: 'dauer', value: '1h' }])), /Umfrage gestartet/);
+  const btn = (id, msgId, who) => inter({ type: 3, channel_id: 'FUNCH', token: 'tk', message: { id: msgId }, data: { custom_id: id }, member: mem(who) });
+  const sub = (id, v, who = 'U5') => inter({ type: 5, channel_id: 'FUNCH', token: 'tok', data: { custom_id: id, components: Object.entries(v).map(([k, x]) => ({ type: 1, components: [{ type: 4, custom_id: k, value: x }] })) }, member: mem(who) });
+  for (const k of ['poll_channel', 'lfg_channel']) db.prepare('INSERT OR REPLACE INTO config (k,v) VALUES (?,?)').run(k, 'FUNCH');
+  // Panel im Umfragen-Kanal simulieren (wie /setup es anlegt)
+  const panel = await (await import('../src/discord.js')).dapi(env, 'POST', '/channels/FUNCH/messages', { embeds: [{ title: 'Panel Umfrage' }], components: [{ type: 1, components: [{ type: 2, custom_id: 'poll_new' }] }] });
+  db.prepare("INSERT OR REPLACE INTO config (k,v) VALUES ('posted:poll-panel',?)").run(panel.data.id);
+  assert.equal((await slash('umfrage')).type, 9); assert.equal((await btn('poll_new', panel.data.id, 'U5')).type, 9);
+  assert.match(J(await sub('modal_poll', { f_q: 'Modus?', f_opts: 'nur eine' })), /Zu wenige Optionen/);
+  assert.match(J(await sub('modal_poll', { f_q: 'Modus?', f_opts: 'a\nb', f_dur: 'x' })), /Dauer ungültig/);
+  assert.match(J(await sub('modal_poll', { f_q: 'Modus?', f_opts: 'Duo\nTrio\nSquad', f_dur: '1h' })), /Umfrage gestartet/);
   const poll = db.prepare('SELECT * FROM polls ORDER BY id DESC').get(); assert.equal(JSON.parse(poll.options).length, 3);
-  assert.equal(S.msgs.FUNCH[0].components[0].components.length, 3);
+  const last = S.msgs.FUNCH[S.msgs.FUNCH.length - 1]; assert.equal(last.components[0].components[0].custom_id, 'poll_new', 'Panel liegt wieder ganz unten');
+  assert.ok(!S.msgs.FUNCH.some(m => m.id === panel.data.id), 'altes Panel gelöscht');
+  const pollMsg = S.msgs.FUNCH.find(m => m.id === poll.message_id); assert.equal(pollMsg.components[0].components.length, 3);
   let r = await btn('poll_1', poll.message_id, 'U6'); assert.equal(r.type, 7); assert.match(J(r), /1 Stimme/);
-  await btn('poll_0', poll.message_id, 'U7'); r = await btn('poll_0', poll.message_id, 'U6'); // U6 wechselt
+  await btn('poll_0', poll.message_id, 'U7'); await btn('poll_0', poll.message_id, 'U6');
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM poll_votes WHERE poll_id=? AND opt=0').get(poll.id).n, 2);
-  r = await btn('poll_0', poll.message_id, 'U7'); assert.equal(db.prepare('SELECT COUNT(*) AS n FROM poll_votes WHERE poll_id=?').get(poll.id).n, 1); // Zurueckziehen
+  await btn('poll_0', poll.message_id, 'U7'); assert.equal(db.prepare('SELECT COUNT(*) AS n FROM poll_votes WHERE poll_id=?').get(poll.id).n, 1);
   db.prepare('UPDATE polls SET ends_at=1 WHERE id=?').run(poll.id);
   assert.match(J(await btn('poll_2', poll.message_id, 'U8')), /Umfrage beendet/);
   await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush();
   assert.equal(db.prepare('SELECT status FROM polls WHERE id=?').get(poll.id).status, 'ended');
-  assert.match(JSON.stringify(S.msgs.FUNCH[0].embeds), /Umfrage beendet/); assert.equal(S.msgs.FUNCH[0].components[0].components[0].disabled, true);
+  const ended = S.msgs.FUNCH.find(m => m.id === poll.message_id); assert.match(JSON.stringify(ended.embeds), /Umfrage beendet/); assert.equal(ended.components[0].components[0].disabled, true);
   // Duo-Suche
-  assert.match(J(await slash('lfg', [{ name: 'modus', value: 'duo' }, { name: 'info', value: 'Ranked' }])), /Suche gepostet/);
-  const lfg = db.prepare('SELECT * FROM lfg ORDER BY id DESC').get(); assert.equal(lfg.slots, 2);
+  const ch = J(await slash('lfg')); assert.match(ch, /lfg_new_duo/); assert.match(ch, /lfg_new_squad/);
+  assert.equal((await btn('lfg_new_duo', 'x', 'U5')).type, 9);
+  assert.match(J(await sub('modal_lfg_duo', { f_info: 'Ranked' })), /Suche gepostet/);
+  const lfg = db.prepare('SELECT * FROM lfg ORDER BY id DESC').get(); assert.equal(lfg.slots, 2); assert.equal(lfg.note, 'Ranked');
   assert.match(J(await btn('lfg_join', lfg.message_id, 'U5')), /schon dabei/);
   r = await btn('lfg_join', lfg.message_id, 'U6'); assert.match(J(r), /VOLL/); assert.equal(db.prepare('SELECT status FROM lfg WHERE id=?').get(lfg.id).status, 'full');
   await new Promise(x => setTimeout(x, 800)); await flush();
   assert.ok(S.msgs.FUNCH.some(m => /komplett/.test(m.content || '')), 'Voll-Hinweis');
   assert.match(J(await btn('lfg_join', lfg.message_id, 'U7')), /Schon voll/);
   await btn('lfg_leave', lfg.message_id, 'U6'); assert.equal(db.prepare('SELECT status FROM lfg WHERE id=?').get(lfg.id).status, 'open');
-  r = await btn('lfg_leave', lfg.message_id, 'U5'); assert.match(J(r), /geschlossen/);
+  assert.match(J(await btn('lfg_leave', lfg.message_id, 'U5')), /geschlossen/);
   // Erinnerung
-  const rm = (sub, options) => inter({ type: 2, channel_id: 'FUNCH', token: 'tok', data: { name: 'erinnerung', options: [{ type: 1, name: sub, options }] }, member: mem('U5') });
-  assert.match(J(await rm('setzen', [{ name: 'in', value: 'abc' }, { name: 'text', value: 'x' }])), /Zeit ungültig/);
-  assert.match(J(await rm('setzen', [{ name: 'in', value: '5m' }, { name: 'text', value: 'Scrim spielen' }])), /Erinnerung gesetzt/);
+  const rm = (sub_, options) => inter({ type: 2, channel_id: 'FUNCH', token: 'tok', data: { name: 'erinnerung', options: [{ type: 1, name: sub_, options }] }, member: mem('U5') });
+  assert.equal((await rm('neu')).type, 9);
+  assert.match(J(await sub('modal_remind', { f_in: 'abc', f_text: 'x' })), /Zeit ungültig/);
+  assert.match(J(await sub('modal_remind', { f_in: '5m', f_text: 'Scrim spielen' })), /Erinnerung gesetzt/);
   assert.match(J(await rm('liste')), /Scrim spielen/);
-  const dm0 = S.dms.length; await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush(); assert.equal(S.dms.length, dm0); // noch nicht faellig
+  const dm0 = S.dms.length; await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush(); assert.equal(S.dms.length, dm0);
   db.prepare('UPDATE reminders SET due=1').run(); await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush();
   assert.ok(S.dms.slice(dm0).some(d => d.to === 'U5' && /Scrim spielen/.test(JSON.stringify(d.body))), 'Erinnerungs-DM');
-  await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush(); assert.equal(S.dms.length, dm0 + 1); // nur einmal
-  // Tipp
+  await worker.scheduled({ cron: '* * * * *' }, env, ctx); await flush(); assert.equal(S.dms.length, dm0 + 1);
   assert.match(J(await slash('tipp')), /Tipp/);
+});
+await T('Bug-Panel springt nach jeder Meldung wieder nach unten', async () => {
+  const dapi = (await import('../src/discord.js')).dapi;
+  const bugCh = 'BUGX'; db.prepare("INSERT OR REPLACE INTO config (k,v) VALUES ('bug_channel','BUGX')").run();
+  const panel = await dapi(env, 'POST', `/channels/${bugCh}/messages`, { embeds: [{ title: '🐛 Fehler melden' }], components: [{ type: 1, components: [{ type: 2, custom_id: 'form_bug' }] }] });
+  db.prepare("INSERT OR REPLACE INTO config (k,v) VALUES ('posted:bug-panel',?)").run(panel.data.id);
+  const fm = { type: 5, token: 'tk', data: { custom_id: 'modal_bug', components: [{ type: 1, components: [{ type: 4, custom_id: 'f_title', value: 'Crash 2' }] }, { type: 1, components: [{ type: 4, custom_id: 'f_text', value: 'stürzt ab' }] }] }, member: mem('U1') };
+  assert.match(J(await inter(fm)), /Fehler gemeldet/);
+  const list = S.msgs[bugCh]; assert.equal(list[list.length - 1].components[0].components[0].custom_id, 'form_bug', 'Panel zuletzt');
+  assert.match(JSON.stringify(list[list.length - 2].embeds), /Crash 2/); assert.ok(!list.some(m => m.id === panel.data.id));
+});
+await T('Live-Stats: Panel, Heartbeat (online), Aktualisieren nur Team', async () => {
+  const dapi = (await import('../src/discord.js')).dapi;
+  env.STATS_CHANNEL_ID = 'STATSCH'; const t = Math.floor(Date.now() / 1000);
+  db.prepare('INSERT INTO sessions (token_hash,discord_id,username,created_at) VALUES (?,?,?,?)').run(await (await import('../src/util.js')).sha256hex('tok-hb'), 'UH1', 'Heart', t - 100);
+  const hb = await post('/license/ping', { session: 'tok-hb', appVersion: '0.10.5' }); assert.equal(hb.status, 200);
+  assert.equal((await post('/license/ping', { session: 'falsch' })).status, 401);
+  assert.equal(db.prepare("SELECT app_version AS v FROM sessions WHERE discord_id='UH1'").get().v, '0.10.5');
+  const { syncStats } = await import('../src/stats.js');
+  assert.equal(await syncStats(env), true); const m1 = S.msgs.STATSCH[0]; const txt = JSON.stringify(m1.embeds);
+  assert.match(txt, /App jetzt online/); assert.match(txt, /Mitglieder/); assert.match(txt, /\*\*42\*\*/); assert.match(txt, /v0\.10\.5/);
+  assert.equal(await syncStats(env), true); assert.equal(S.msgs.STATSCH.length, 1, 'bearbeitet statt neu gepostet');
+  const rf = id => inter({ type: 3, token: 'tk', message: { id: m1.id }, data: { custom_id: 'stats_refresh' }, member: mem(id) });
+  assert.match(J(await rf('U1')), /Keine Berechtigung/); assert.equal((await rf('ADMIN')).type, 7);
 });
 await T('Admin: Nutzerliste (App) und eingelöste Keys', async () => {
   const adm = (sub, who = 'ADMIN') => inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'admin', options: [{ type: 1, name: sub }] }, member: mem(who) });
