@@ -7,7 +7,7 @@ const rd = f => readFileSync(new URL('../' + f, import.meta.url), 'utf8');
 export function makeDb(sqlFiles) {
   const db = new DatabaseSync(':memory:');
   for (const f of sqlFiles) db.exec(rd(f));
-  const D1 = { prepare(sql) { const st = db.prepare(sql); let a = []; const o = { bind(...x) { a = x; return o; }, async first() { return st.get(...a) || null; }, async all() { return { results: st.all(...a) }; }, async run() { const r = st.run(...a); return { meta: { changes: Number(r.changes) } }; } }; return o; } };
+  const D1 = { prepare(sql) { const st = db.prepare(sql); let a = []; const o = { bind(...x) { a = x; return o; }, async first() { return st.get(...a) || null; }, async all() { return { results: st.all(...a) }; }, async run() { const r = st.run(...a); return { meta: { changes: Number(r.changes), last_row_id: Number(r.lastInsertRowid) } }; } }; return o; } };
   return { db, D1 };
 }
 
