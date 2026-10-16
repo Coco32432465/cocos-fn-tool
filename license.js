@@ -137,6 +137,10 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
     } catch (e) { return state({ error: 'Lizenz-Server nicht erreichbar.' }); }
     return state();
   }
+  async function rankAvg() {
+    if (!enabled()) return { ok: false };
+    try { const r = await doFetch(cfg.endpoint.replace(/\/$/, '') + '/rank/avg', { method: 'GET' }); return await r.json(); } catch (e) { return { ok: false }; }
+  }
   async function rankSync(stats) {
     const s = load();
     if (!s.rankOptIn || !s.session || !enabled()) return false;
@@ -155,7 +159,7 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
   function start() { refresh(); ping(); timer = setInterval(refresh, REFRESH_EVERY); pingTimer = setInterval(ping, 5 * 60 * 1000); }
   function stop() { clearInterval(timer); clearInterval(pingTimer); }
 
-  return { rankSet, rankSync, state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
+  return { rankSet, rankSync, rankAvg, state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
 }
 
 function register(ipcMain, opts) {
@@ -167,6 +171,7 @@ function register(ipcMain, opts) {
   ipcMain.handle('lic-refresh', () => L.refresh());
   ipcMain.handle('lic-logout', () => L.logout());
   ipcMain.handle('lic-rank-set', (_e, on, stats) => L.rankSet(!!on, stats));
+  ipcMain.handle('lic-rank-avg', () => L.rankAvg());
   ipcMain.handle('lic-rank-sync', (_e, stats) => L.rankSync(stats));
   return L;
 }

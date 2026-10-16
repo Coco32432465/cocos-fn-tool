@@ -207,5 +207,33 @@
     return { total: total, done: done, pct: total ? Math.round(100 * done / total) : 0, items: items, newGames: G.length };
   };
 
+  /** Letzte Session = Games mit höchstens `gapMin` Minuten Abstand (Standard 90). Liefert Zusammenfassung, beste/schlechteste Runde, 2 größte Fehler, Ziel. */
+  S.session = function (games, gapMin) {
+    var G = S.sorted(games); if (!G.length) return null;
+    var gap = (gapMin || 90) * 60000, a = G.length - 1;
+    while (a > 0 && ts(G[a]) - ts(G[a - 1]) <= gap) a--;
+    var L = G.slice(a), sum = S.summary(L);
+    var best = L[0], worst = L[0];
+    L.forEach(function (g) { if ((g.tot || 0) > (best.tot || 0)) best = g; if ((g.tot || 0) < (worst.tot || 0)) worst = g; });
+    var W = S.weaknesses(L).slice(0, 2), top = W[0] && S.DRILLS[W[0].kind];
+    var goal = top ? top.goal + ' (häufigster Fehler: ' + W[0].label + ')' : (sum.n >= 2 ? 'Halte deine Note stabil und versuche, die schwächste Phase anzuheben.' : 'Spiele mehr Games, damit ich Muster erkennen kann.');
+    return { games: L, n: L.length, from: ts(L[0]), to: ts(L[L.length - 1]), sum: sum, best: best, worst: worst, mistakes: W, goal: goal,
+      curve: sum.ph, same: best === worst };
+  };
+
+  /** Vergleich mit der Community: mine = S.summary, ref = {avgScore, avgPlace, kpg, winPct}. */
+  S.compare = function (sum, ref) {
+    if (!sum || !sum.n || !ref) return [];
+    var wp = r1(100 * sum.wins / sum.n);
+    return [
+      { key: 'score', label: 'Ø Note', mine: sum.score, ref: r1(ref.avgScore), unit: '', scale: 100, lower: false, div: 10 },
+      { key: 'place', label: 'Ø Platz', mine: sum.place, ref: r1(ref.avgPlace), unit: '#', scale: 100, lower: true, div: 1 },
+      { key: 'kpg', label: 'Elims pro Game', mine: sum.kpg, ref: r1(ref.kpg), unit: '', scale: 10, lower: false, div: 1 },
+      { key: 'win', label: 'Siegquote', mine: wp, ref: r1(ref.winPct), unit: '', suffix: ' %', scale: 100, lower: false, div: 1 }
+    ].filter(function (x) { return x.mine && x.ref; }).map(function (x) {
+      x.better = x.lower ? x.mine < x.ref : x.mine > x.ref; x.diff = r1(Math.abs(x.mine - x.ref) / x.div); return x;
+    });
+  };
+
   if (typeof module !== 'undefined' && module.exports) module.exports = CFT;
 })(typeof window !== 'undefined' ? window : globalThis);

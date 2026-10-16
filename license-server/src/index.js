@@ -17,7 +17,7 @@ import { startTrial, rate, openRewardModal, submitReward } from './growth.js';
 import { openTicket, selectPlan, closeTicket, confirmTicket, codeButton, submitCode } from './tickets.js';
 import { ensureSchema } from './schema.js';
 import { remindSweep, RENEW_BUTTON } from './remind.js';
-import { rankSubmit, rankLeave, handleRank, syncRank } from './rank.js';
+import { rankAvg, rankSubmit, rankLeave, handleRank, syncRank } from './rank.js';
 import { openForm, submitForm, setBugStatus } from './forms.js';
 import { adminStats, adminUsers, adminKeys, handleTeam } from './admin.js';
 import { syncStatus, downloadTarget } from './panels.js';
@@ -283,6 +283,11 @@ export default {
       if (url.pathname === '/patchnotes') {
         if (!(await hit(env0, 'pn:' + ip, 6, 60))) return json({ ok: false, error: 'rate' }, 429);
         return json(await syncPatchnotes(await withCfg(env0)));
+      }
+      if (url.pathname === '/rank/avg') {
+        if (!(await hit(env0, 'ip:' + ip, 40, 60))) return json({ ok: false, error: 'rate' }, 429, cors);
+        await ensureSchema(env0);
+        const res = await rankAvg(await withCfg(env0)); for (const [k, v] of Object.entries(cors)) res.headers.set(k, v); return res;
       }
       if (url.pathname === '/rank/submit' || url.pathname === '/rank/leave') {
         if (request.method !== 'POST') return json({ ok: false }, 405, cors);

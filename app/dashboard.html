@@ -594,7 +594,7 @@ main .center>.slider{flex:1 1 200px;min-height:170px;max-height:min(34vh,320px);
 .spds{display:flex;gap:4px}.spd{min-width:44px;padding:8px 10px}.spd.on{border-color:var(--acc);background:rgba(var(--rgb),.12);color:var(--acc-light);box-shadow:0 0 12px rgba(var(--rgb),.27)}
 .tl{position:relative;flex:1;height:38px;min-width:120px}
 .tl input{position:absolute;left:0;right:0;bottom:0;width:100%;margin:0}
-.mkd{position:absolute;top:2px;width:11px;height:11px;margin-left:-5px;border-radius:50%;border:1px solid #0A0A0C;background:var(--c);box-shadow:0 0 8px var(--c);transition:transform .15s;padding:0}
+.mkb{font-size:16px;color:#f1c40f;width:auto;padding:0 12px}.mkd.usr{background:#f1c40f;border-radius:3px;width:9px;height:14px;top:-1px;margin-left:-4px;--c:#f1c40f}.mkd{position:absolute;top:2px;width:11px;height:11px;margin-left:-5px;border-radius:50%;border:1px solid #0A0A0C;background:var(--c);box-shadow:0 0 8px var(--c);transition:transform .15s;padding:0}
 .mkd:hover{transform:scale(1.6);z-index:2}
 .feed{max-height:24vh;min-height:96px}
 .evl{max-height:none;flex:1;position:relative}
@@ -1003,6 +1003,7 @@ header .mbtn{margin-right:14px}
         <div class="spds" id="spds"><button class="spd on" data-s="1">1.0x</button><button class="spd" data-s="2">2.0x</button><button class="spd" data-s="4">4.0x</button><button class="spd" data-s="8">8.0x</button></div>
         <div class="tl"><div id="mks"></div><input type="range" id="sc" min="0" value="0" step="1"></div>
         <span id="tm">00:00</span>
+        <button class="pb mkb" id="mkAdd" aria-label="Marker setzen (M)" title="Marker setzen (M). Marker anklicken = hinspringen, Rechtsklick = löschen">&#9873;</button>
       </div>
       <div class="panel status" id="status" style="display:none">
       <div class="rhud" id="rhud"></div>
@@ -1451,11 +1452,19 @@ function feed(){
  $('evl').innerHTML=V.F.map(function(f,i){return'<li class="'+(f.mk?'':'dim')+'" style="--c:'+f.c+'" data-i="'+i+'"><time>'+fmt(f.t)+'</time><span>'+(f.mis?'<em>✕ Mistake</em>':f.tip?'<em>KI-Tipp</em>':'')+f.txt+'</span></li>'}).join('');
  [].forEach.call($('evl').children,function(li){li.onclick=function(){jump(V.F[+li.dataset.i])}});
  $('mks').innerHTML=V.F.map(function(f,i){return f.mk?'<button class="mkd'+(f.kill?' kill':'')+'" aria-label="'+f.txt+'" data-i="'+i+'" style="--c:'+f.c+';left:calc(9px + (100% - 18px)*'+(f.t/DUR)+')">'+(f.kill?'!':'')+'</button>':''}).join('');
- [].forEach.call($('mks').children,function(b){b.onclick=function(){jump(V.F[+b.dataset.i])}})}
+ [].forEach.call($('mks').children,function(b){b.onclick=function(){jump(V.F[+b.dataset.i])}});renderMarks()}
+/* Clip-Marker: eigene Markierungen je Replay (lokal gespeichert) */
+var curM=null;function mkKey(){var m=curM||{};return String(m.fname||(m.real&&m.real.fname)||m.n||'g')+'|'+Math.round(DUR)}
+function mkAll(){try{return JSON.parse(localStorage.getItem('cft_marks'))||{}}catch(e){return {}}}
+function mkList(){return mkAll()[mkKey()]||[]}
+function mkSave(l){try{var a=mkAll();if(l.length)a[mkKey()]=l;else delete a[mkKey()];localStorage.setItem('cft_marks',JSON.stringify(a))}catch(e){}}
+function renderMarks(){var box=$('mks');[].forEach.call(box.querySelectorAll('.usr'),function(n){n.remove()});mkList().forEach(function(t,i){var b=document.createElement('button');b.className='mkd usr';b.setAttribute('aria-label','Marker '+(i+1)+' bei '+fmt(t));b.title='Marker '+(i+1)+' · '+fmt(t)+' (Rechtsklick löscht)';b.style.left='calc(9px + (100% - 18px)*'+(t/DUR)+')';b.onclick=function(){seek(Math.max(0,t-3))};b.oncontextmenu=function(e){e.preventDefault();var l=mkList();l.splice(i,1);mkSave(l);renderMarks();window.toast('Marker gelöscht')};box.appendChild(b)})}
+function addMark(){var l=mkList(),t=Math.round(V.t);if(l.some(function(x){return Math.abs(x-t)<2}))return window.toast('Hier ist schon ein Marker');l.push(t);l.sort(function(a,b){return a-b});mkSave(l);renderMarks();window.toast('Marker '+(l.indexOf(t)+1)+' bei '+fmt(t)+' gesetzt')}
+$('mkAdd').onclick=addMark;
 window.openViewer=function(i){
  var m=(typeof i==='object'?i:M[i])||M[0],v=$('veil');v.classList.add('on');
  setTimeout(function(){
-  V.pin=null;V.t=0;V.sp=1;V.zoom=1;V.cx=V.cy=.5;V.follow=false;zUI();cur=-2;build(m);feed();fightsUI(m);grades(m);hideMis();HUDC={};if(!GEN)GEN=genMap();if(MAP_SRC&&!MAPIMG)setImg(MAP_SRC);
+  V.pin=null;V.t=0;V.sp=1;V.zoom=1;V.cx=V.cy=.5;V.follow=false;zUI();cur=-2;curM=m;build(m);feed();fightsUI(m);grades(m);hideMis();HUDC={};if(!GEN)GEN=genMap();if(MAP_SRC&&!MAPIMG)setImg(MAP_SRC);
   [].forEach.call($('spds').children,function(b){b.classList.toggle('on',b.dataset.s==='1')});
   V.map=!(m.real&&m.real.meta&&m.real.meta.mapOn===false);$('mb').textContent=V.map?'Karte ausblenden':'Karte anzeigen';$('vt').textContent=m.n;V.m=m;window.__lastM=m;V.laK=null;renderLeft();scoreUpd();
   $('vs').textContent=m.real?(m.pl>0?'Platz #'+m.pl+' · ':'')+m.k+' Elims · '+m.real.nPlayers+' Spieler'+(m.real.meta.landPoi?' · gelandet: '+m.real.meta.landPoi:'')+(m.real.meta.mode?' · '+m.real.meta.mode:''):'Platz #'+m.pl+' · '+m.pts+' Pkt · '+m.k+' Elims';
@@ -1589,7 +1598,7 @@ $('c_auto').onclick=function(){CF.cal.saved=false;CF.cal.H=153000;CF.cal.ox=0.01
 
 if(window.ResizeObserver)new ResizeObserver(function(){if(document.body.classList.contains('vw')){size();draw()}}).observe($('stage'));
 window.addEventListener('resize',function(){if(document.body.classList.contains('vw')){size();draw()}});
-document.addEventListener('keydown',function(e){if(!document.body.classList.contains('vw'))return;if(e.code==='Space'){e.preventDefault();$('pp').click()}if(e.code==='Escape')$('vb').click()});
+document.addEventListener('keydown',function(e){if(!document.body.classList.contains('vw'))return;if(e.code==='Space'){e.preventDefault();$('pp').click()}if(e.code==='KeyM'&&!/INPUT|TEXTAREA/.test((e.target||{}).tagName||'')){e.preventDefault();addMark()}if(e.code==='Escape')$('vb').click()});
 })();
 </script>
 <script>

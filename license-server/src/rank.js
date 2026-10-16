@@ -88,3 +88,12 @@ export async function handleRank(i, env, uid) {
   }
   return bad(env, 'Unbekannter Befehl', '');
 }
+
+// Durchschnittswerte der Community (nur Summen, keine Namen). Erst ab 5 Teilnehmern, damit niemand erkennbar wird.
+export async function rankAvg(env) {
+  const q = lim => env.DB.prepare(`SELECT COUNT(*) AS n, AVG(avg_score) AS avgScore, AVG(avg_place) AS avgPlace, SUM(kills)*1.0/NULLIF(SUM(games),0) AS kpg, SUM(wins)*100.0/NULLIF(SUM(games),0) AS winPct
+    FROM (SELECT * FROM ranks WHERE games>=? ORDER BY avg_score DESC, wins DESC, games DESC ${lim})`).bind(MIN_GAMES).first();
+  const [all, top] = [await q(''), await q('LIMIT 10')];
+  const clean = r => r && r.n >= 5 ? { n: r.n, avgScore: r.avgScore, avgPlace: r.avgPlace, kpg: r.kpg, winPct: r.winPct } : null;
+  return json({ ok: true, all: clean(all), top: clean(top) });
+}

@@ -49,4 +49,21 @@ const rg = (oks) => dg('X', 50, 5, 1, false, oks.map((ok, i) => ({ k: i + 1, ok,
 const ro = S.rotation([rg([true, false, false]), rg([true, false, true]), rg([false, false, null])]);
 assert.strictEqual(ro.zones[0].okPct, 67); assert.strictEqual(ro.zones[1].okPct, 0); assert.strictEqual(ro.zones[1].gapM, 50); assert.strictEqual(ro.weak.k, 2);
 assert.ok(ro.tips.length >= 1); assert.strictEqual(S.rotation([]).n, 0); assert.deepStrictEqual(S.rotation([]).tips, []);
+
+// Session: Games mit <= 90 Min Abstand; alte Games gehoeren nicht dazu
+(function () {
+  const H = 3600000, T0 = NOW;
+  const g2 = (h, tot, pl, k, mis) => ({ mtime: T0 - h * H, tot, ph: [tot, tot - 10, tot - 30], m: { pl, k, n: 'g' + h }, mis: mis || [] });
+  const sess = S.session([g2(30, 50, 10, 1), g2(3, 40, 20, 0, [{ kind: 'rot', sev: 400 }]), g2(2.2, 80, 1, 6, [{ kind: 'rot', sev: 400 }]), g2(1.5, 60, 5, 2, [{ kind: 'storm', sev: 300 }])]);
+  assert.strictEqual(sess.n, 3); assert.strictEqual(sess.best.tot, 80); assert.strictEqual(sess.worst.tot, 40);
+  assert.strictEqual(sess.mistakes[0].kind, 'rot'); assert.ok(sess.goal.length > 10); assert.strictEqual(sess.curve.length, 3);
+  assert.strictEqual(S.session([]), null);
+  assert.strictEqual(S.session([g2(1, 50, 5, 1)]).same, true);
+  // Vergleich
+  const cmp = S.compare({ n: 10, score: 70, place: 8, kpg: 3, wins: 2 }, { avgScore: 60, avgPlace: 12, kpg: 4, winPct: 10 });
+  const by = k => cmp.filter(x => x.key === k)[0];
+  assert.strictEqual(by('score').better, true); assert.strictEqual(by('place').better, true); assert.strictEqual(by('kpg').better, false); assert.strictEqual(by('win').better, true);
+  assert.deepStrictEqual(S.compare({ n: 0 }, {}), []);
+})();
+
 console.log('drops ok');

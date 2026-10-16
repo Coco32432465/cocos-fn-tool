@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.11.0', date: '2026-10-16', tag: 'FEATURE', text: 'Fortschritt: Session-Zusammenfassung mit Momentum-Kurve und Ziel für die nächste Session, Vergleich mit der Community und den Top 10. Replay Viewer: Clip-Marker mit Taste M (Rechtsklick löscht)' },
   { v: '0.10.9', date: '2026-10-16', tag: 'NEU', text: 'Lifetime-Lizenzen werden in der App als „Lifetime“ angezeigt' },
   { v: '0.10.8', date: '2026-10-16', tag: 'UPDATE', text: 'Datenschutz-Hinweis in den Einstellungen: was die App sendet und wie du deine Daten im Discord mit /datenschutz ansiehst oder löschst. Neu im Discord: Creator-Codes mit Bonus-Tagen, Formulare statt Befehlsfelder.', vod: 0 },
   { v: '0.10.7', date: '2026-10-16', tag: 'UPDATE', text: 'Die linke Seite zeigt jetzt „Zuletzt analysiert“ statt der News-Liste. Alle Neuerungen findest du weiter im Modus „Patchnotes“.' },
