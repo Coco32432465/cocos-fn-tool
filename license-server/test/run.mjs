@@ -360,6 +360,16 @@ await T('Extras: Umfrage, Duo-Suche, Erinnerung, Tipp', async () => {
   // Tipp
   assert.match(J(await slash('tipp')), /Tipp/);
 });
+await T('Admin: Nutzerliste (App) und eingelöste Keys', async () => {
+  const adm = (sub, who = 'ADMIN') => inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'admin', options: [{ type: 1, name: sub }] }, member: mem(who) });
+  const t = Math.floor(Date.now() / 1000);
+  db.prepare('INSERT INTO sessions (token_hash,discord_id,username,created_at,last_seen,app_version) VALUES (?,?,?,?,?,?)').run('h-adm1', 'UA1', 'Alice', t - 5000, t - 60, '0.10.4');
+  db.prepare('INSERT INTO sessions (token_hash,discord_id,username,created_at) VALUES (?,?,?,?)').run('h-adm2', 'UA2', 'Bob', t - 9000);
+  db.prepare("INSERT INTO keys (key,discord_id,plan,days,created_at,expires_at,status,redeemed_at,device,last_seen) VALUES ('ABCD-EFGH-JKLM','UA1','week',7,?,?,'active',?,'dev-adm-1',?)").run(t - 5000, t + 86400 * 5, t - 4000, t - 60);
+  assert.match(J(await adm('nutzer', 'U1')), /Keine Berechtigung/);
+  const n = J(await adm('nutzer')); assert.match(n, /Alice/); assert.match(n, /v0\.10\.4/); assert.match(n, /Bob/); assert.match(n, /kein Key/); assert.match(n, /gerade eben|Min/);
+  const k = J(await adm('keys')); assert.match(k, /ABCD-••••-JKLM/); assert.match(k, /UA1/); assert.match(k, /Gerät gebunden/); assert.ok(!/ABCD-EFGH-JKLM/.test(k), 'Key nicht im Klartext');
+});
 await T('/download: leitet direkt auf die neueste Setup-Datei', async () => {
   const r = await worker.fetch(new Request('https://w.dev/download', { headers: { 'cf-connecting-ip': 'dlip' } }), env, ctx);
   assert.equal(r.status, 302); assert.match(r.headers.get('location'), /Setup\.exe$/);
