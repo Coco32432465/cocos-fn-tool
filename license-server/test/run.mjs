@@ -128,7 +128,7 @@ await T('/setup: baut Struktur, überspringt Vorhandenes, 2. Lauf ändert nichts
   const r = await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); assert.equal(r.type, 5); await flush();
   for (let g = 0; g < 6 && /Limit erreicht/.test(JSON.stringify(S.patched.at(-1))); g++) { await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); await flush(); }
   const names = S.channels.map(c => c.name.replace(/^[^a-z0-9]+/i, '').toLowerCase());
-  for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs', 'status', 'rangliste', 'arbeit', 'vorschläge', 'team-chat']) assert.ok(names.includes(n), n);
+  for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs', 'status', 'rangliste', 'giveaways', 'arbeit', 'vorschläge', 'team-chat']) assert.ok(names.includes(n), n);
   assert.equal(names.filter(n => n === 'key-kaufen').length, 1); // vorhanden, nicht doppelt
   for (const n of ['Admin', 'Moderator', 'Supporter', 'Developer', 'Content Creator', 'Top 10', 'Customer', 'Member', 'Tester', 'User']) assert.equal(S.roles.filter(x => x.name === n).length, 1, n);
   globalThis.byBase = b => S.channels.find(c => c.name.replace(/^[^a-z0-9]+/i, '') === b);
@@ -294,7 +294,7 @@ await T('Giveaway: Start, Teilnahme, automatische Ziehung, Gewinner-Ticket mit N
   const gwc = (sub, options, who = 'ADMIN') => inter({ type: 2, channel_id: 'GWCH', token: 'tok', data: { name: 'giveaway', options: [{ type: 1, name: sub, options }] }, member: mem(who) });
   assert.match(J(await gwc('start', [{ name: 'preis', value: 'Key' }, { name: 'dauer', value: '1h' }], 'U1')), /Keine Berechtigung/);
   assert.match(J(await gwc('start', [{ name: 'preis', value: 'Key' }, { name: 'dauer', value: 'xyz' }])), /Dauer ungültig/);
-  const r = await gwc('start', [{ name: 'preis', value: '1 Monat Lizenz' }, { name: 'dauer', value: '1h' }, { name: 'gewinner', value: 2 }]);
+  const r = await gwc('start', [{ name: 'preis', value: '1 Monat Lizenz' }, { name: 'dauer', value: '1h' }, { name: 'gewinner', value: 2 }, { name: 'kanal', value: 'GWCH' }]);
   assert.match(J(r), /Giveaway gestartet/); const gw = db.prepare('SELECT * FROM giveaways ORDER BY id DESC').get(); assert.equal(gw.winners, 2);
   const post_ = S.msgs.GWCH[0]; assert.equal(post_.components[0].components[0].custom_id, 'gw_join');
   const join = who => inter({ type: 3, token: 'tk', message: { id: gw.message_id }, data: { custom_id: 'gw_join' }, member: mem(who) });

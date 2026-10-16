@@ -34,7 +34,7 @@ async function start(i, env, uid) {
   if (!prize) return bad(env, 'Preis fehlt', '');
   if (!sec) return bad(env, 'Dauer ungültig', 'Beispiele: `30m`, `2h`, `3d` (1 Minute bis 30 Tage).');
   const winners = Math.min(10, Math.max(1, Number(o('gewinner')) || 1));
-  const ch = o('kanal') || i.channel_id, ends = now() + sec;
+  const ch = o('kanal') || env.GIVEAWAY_CHANNEL_ID || i.channel_id, ends = now() + sec;
   const g = { prize, winners, ends_at: ends, host: uid };
   const msg = await dapi(env, 'POST', `/channels/${ch}/messages`, { embeds: [giveEmbed(env, g, 0)], components: JOIN() });
   if (!msg.ok) return bad(env, 'Giveaway nicht gepostet', 'Dem Bot fehlt die Berechtigung im Kanal.');
