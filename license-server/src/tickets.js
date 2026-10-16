@@ -2,6 +2,7 @@
 import { now, emb, eph, bad, COL, PLANS, PLAN_ALL, price, priceNum, paypalUrl, fmtDateTime, fmtDate } from './util.js';
 import { dapi, dapiFile, adminIds, isTeam, tryDM } from './discord.js';
 import { createKeys, extendLicense, bestKey } from './keys.js';
+import { askRating } from './growth.js';
 import { attachCode, payOut, rewards, codeRow, openCodeModal } from './codes.js';
 const codeInfo = async (env, c) => { if (!c) return null; const row = await codeRow(env, c); return row ? { code: row.code, buyer: rewards(env, row).buyer } : null; };
 
@@ -132,9 +133,13 @@ export async function confirmTicket(i, env, uid) {
   const claim = await env.DB.prepare('UPDATE tickets SET paid=1 WHERE channel_id=? AND paid=0').bind(i.channel_id).run();
   if (!(claim.meta && claim.meta.changes)) return bad(env, 'Schon bestätigt', 'Für dieses Ticket wurde die Zahlung bereits bestätigt.');
   const plan = PLANS[t.plan];
-  let fields, kind;
+  let fields, kind, r_loyal = 0;
   if (t.type === 'renew') {
+    const early = !!(await env.DB.prepare("SELECT 1 AS x FROM keys WHERE discord_id=? AND status='active' AND expires_at>?").bind(t.user_id, now()).first());
     const r = await extendLicense(env, t.user_id, t.plan, uid);
+    const loyal = early && r.mode !== 'new' ? (Number(env.RENEW_BONUS) >= 0 && env.RENEW_BONUS !== undefined && env.RENEW_BONUS !== '' ? Number(env.RENEW_BONUS) : 1) : 0;
+    if (loyal) { r.expires_at += Math.round(loyal * 86400); await env.DB.prepare('UPDATE keys SET expires_at=? WHERE key=?').bind(r.expires_at, r.key).run(); }
+    r_loyal = loyal;
     kind = r.mode === 'new' ? 'new' : 'renew';
     fields = r.mode === 'new'
       ? [{ name: 'Dein Key', value: '```\n' + r.key + '\n```' }, { name: 'Einlösen', value: 'In der App (Mit Discord verbinden → Key eingeben).' }]
@@ -156,6 +161,7 @@ export async function confirmTicket(i, env, uid) {
     }
   }
   await env.DB.prepare('INSERT INTO sales (user_id,plan,amount,kind,created_at) VALUES (?,?,?,?,?)').bind(t.user_id, t.plan, priceNum(price(env, t.plan)), kind, now()).run();
+  if (typeof r_loyal !== 'undefined' && r_loyal) fields.push({ name: '💙 Treue-Bonus', value: `Du hast **vor Ablauf** verlängert: **+${r_loyal} Bonustag${r_loyal === 1 ? '' : 'e'}** geschenkt.` });
   if (codeNote) fields.push(codeNote);
   return { type: 4, data: { content: `<@${t.user_id}>`, embeds: [emb(env, { title: '✅ Zahlung bestätigt', color: COL.ok, desc: 'Vielen Dank! Dein Zugang ist freigeschaltet. Du kannst dieses Ticket jetzt schließen.', fields })] } };
 }
@@ -201,6 +207,7 @@ export async function closeTicket(i, env, ctx, uid) {
           { name: 'Dauer', value: Math.max(1, Math.round((now() - t.created_at) / 60)) + ' Min.', inline: true }] })] }, `transkript-${i.channel_id}.txt`, text);
       }
     } catch (e) { /* Transkript best effort */ }
+    try { if (t.user_id !== undefined) await askRating(env, t.user_id, i.channel_id, (TYPES[t.type] || TYPES.buy).label); } catch (e) { /* optional */ }
     await new Promise(r => setTimeout(r, 2500));
     await dapi(env, 'DELETE', `/channels/${i.channel_id}`);
   })());

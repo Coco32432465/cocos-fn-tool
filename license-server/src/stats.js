@@ -1,3 +1,4 @@
+import { ratingSummary } from './growth.js';
 // Live-Statistik fuer das Team: ein Embed im Kanal live-stats, alle 5 Minuten aktualisiert (Button "Aktualisieren" fuer sofort).
 import { now, emb, COL, fmtDateTime } from './util.js';
 import { dapi, editMsg, getCfg, setCfg } from './discord.js';
@@ -28,7 +29,7 @@ export async function statsEmbed(env) {
     { name: '🔑 Keys', value: `Eingelöst gesamt: **${k.used || 0}**\nAktiv: **${k.act || 0}** (${dev.n || 0} mit Gerät)\nLäuft in 3 Tagen ab: ${k.soon || 0}\nAbgelaufen: ${k.exp || 0} · Gesperrt: ${k.rev || 0}\nNoch nicht eingelöst: ${k.unused || 0}`, inline: true },
     { name: '💶 Umsatz', value: `7 Tage: **${eur(s7.sum)}** (${s7.n})\n30 Tage: **${eur(s30.sum)}** (${s30.n})`, inline: true },
     { name: '💬 Discord', value: `Mitglieder: **${mem.approximate_member_count != null ? mem.approximate_member_count : '?'}**\nOnline: **${mem.approximate_presence_count != null ? mem.approximate_presence_count : '?'}**`, inline: true },
-    { name: '🎫 Aktivität', value: `Tickets offen: ${tk.n || 0}\nGiveaways laufen: ${gw.n || 0}\nUmfragen laufen: ${pl.n || 0}\nRangliste: ${rk.n || 0}`, inline: true },
+    { name: '🎫 Aktivität', value: `Tickets offen: ${tk.n || 0}\nGiveaways laufen: ${gw.n || 0}\nUmfragen laufen: ${pl.n || 0}\nRangliste: ${rk.n || 0}\nSupport: ${await ratingSummary(env)}`, inline: true },
     { name: '🧩 App-Versionen (7 Tage)', value: vers.length ? vers.map(r => `v${r.v}: ${r.n}`).join('\n') : 'noch keine Daten', inline: true },
     { name: 'Stand', value: `${fmtDateTime(t)} · aktualisiert alle 5 Minuten`, inline: false }] });
 }

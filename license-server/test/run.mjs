@@ -205,7 +205,7 @@ await T('Verlängern: Erinnerung 3 Tage vorher (einmal) -> Button -> Renew-Ticke
   const first = JSON.stringify(S.msgs[ch.id][0]); assert.match(first, /paypal|PayPal/i); assert.match(first, /Screenshot/);
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('U7') })), /Keine Berechtigung/);
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), /Zahlung bestätigt/);
-  assert.equal(db.prepare('SELECT expires_at FROM keys WHERE key=?').get(k).expires_at, exp0 + 7 * 86400);
+  assert.equal(db.prepare('SELECT expires_at FROM keys WHERE key=?').get(k).expires_at, exp0 + 8 * 86400);
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM sales WHERE user_id='U7' AND kind='renew'").get().n, 1);
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), /Schon bestätigt/);
   assert.equal(db.prepare('SELECT reminded FROM keys WHERE key=?').get(k).reminded, 0); // neue Erinnerung moeglich
@@ -449,7 +449,7 @@ await T('Creator-Codes: Bonus-Tage für Käufer, Belohnung für Inhaber, nur ein
   const ok = await sub('coco', 'U30'); assert.equal(ok.type, 7); assert.match(J(ok), /Creator-Code/); assert.match(J(ok), /COCO/);
   const dm0 = S.dms.length;
   const conf = J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })); const key = (conf.match(/[A-Z0-9]{4}(-[A-Z0-9]{4}){2}/) || [])[0]; assert.ok(key, 'Key im Ticket'); assert.match(conf, /Bonustag/); assert.equal(db.prepare('SELECT days FROM keys WHERE key=?').get(key).days, 9, '7 + 2 Bonustage (beim Code eingestellt)');
-  const owner = db.prepare("SELECT * FROM keys WHERE created_by='code'").get(); assert.ok(owner && owner.days === 2, 'Inhaber ohne Lizenz bekommt einen Belohnungs-Key (2 Tage Wochen-Belohnung)');
+  const owner = db.prepare("SELECT * FROM keys WHERE created_by='bonus'").get(); assert.ok(owner && owner.days === 2, 'Inhaber ohne Lizenz bekommt einen Belohnungs-Key (2 Tage Wochen-Belohnung)');
   assert.ok(S.dms.slice(dm0).some(d => d.to === '123456789012345678' && /Code wurde genutzt/.test(JSON.stringify(d.body))), 'DM an Inhaber');
   assert.equal(db.prepare("SELECT uses, earned_days FROM codes WHERE code='COCO'").get().uses, 1);
   // zweiter Kauf derselben Person: Code nicht mehr möglich
@@ -491,6 +491,41 @@ await T('PayPal: eigener Link je Laufzeit', async () => {
   const e = { PAYPAL_URL_WEEK: 'https://py.pl/w', PAYPAL_URL_MONTH: 'https://py.pl/m', PAYPAL_URL: 'https://paypal.me/x', PRICE_WEEK: '5 €', PRICE_MONTH: '15 €' };
   assert.equal(paypalUrl(e, 'week'), 'https://py.pl/w'); assert.equal(paypalUrl(e, 'month'), 'https://py.pl/m');
   assert.equal(paypalUrl({ PAYPAL_URL: 'https://paypal.me/x', PRICE_WEEK: '5 €' }, 'week'), 'https://paypal.me/x/5EUR');
+});
+await T('Wachstum: Probe-Key, Treue-Bonus, Bewertung, Belohnung', async () => {
+  const btn = (id, who, ch = 'X') => inter({ type: 3, channel_id: ch, token: 'tok', data: { custom_id: id }, member: mem(who) });
+  const form = (id, v, member) => inter({ type: 5, channel_id: 'X', token: 'tok', data: { custom_id: id, components: Object.entries(v).map(([k, x]) => ({ type: 1, components: [{ type: 4, custom_id: k, value: x }] })) }, member });
+  // Probe
+  const r1 = J(await btn('trial_start', 'U50')); assert.match(r1, /Probe-Key/); assert.match(r1, /[A-Z0-9]{4}(-[A-Z0-9]{4}){2}/);
+  assert.equal(db.prepare("SELECT days FROM keys WHERE created_by='trial'").get().days, 1);
+  assert.match(J(await btn('trial_start', 'U50')), /schon genutzt/);
+  db.prepare("INSERT INTO keys (key,plan,days,status,discord_id,created_at,expires_at) VALUES ('OWN1-OWN2-OWN3-OWN4','week',7,'expired','U51',1,2)").run();
+  assert.match(J(await btn('trial_start', 'U51')), /schon eine Lizenz/);
+  // Treue-Bonus: aktive Lizenz + Verlaengerung vor Ablauf
+  const exp0 = Math.floor(Date.now() / 1000) + 86400;
+  db.prepare("INSERT INTO keys (key,plan,days,status,discord_id,created_at,redeemed_at,expires_at) VALUES ('ACT1-ACT2-ACT3-ACT4','week',7,'active','U52',1,1,?)").run(exp0);
+  await inter({ type: 3, data: { custom_id: 'renew_open' }, user: { id: 'U52', username: 'useru52' } }); const ch = S.channels.find(c => /^verlaengern-useru52-\d+$/.test(c.name));
+  assert.ok(ch, 'Ticket-Kanal');
+  await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['week'] }, member: mem('U52') });
+  const conf = J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') }));
+  assert.match(conf, /Treue-Bonus/);
+  assert.equal(db.prepare("SELECT expires_at FROM keys WHERE key='ACT1-ACT2-ACT3-ACT4'").get().expires_at, exp0 + 7 * 86400 + 86400);
+  // Bewertung beim Schliessen
+  const dm0 = S.dms.length;
+  await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_close' }, member: mem('U52') }); await flush();
+  const rd = S.dms.slice(dm0).find(d => d.to === 'U52' && /rate:/.test(JSON.stringify(d.body))); assert.ok(rd, 'Bewertungs-DM');
+  assert.match(J(await btn('rate:5:' + ch.id, 'U52')), /5 von 5/);
+  await btn('rate:1:' + ch.id, 'U52'); assert.equal(db.prepare('SELECT COUNT(*) n, MAX(stars) s FROM ratings').get().s, 5);
+  // Belohnung
+  const bel = who => inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'belohnung' }, member: mem(who) });
+  assert.equal((await bel('ADMIN')).type, 9); assert.match(J(await bel('U1')), /Keine Berechtigung/);
+  assert.match(J(await form('modal_reward', { f_user: '<@123456789012345678>', f_days: '99', f_why: 'x' }, mem('ADMIN'))), /Tage ungültig/);
+  assert.match(J(await form('modal_reward', { f_user: 'nix', f_days: '3', f_why: 'x' }, mem('ADMIN'))), /nicht erkannt/);
+  assert.match(J(await form('modal_reward', { f_user: '<@123456789012345678>', f_days: '3', f_why: 'Vorschlag umgesetzt' }, mem('U1'))), /Keine Berechtigung/);
+  const d1 = S.dms.length;
+  assert.match(J(await form('modal_reward', { f_user: '<@123456789012345678>', f_days: '3', f_why: 'Vorschlag umgesetzt' }, mem('ADMIN'))), /\+3 Tage/);
+  assert.ok(S.dms.slice(d1).some(d => /Vorschlag umgesetzt/.test(JSON.stringify(d.body))), 'DM mit Grund');
+  assert.equal(db.prepare('SELECT days FROM reward_log').get().days, 3);
 });
 console.log(`\n${ok} Tests bestanden`); S.restore();
 

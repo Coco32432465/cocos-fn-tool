@@ -10,8 +10,9 @@
 //   POST /license/refresh     Ticket erneuern {session, device}
 //   POST /api/verify          {key, deviceId} -> {valid, expiresAt}
 import { sha256hex, json, now, emb, eph, bad, noPerm, COL, PLANS, PLAN_ALL, fmtDate, normKey, KEY_RE } from './util.js';
-import { getCfg, setCfg, dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin, isTeam } from './discord.js';
+import { getCfg, setCfg, dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin, isTeam, isCodeManager } from './discord.js';
 import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statusOf, expireSweep } from './keys.js';
+import { startTrial, rate, openRewardModal, submitReward } from './growth.js';
 import { openTicket, selectPlan, closeTicket, confirmTicket, codeButton, submitCode } from './tickets.js';
 import { ensureSchema } from './schema.js';
 import { remindSweep, RENEW_BUTTON } from './remind.js';
@@ -57,6 +58,7 @@ const COMMANDS = [
     { type: 1, name: 'löschen', description: 'Erinnerung löschen', options: [{ type: 4, name: 'id', description: 'ID aus /erinnerung liste', required: true }] }] },
   { name: 'tipp', description: 'Zufälliger Pro-Tipp' },
   { name: 'datenschutz', description: 'Deine gespeicherten Daten ansehen und löschen' },
+  { name: 'belohnung', description: 'Team: Bonus-Tage als Belohnung vergeben (Formular)', options: [] },
   { name: 'code', description: 'Creator-Codes: Käufer bekommen Bonus-Tage, Creator werden belohnt', options: [
     { type: 1, name: 'mein', description: 'Dein Creator-Code und was er dir gebracht hat' },
     { type: 1, name: 'neu', description: 'Neuen Code anlegen (Content Manager, öffnet ein Formular)' },
@@ -149,6 +151,8 @@ async function handleInteraction(i, env, ctx) {
     if (id === 'ticket_buy' || id === 'ticket_open') return openTicket(i, env, uid, 'buy');
     if (id === 'ticket_support') return openTicket(i, env, uid, 'support');
     if (id === 'ticket_plan') return selectPlan(i, env, uid);
+    if (id === 'trial_start') return startTrial(i, env, uid);
+    if (id.startsWith('rate:')) { const [, n, ch] = id.split(':'); return rate(i, env, uid, n, ch); }
     if (id === 'ticket_close') return closeTicket(i, env, ctx, uid);
     if (id === 'ticket_confirm') return confirmTicket(i, env, uid);
     if (id === 'gw_join') {
@@ -190,6 +194,7 @@ async function handleInteraction(i, env, ctx) {
     const id = i.data.custom_id;
     if (id === 'modal_feedback') return submitForm(i, env, uid, 'feedback');
     if (id === 'modal_bug') return submitForm(i, env, uid, 'bug');
+    if (id === 'modal_reward') return submitReward(i, env, uid);
     if (id === 'modal_code') return submitCode(i, env, uid);
     if (id === 'modal_giveaway') return submitGiveaway(i, env, uid);
     const fr = await submitFun(i, env, uid); if (fr) return fr;
@@ -225,6 +230,7 @@ async function handleInteraction(i, env, ctx) {
     if (['umfrage', 'lfg', 'erinnerung', 'tipp'].includes(name)) return handleFun(i, env, uid);
     if (name === 'datenschutz') return handlePrivacy(i, env, uid);
     if (name === 'code') return handleCode(i, env, uid);
+    if (name === 'belohnung') return (isTeam(env, i) || isCodeManager(env, i)) ? openRewardModal() : noPerm(env);
     if (name === 'admin') {
       if (!isAdmin(env, i)) return noPerm(env);
       const sub = ((i.data.options || [])[0] || {}).name;
