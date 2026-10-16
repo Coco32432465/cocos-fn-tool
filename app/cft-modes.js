@@ -577,6 +577,63 @@
   MODES.patch = { title: 'Patchnotes', tabs: [], render: function (t, w) { renderPatch(w); } };
   bind('mtPatch', 'patch');
 
+  /* ---------- Replay-Bibliothek ---------- */
+  var LIB = store.get('cft_lib') || {}; LIB.favs = LIB.favs || {};
+  var LQ = '';
+  (function () {
+    var st = document.createElement('style');
+    st.textContent = '#cm .lbf{display:flex;gap:10px;flex-wrap:wrap;align-items:center}#cm .lbf select{background:#0c0c11;border:1px solid #ffffff1c;border-radius:10px;color:#fff;font:600 15px Rajdhani,sans-serif;padding:9px 12px}#cm .lbf select:focus{outline:none;border-color:var(--acc)}'
+      + '#cm .lbs{background:none;border:0;cursor:pointer;font-size:20px;line-height:1;color:#ffffff40;padding:2px 6px}#cm .lbs.on{color:#f1c40f;text-shadow:0 0 10px #f1c40f88}#cm .lbs:hover{color:#f1c40f}'
+      + '#cm .lbg{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;font:800 14px Orbitron,sans-serif;color:#fff;background:rgba(var(--rgb),.25);border:1px solid var(--acc)}'
+      + '#cm .tb td small{display:block;color:var(--mute);font-size:13px}#cm .lbo{font:700 13px Rajdhani,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--acc-light);background:transparent;border:1px solid rgba(var(--rgb),.4);border-radius:8px;padding:6px 12px;cursor:pointer}#cm .lbo:hover{border-color:var(--acc);box-shadow:0 0 12px rgba(var(--rgb),.35)}'
+      + '@media(max-width:800px){#cm .tb .lbh{display:none}}';
+    document.head.appendChild(st);
+  })();
+  function libSave() { store.set('cft_lib', LIB); }
+  function libOpen(g) {
+    if (window.cftLicense && !window.cftLicense.ok()) { window.cftLicense.open(); return; }
+    close(); if (window.hideMenu) window.hideMenu();
+    if (window.openViewer) setTimeout(function () { window.openViewer(g.m); }, 60);
+  }
+  function renderLib(w) {
+    var all = games();
+    if (!all.length) return empty(w, 'Analysiere zuerst ein paar Replays im VOD Review, dann findest du sie hier wieder, mit Suche, Filtern und Favoriten.');
+    var modes = ST.libModes(all), sel = function (id, list, v) { return '<select id="' + id + '">' + list.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(v || '') === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; };
+    if (LIB.mode && modes.indexOf(LIB.mode) < 0) LIB.mode = '';
+    w.innerHTML = '<div class="lbf"><input class="sr" id="lbq" placeholder="Suchen: Name, Modus, Landeort …" value="' + esc(LQ) + '" aria-label="Replays durchsuchen">'
+      + sel('lbm', [['', 'Alle Modi']].concat(modes.map(function (m) { return [m, m]; })), LIB.mode)
+      + sel('lbr', ST.LIB_RES, LIB.res || 'all')
+      + sel('lbd', [[0, 'Gesamter Zeitraum'], [1, 'Heute & gestern'], [7, '7 Tage'], [30, '30 Tage']], LIB.days || 0)
+      + sel('lbo', ST.LIB_SORTS, LIB.sort || 'new')
+      + '</div><div class="cc"><button id="lbfav" class="' + (LIB.favOnly ? 'on' : '') + '">★ Nur Favoriten</button><button id="lbx">Filter zurücksetzen</button>' + (CFT.share ? '<span class="lbl" style="margin-left:auto">Bildformat</span><button data-fm="post" class="' + (LIB.fmt !== 'story' ? 'on' : '') + '">Post 4:5</button><button data-fm="story" class="' + (LIB.fmt === 'story' ? 'on' : '') + '">Story 9:16</button>' : '') + '</div><div class="kp" id="lbk"></div><div class="pn"><table class="tb"><thead><tr><th></th><th>Note</th><th>Replay</th><th class="lbh">Modus</th><th class="lbh">Landung</th><th>Platz</th><th>Elims</th><th></th></tr></thead><tbody id="lbt"></tbody></table></div>';
+    var $q = function (id) { return w.querySelector('#' + id); }, R = null;
+    var draw = function () {
+      R = ST.library(all, { q: LQ, mode: LIB.mode, res: LIB.res, days: +LIB.days || 0, favs: LIB.favs, favOnly: LIB.favOnly, sort: LIB.sort });
+      $q('lbk').innerHTML = kpi('Treffer', R.n, 'von ' + all.length) + kpi('Ø Note', R.n ? fmt1(R.avg / 10) : '–', '/ 10') + kpi('Ø Platz', R.place ? fmt1(R.place) : '–', '') + kpi('Siege', R.wins, '') + kpi('Elims', R.kills, '');
+      var show = R.list.slice(0, 200);
+      $q('lbt').innerHTML = show.length ? show.map(function (g, i) {
+        var me = (g.real && g.real.meta) || {}, k = ST.libKey(g), fav = !!LIB.favs[k];
+        return '<tr class="cl" data-i="' + i + '"><td><button class="lbs' + (fav ? ' on' : '') + '" data-f="' + i + '" aria-label="' + (fav ? 'Favorit entfernen' : 'Als Favorit merken') + '" title="Favorit">' + (fav ? '★' : '☆') + '</button></td>'
+          + '<td><span class="lbg">' + esc(g.m.g || '–') + '</span></td><td><b>' + esc(g.m.n || 'Game') + '</b><small>' + esc(g.mtime ? new Date(g.mtime).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') + '</small></td>'
+          + '<td class="lbh">' + esc(me.mode || '–') + '</td><td class="lbh">' + esc(me.landPoi || '–') + '</td>'
+          + '<td class="' + (g.m.pl === 1 ? 'hl' : '') + '"><b>' + (g.m.pl > 0 ? '#' + g.m.pl : '–') + '</b></td><td>' + (g.m.k || 0) + '</td><td style="white-space:nowrap"><button class="lbo" data-o="' + i + '">Öffnen</button> ' + (CFT.share ? '<button class="lbo" data-sh="' + i + '" title="Runde als Bild speichern (für Discord, TikTok, Instagram)">Bild</button>' : '') + '</td></tr>';
+      }).join('') + (R.n > show.length ? '<tr><td colspan="8" style="color:var(--mute)">… und ' + (R.n - show.length) + ' weitere. Schränke die Suche ein.</td></tr>' : '')
+        : '<tr><td colspan="8"><div class="emp" style="padding:30px"><b>Nichts gefunden</b>Andere Suche oder Filter zurücksetzen.</div></td></tr>';
+      [].forEach.call($q('lbt').querySelectorAll('[data-f]'), function (b) { b.onclick = function (e) { e.stopPropagation(); var k = ST.libKey(show[+b.dataset.f]); if (LIB.favs[k]) delete LIB.favs[k]; else LIB.favs[k] = 1; libSave(); draw(); }; });
+      [].forEach.call($q('lbt').querySelectorAll('tr.cl'), function (tr) { tr.onclick = function () { libOpen(show[+tr.dataset.i]); }; });
+      [].forEach.call($q('lbt').querySelectorAll('[data-sh]'), function (b) { b.onclick = function (e) { e.stopPropagation(); b.textContent = '…'; CFT.share.save(show[+b.dataset.sh], LIB.fmt || 'post').then(function () { b.textContent = '✓ Gespeichert'; setTimeout(function () { b.textContent = 'Bild'; }, 2200); }, function () { b.textContent = 'Fehler'; }); }; });
+    };
+    draw();
+    $q('lbq').oninput = function () { LQ = this.value; draw(); };
+    [['lbm', 'mode'], ['lbr', 'res'], ['lbd', 'days'], ['lbo', 'sort']].forEach(function (x) { $q(x[0]).onchange = function () { LIB[x[1]] = this.value; libSave(); draw(); }; });
+    $q('lbfav').onclick = function () { LIB.favOnly = !LIB.favOnly; libSave(); renderLib(w); };
+    $q('lbx').onclick = function () { LQ = ''; LIB = { favs: LIB.favs, fmt: LIB.fmt }; libSave(); renderLib(w); };
+    [].forEach.call(w.querySelectorAll('[data-fm]'), function (b) { b.onclick = function () { LIB.fmt = b.dataset.fm; libSave(); renderLib(w); }; });
+    setTimeout(function () { var q = $q('lbq'); if (q) q.focus(); }, 30);
+  }
+  MODES.lib = { title: 'Replay-Bibliothek', tabs: [], render: function (t, w) { renderLib(w); } };
+  bind('lastAll', 'lib');
+
 
   /* ---------- PC-Check & Tweak-Paket ---------- */
   (function () {

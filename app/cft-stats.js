@@ -359,5 +359,49 @@
     return out;
   };
 
+  /* ---------- Replay-Bibliothek: Suche, Filter, Sortierung, Favoriten ---------- */
+  /** stabiler Schlüssel je Replay (für Favoriten), auch nach Neustart gleich */
+  S.libKey = function (g) { return String(g.path || g.fname || ((g.mtime || 0) + '|' + ((g.m && g.m.n) || ''))); };
+  var gMode = function (g) { var md = g.real && g.real.meta && g.real.meta.mode; return md || ''; };
+  /** alle vorkommenden Modi, häufigste zuerst */
+  S.libModes = function (games) {
+    var c = {}; S.sorted(games).forEach(function (g) { var md = gMode(g); if (md) c[md] = (c[md] || 0) + 1; });
+    return Object.keys(c).sort(function (a, b) { return c[b] - c[a] || a.localeCompare(b); });
+  };
+  S.LIB_SORTS = [['new', 'Neueste'], ['old', 'Älteste'], ['score', 'Beste Note'], ['place', 'Beste Platzierung'], ['kills', 'Meiste Elims']];
+  S.LIB_RES = [['all', 'Alle'], ['win', 'Siege'], ['top10', 'Top 10'], ['rest', 'Ohne Top 10']];
+  /** Filtern + sortieren. o: { q, mode ('' = alle), res, days, favs: {key:1}, favOnly, sort }. `now` nur für Tests. */
+  S.library = function (games, o, now) {
+    o = o || {};
+    var q = String(o.q || '').trim().toLowerCase(), favs = o.favs || {}, from = o.days ? (now || Date.now()) - o.days * DAY : 0;
+    var L = S.sorted(games).filter(function (g) {
+      if (from && ts(g) < from) return false;
+      if (o.mode && gMode(g) !== o.mode) return false;
+      var p = pl(g);
+      if (o.res === 'win' && p !== 1) return false;
+      if (o.res === 'top10' && !(p > 0 && p <= 10)) return false;
+      if (o.res === 'rest' && p > 0 && p <= 10) return false;
+      if (o.favOnly && !favs[S.libKey(g)]) return false;
+      if (q) {
+        var me = (g.real && g.real.meta) || {};
+        var hay = [g.m.n, g.fname, gMode(g), me.landPoi, me.landName, g.m.g, p ? '#' + p : ''].join(' ').toLowerCase();
+        if (q.split(/\s+/).some(function (w) { return hay.indexOf(w) < 0; })) return false;
+      }
+      return true;
+    });
+    var plc = function (g) { return pl(g) || 999; }, kills = function (g) { return (g.m && g.m.k) || 0; };
+    var by = {
+      new: function (a, b) { return ts(b) - ts(a); }, old: function (a, b) { return ts(a) - ts(b); },
+      score: function (a, b) { return (b.tot || 0) - (a.tot || 0) || ts(b) - ts(a); },
+      place: function (a, b) { return plc(a) - plc(b) || ts(b) - ts(a); },
+      kills: function (a, b) { return kills(b) - kills(a) || ts(b) - ts(a); }
+    }[o.sort] || function (a, b) { return ts(b) - ts(a); };
+    L.sort(by);
+    var P = L.filter(function (g) { return pl(g) > 0; });
+    return { list: L, n: L.length, wins: L.filter(function (g) { return pl(g) === 1; }).length,
+      avg: L.length ? r1(avg(L.map(function (g) { return g.tot || 0; }))) : 0, place: P.length ? r1(avg(P.map(pl))) : 0,
+      kills: L.reduce(function (s, g) { return s + kills(g); }, 0) };
+  };
+
   if (typeof module !== 'undefined' && module.exports) module.exports = CFT;
 })(typeof window !== 'undefined' ? window : globalThis);

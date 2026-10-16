@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cocos Tool Projekt</title>
+<link rel="stylesheet" href="../app/fonts.css">
+<style>
+:root{--bg:#0A0A0C;--panel:rgba(18,18,24,.85);--acc:#3b82f6;--acc2:#60a5fa;--rgb:59,130,246;--txt:#e8e8ee;--mute:#8a8a98;--good:#4ade80;--warn:#facc15;--bad:#ff5a67}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(120% 70% at 50% -10%,rgba(var(--rgb),.16),transparent 60%),var(--bg);color:var(--txt);font:500 17px/1.45 Rajdhani,system-ui,sans-serif;min-height:100vh}
+.w{max-width:1200px;margin:0 auto;padding:28px 16px 60px;display:flex;flex-direction:column;gap:20px}
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+h1{font:900 clamp(20px,3vw,30px) Orbitron,sans-serif;letter-spacing:.08em;color:#fff}h1 span{color:var(--acc);text-shadow:0 0 18px var(--acc)}
+.st{margin-left:auto;color:var(--mute);font-size:15px}
+h2{font:800 13px Orbitron,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--acc2);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+h2::before{content:"";width:6px;height:6px;background:var(--acc);box-shadow:0 0 8px var(--acc);transform:rotate(45deg)}
+.pn{background:var(--panel);border:1px solid rgba(var(--rgb),.2);border-radius:14px;padding:18px 20px}
+.fr{border-color:var(--warn);box-shadow:0 0 26px rgba(250,204,21,.12);display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.fr b.v{font:900 34px Orbitron,sans-serif;color:#fff}.fr .t{flex:1;min-width:240px}.fr .t strong{display:block;color:#fff;font-size:20px}.fr .t p{color:var(--mute)}
+.tag{display:inline-block;font:700 12px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:2px 10px;border-radius:99px;border:1px solid currentColor}
+.tag.w{color:var(--warn)}.tag.g{color:var(--good)}.tag.b{color:var(--acc2)}
+a.btn{font:800 13px Orbitron,sans-serif;letter-spacing:.12em;padding:11px 16px;border-radius:9px;background:var(--acc);color:#fff;text-decoration:none;box-shadow:0 0 18px rgba(var(--rgb),.35)}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.k{background:var(--panel);border:1px solid rgba(var(--rgb),.22);border-radius:12px;padding:14px 16px}
+.k small{display:block;color:var(--mute);font-size:13px;letter-spacing:.14em;text-transform:uppercase}.k b{display:block;font:800 28px Orbitron,sans-serif;color:#fff;margin-top:6px}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.li{list-style:none;display:flex;flex-direction:column;gap:8px}
+.li li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:#ffffff05;border:1px solid #ffffff0d}
+.li li em{font-style:normal;flex:none;font:700 11px Rajdhani,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--acc2);border:1px solid rgba(var(--rgb),.4);border-radius:6px;padding:1px 6px;margin-top:3px}
+.li li i{font-style:normal;margin-left:auto;color:var(--mute);font-size:13px;flex:none}
+.li label{display:flex;gap:10px;align-items:flex-start;cursor:pointer;flex:1}.li input{accent-color:var(--acc);margin-top:5px}
+.li li.ok span{color:var(--mute);text-decoration:line-through}
+.fl{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.fl button{font:700 13px Rajdhani,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);background:#0c0c11;border:1px solid #ffffff1c;border-radius:99px;padding:6px 14px;cursor:pointer}
+.fl button.on{color:#fff;background:rgba(var(--rgb),.22);border-color:var(--acc)}
+.gr{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.id{border:1px solid rgba(var(--rgb),.2);border-radius:12px;padding:14px 16px;background:#0c0c11}.id h3{font:800 15px Orbitron,sans-serif;color:#fff;letter-spacing:.04em;margin:6px 0 4px}.id p{color:var(--mute);font-size:16px}
+.tl{display:flex;flex-direction:column;gap:10px}
+.tr{display:grid;grid-template-columns:130px 1fr;gap:14px;padding:12px 0;border-top:1px solid #ffffff0d}.tr:first-child{border-top:0}
+.tr b{font:800 18px Orbitron,sans-serif;color:#fff;display:block}.tr small{color:var(--mute)}@media(max-width:600px){.tr{grid-template-columns:1fr}}
+.more{margin-top:10px;background:none;border:1px solid rgba(var(--rgb),.4);color:var(--acc2);border-radius:8px;padding:8px 14px;font:700 13px Rajdhani,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.emp{color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="w">
+  <header><h1>COCOS <span>TOOL</span> · PROJEKT</h1><div class="st" id="st"></div></header>
+  <div id="fr"></div>
+  <div class="kp" id="kp"></div>
+  <section class="pn"><h2>Braucht dich</h2><ul class="li" id="me"></ul></section>
+  <div class="cols">
+    <section class="pn"><h2>Als Nächstes</h2><ul class="li" id="next"></ul></section>
+    <section class="pn"><h2>In Arbeit</h2><ul class="li" id="work"></ul></section>
+    <section class="pn"><h2>Erledigt</h2><ul class="li" id="done"></ul></section>
+  </div>
+  <section class="pn"><h2>Ideen</h2><div class="fl" id="ifl"></div><div class="gr" id="ide"></div></section>
+  <section class="pn"><h2>Versionen</h2><div class="tl" id="ver"></div><button class="more" id="vm">Alle Versionen zeigen</button></section>
+</div>
+<script src="../app/patchnotes.js"></script>
+<script src="projekt.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var P = window.PROJEKT || { aufgaben: [], ideen: [] }, N = window.PATCHNOTES || [], A = P.aufgaben || [];
+  var store = { get: function (k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } } };
+  var checked = store.get('cftp_ok') || {};
+  var fd = function (d) { return d ? new Date(d + 'T12:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''; };
+  var F = P.freigabe, live = N.filter(function (n) { return !F || n.v !== F.version; })[0];
+
+  $('st').textContent = 'Stand ' + fd(P.stand) + (live ? ' · veröffentlicht: v' + live.v : '');
+  if (F && F.version) $('fr').innerHTML = '<div class="pn fr"><b class="v">v' + esc(F.version) + '</b><div class="t"><span class="tag w">Wartet auf Freigabe</span><strong>' + esc(F.titel) + '</strong><p>' + esc(F.hinweis || '') + '</p></div>' + (F.pr ? '<a class="btn" href="' + esc(F.pr) + '" target="_blank" rel="noopener">Zum PR</a>' : '') + '</div>';
+
+  var week = Date.now() - 7 * 864e5, recent = N.filter(function (n) { return n.date && new Date(n.date + 'T12:00:00').getTime() >= week; }).length;
+  var cnt = function (s) { return A.filter(function (a) { return a.status === s; }).length; };
+  $('kp').innerHTML = [['Versionen', N.length], ['Updates (7 Tage)', recent], ['Braucht dich', cnt('braucht-dich')], ['Offen', cnt('offen') + cnt('arbeit')], ['Erledigt', cnt('fertig')], ['Ideen', (P.ideen || []).length]]
+    .map(function (k) { return '<div class="k"><small>' + k[0] + '</small><b>' + k[1] + '</b></div>'; }).join('');
+
+  function list(id, s, box) {
+    var L = A.filter(function (a) { return a.status === s; });
+    $(id).innerHTML = L.length ? L.map(function (a) {
+      var key = a.text, ok = box && checked[key];
+      var inner = '<em>' + esc(a.bereich || '') + '</em><span>' + esc(a.text) + '</span>' + (a.aufwand ? '<i>' + esc(a.aufwand) + '</i>' : '');
+      return '<li class="' + (ok ? 'ok' : '') + '">' + (box ? '<label><input type="checkbox" data-k="' + esc(key) + '"' + (ok ? ' checked' : '') + '>' + inner + '</label>' : inner) + '</li>';
+    }).join('') : '<li class="emp">Nichts hier.</li>';
+  }
+  function lists() { list('me', 'braucht-dich', true); list('next', 'offen'); list('work', 'arbeit'); list('done', 'fertig'); }
+  lists();
+  $('me').addEventListener('change', function (e) { var k = e.target.dataset.k; if (!k) return; if (e.target.checked) checked[k] = 1; else delete checked[k]; store.set('cftp_ok', checked); lists(); });
+
+  var IF = '', areas = []; (P.ideen || []).forEach(function (i) { if (areas.indexOf(i.bereich) < 0) areas.push(i.bereich); });
+  function ideas() {
+    $('ifl').innerHTML = [''].concat(areas).map(function (a) { return '<button data-a="' + esc(a) + '" class="' + (a === IF ? 'on' : '') + '">' + esc(a || 'Alle') + '</button>'; }).join('');
+    $('ide').innerHTML = (P.ideen || []).filter(function (i) { return !IF || i.bereich === IF; }).map(function (i) {
+      return '<div class="id"><span class="tag b">' + esc(i.bereich) + '</span> <span class="tag ' + (i.aufwand === 'S' ? 'g' : i.aufwand === 'L' ? 'w' : 'b') + '">Aufwand ' + esc(i.aufwand) + '</span><h3>' + esc(i.titel) + '</h3><p>' + esc(i.text) + '</p></div>';
+    }).join('');
+    [].forEach.call($('ifl').querySelectorAll('button'), function (b) { b.onclick = function () { IF = b.dataset.a; ideas(); }; });
+  }
+  ideas();
+
+  var all = false;
+  function versions() {
+    var L = all ? N : N.slice(0, 6);
+    $('ver').innerHTML = L.map(function (n) { var wait = F && n.v === F.version; return '<div class="tr"><div><b>v' + esc(n.v) + '</b><small>' + esc(fd(n.date)) + '</small><br><span class="tag ' + (wait ? 'w' : 'b') + '">' + esc(wait ? 'Freigabe' : n.tag || '') + '</span></div><p>' + esc(n.text) + '</p></div>'; }).join('');
+    $('vm').textContent = all ? 'Weniger zeigen' : 'Alle ' + N.length + ' Versionen zeigen';
+  }
+  versions(); $('vm').onclick = function () { all = !all; versions(); };
+})();
+</script>
+</body>
+</html>
