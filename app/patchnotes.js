@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.10.7', date: '2026-10-16', tag: 'UPDATE', text: 'Die linke Seite zeigt jetzt „Zuletzt analysiert“ statt der News-Liste. Alle Neuerungen findest du weiter im Modus „Patchnotes“.' },
   { v: '0.10.6', date: '2026-10-16', tag: 'NEU', text: 'Beim Start lädt die App alle schon gespeicherten Replays automatisch aus dem Cache, nichts muss mehr neu eingelesen werden (auch nach Updates). Die App erkennt jetzt den Modus: Landeorte und Karte gibt es nur bei Reload, bei anderen Modi bleibt die Karte aus. In den Einstellungen lässt sich die Karte für alle Modi einschalten.' },
   { v: '0.10.5', date: '2026-10-16', tag: 'UPDATE', text: 'Die App meldet sich alle paar Minuten beim Lizenz-Server, damit das Team sieht, wie viele Nutzer gerade online sind. Dazu im Discord: animiertes Banner, Umfragen und Mitspielersuche per Button und Formular, Erste-Schritte-Anleitung und Live-Stats für das Team.', vod: 0 },
   { v: '0.10.4', date: '2026-10-16', tag: 'FEATURE', text: 'Die App meldet ihre Version beim Lizenz-Check. Admins sehen im Discord mit /admin nutzer, wer die App hat und wann sie zuletzt genutzt wurde, und mit /admin keys, wer welchen Key eingelöst hat.', vod: 0 },
