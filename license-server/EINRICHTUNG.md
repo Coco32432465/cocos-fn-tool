@@ -116,3 +116,6 @@ Discord-Login für deine Website: `…/auth/start?cid=ZUFALLSTEXT&next=https://d
 - Teilnahme per Button (nochmal klicken = austragen). Ende automatisch (Cron jede Minute), Gewinner bekommen sofort ein privates Ticket + DM.
 - Ticket-Kanäle heißen jetzt `thema-name-nr`, z. B. `support-ben-01`, `kauf-ben-02`, `giveaway-ben-01` (Zähler je Thema, sinkt nie).
 - Neue Befehle: danach `/register` einmal neu aufrufen.
+
+## /setup erneuern
+Bearbeitet die vorhandenen Panel-Nachrichten (Regeln, Status, Download …) statt neu zu posten und löscht doppelte Altlasten.

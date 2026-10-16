@@ -135,10 +135,22 @@ export async function runSetup(env, renew) {
     ];
     for (const [chName, flag, payload] of posts) {
       const cid = ids[chName]; if (!cid) continue;
-      if (!renew && await getCfg(env, 'posted:' + flag)) { L(`Nachricht ${flag}: schon gepostet`); continue; }
-      if (!renew) { // bereits vorhandene Bot-Nachricht mit gleichem Titel erkennen (z. B. altes Panel)
-        const h = await dapi(env, 'GET', `/channels/${cid}/messages?limit=15`);
-        if (h.ok && h.data.some(m => m.author && m.author.id === env.DISCORD_APP_ID && (m.embeds || []).some(e => e.title === payload.embeds[0].title))) { await setCfg(env, 'posted:' + flag, 1); L(`Nachricht ${flag}: schon vorhanden`); continue; }
+      const stored = await getCfg(env, 'posted:' + flag);
+      if (!renew && stored) { L(`Nachricht ${flag}: schon gepostet`); continue; }
+      // Eigene Nachrichten im Kanal suchen: gespeicherte ID oder gleicher Titel (auch Altlasten/Duplikate)
+      const h = await dapi(env, 'GET', `/channels/${cid}/messages?limit=50`);
+      const title = payload.embeds[0].title;
+      const mine = h.ok ? h.data.filter(m => m.author && m.author.id === env.DISCORD_APP_ID) : [];
+      const same = mine.filter(m => m.id === stored || (m.embeds || []).some(e => e.title === title));
+      const target = same.find(m => m.id === stored) || same[0];
+      if (target && !renew) { await setCfg(env, 'posted:' + flag, target.id); L(`Nachricht ${flag}: schon vorhanden`); continue; }
+      if (target) { // erneuern = bestehende Nachricht bearbeiten, Doppelte loeschen
+        const e = await dapi(env, 'PATCH', `/channels/${cid}/messages/${target.id}`, { content: '', embeds: payload.embeds, components: payload.components || [] });
+        if (e.ok) {
+          await setCfg(env, 'posted:' + flag, target.id);
+          let del = 0; for (const d of same) if (d.id !== target.id && del < 5) { await dapi(env, 'DELETE', `/channels/${cid}/messages/${d.id}`); del++; }
+          L(`Nachricht ${flag}: aktualisiert${del ? ` (${del} Doppelte gelöscht)` : ''}`); continue;
+        }
       }
       const p = await dapi(env, 'POST', `/channels/${cid}/messages`, payload);
       if (p.ok) { await setCfg(env, 'posted:' + flag, p.data.id); L(`Nachricht ${flag}: gepostet`); } else L(`Nachricht ${flag}: Fehler (${p.status})`);

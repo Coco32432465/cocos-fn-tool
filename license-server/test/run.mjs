@@ -146,6 +146,16 @@ await T('/setup: baut Struktur, überspringt Vorhandenes, 2. Lauf ändert nichts
   assert.equal(S.channels.length, before); const pc = S.chPatched || 0; assert.equal(Object.values(S.msgs).flat().length, msgsBefore);
   assert.equal(S.chPatched || 0, pc); assert.match(JSON.stringify(S.patched.at(-1)), /vorhanden/);
 });
+await T('/setup erneuern: bearbeitet bestehende Nachrichten statt neu zu posten, löscht Doppelte', async () => {
+  const rules = byBase('rules').id, count = () => Object.values(S.msgs).flat().length;
+  S.msgs[rules].push({ ...S.msgs[rules][0], id: '999001' }); // Altlast: Duplikat
+  const before = count(), ed = S.edited || 0;
+  await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup', options: [{ name: 'erneuern', value: true }] }, member: mem('ADMIN') }); await flush();
+  for (let g = 0; g < 6 && /Limit erreicht/.test(JSON.stringify(S.patched.at(-1))); g++) { await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup', options: [{ name: 'erneuern', value: true }] }, member: mem('ADMIN') }); await flush(); }
+  assert.equal(count(), before - 1); // nur das Duplikat ist weg, nichts neu gepostet
+  assert.ok((S.edited || 0) > ed); assert.equal(S.msgs[rules].length, 1);
+  assert.match(JSON.stringify(S.patched.at(-1)), /aktualisiert/);
+});
 await T('/setup: Rollen-Beitritt per Regel-Button + Limit-Fortsetzung', async () => {
   assert.match(J(await inter({ type: 3, data: { custom_id: 'rules_accept' }, member: mem('U1') })), /Member/);
   const memberId = S.roles.find(r => r.name === 'Member').id; assert.ok(S.members.U1.roles.includes(memberId));
