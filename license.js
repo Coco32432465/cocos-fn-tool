@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 
+const appVer = () => { try { return require('electron').app.getVersion(); } catch (e) { return ''; } };
 const SALT = 'cft-license-v1';
 const REFRESH_EVERY = 6 * 3600 * 1000; // Ticket alle 6 h im Hintergrund erneuern
 const LOGIN_TIMEOUT = 5 * 60 * 1000;
@@ -107,14 +108,14 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
   async function activate(key) {
     const s = load();
     if (!s.session) return state({ error: 'Bitte zuerst mit Discord verbinden.' });
-    try { return await applyGrant(await post('/license/activate', { session: s.session, key: String(key || '').trim().toUpperCase(), device: await dev() })); }
+    try { return await applyGrant(await post('/license/activate', { session: s.session, key: String(key || '').trim().toUpperCase(), device: await dev(), appVersion: appVer() })); }
     catch (e) { return state({ error: 'Lizenz-Server nicht erreichbar. Prüfe deine Internetverbindung.' }); }
   }
 
   async function refresh() {
     const s = load();
     if (!enabled() || !s.session) return state();
-    try { return await applyGrant(await post('/license/refresh', { session: s.session, device: await dev() })); }
+    try { return await applyGrant(await post('/license/refresh', { session: s.session, device: await dev(), appVersion: appVer() })); }
     catch (e) { return state(); } // offline: gueltiges Ticket bleibt bis zum Ablauf nutzbar
   }
 

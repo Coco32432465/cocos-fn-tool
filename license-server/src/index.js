@@ -17,7 +17,7 @@ import { ensureSchema } from './schema.js';
 import { remindSweep, RENEW_BUTTON } from './remind.js';
 import { rankSubmit, rankLeave, handleRank, syncRank } from './rank.js';
 import { openForm, submitForm, setBugStatus } from './forms.js';
-import { adminStats, handleTeam } from './admin.js';
+import { adminStats, adminUsers, adminKeys, handleTeam } from './admin.js';
 import { syncStatus, downloadTarget } from './panels.js';
 import { Gateway, pingGateway } from './gateway.js';
 import { handleGiveaway, joinGiveaway, endSweep } from './giveaway.js';
@@ -68,7 +68,7 @@ const COMMANDS = [
     { type: 1, name: 'top', description: 'Top 10 anzeigen' },
     { type: 1, name: 'ich', description: 'Deinen Rang anzeigen' },
     { type: 1, name: 'austragen', description: 'Dich aus der Rangliste entfernen' }] },
-  { name: 'admin', description: 'Admin-Übersicht', options: [{ type: 1, name: 'stats', description: 'Lizenzen, Umsatz, Nutzer, Support' }] },
+  { name: 'admin', description: 'Admin-Übersicht', options: [{ type: 1, name: 'stats', description: 'Lizenzen, Umsatz, Nutzer, Support' }, { type: 1, name: 'nutzer', description: 'Wer die App hat (mit Discord verbunden)' }, { type: 1, name: 'keys', description: 'Welche Keys wer eingelöst hat' }] },
   { name: 'team', description: 'Team-Rollen verwalten (Admin)', options: [
     { type: 6, name: 'user', description: 'Nutzer', required: true },
     { type: 3, name: 'rolle', description: 'Rolle', required: true, choices: [{ name: 'Moderator', value: 'moderator' }, { name: 'Supporter', value: 'supporter' }, { name: 'Developer', value: 'developer' }, { name: 'Content Creator', value: 'creator' }, { name: 'Tester', value: 'tester' }] },
@@ -213,7 +213,8 @@ async function handleInteraction(i, env, ctx) {
     if (['umfrage', 'lfg', 'erinnerung', 'tipp'].includes(name)) return handleFun(i, env, uid);
     if (name === 'admin') {
       if (!isAdmin(env, i)) return noPerm(env);
-      return { type: 4, data: { embeds: [await adminStats(env)], flags: 64 } };
+      const sub = ((i.data.options || [])[0] || {}).name;
+      return { type: 4, data: { embeds: [await (sub === 'nutzer' ? adminUsers(env) : sub === 'keys' ? adminKeys(env) : adminStats(env))], flags: 64 } };
     }
   }
   return bad(env, 'Nicht unterstützt', '');

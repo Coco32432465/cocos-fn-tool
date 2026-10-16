@@ -89,7 +89,7 @@ export async function authPoll(body, env) {
 /* ---------- Lizenz fuer die App ---------- */
 const getSession = async (env, token) => token ? env.DB.prepare('SELECT * FROM sessions WHERE token_hash=?').bind(await sha256hex(String(token))).first() : null;
 
-async function grant(env, sess, key, device, ip) {
+async function grant(env, sess, key, device, ip, ver) {
   const dev = String(device || '').slice(0, 128);
   if (dev.length < 8) return json({ ok: false, error: 'device', message: 'Geräte-ID fehlt.' }, 400);
   const t = now();
@@ -109,6 +109,9 @@ async function grant(env, sess, key, device, ip) {
   if (row.device && row.device !== dev) return json({ ok: false, error: 'device', message: 'Der Key ist schon auf einem anderen Gerät aktiv. Melde dich im Discord für einen Reset.' }, 403);
   if (!fresh) { const role = await hasRole(env, sess.discord_id); if (role === false) return json({ ok: false, error: 'role', message: 'Dir fehlt die Customer-Rolle im Discord.' }, 403); }
   if (!row.device) await env.DB.prepare('UPDATE keys SET device=? WHERE key=? AND device IS NULL').bind(dev, row.key).run();
+  const v = String(ver || '').slice(0, 20);
+  await env.DB.prepare('UPDATE sessions SET last_seen=?, app_version=COALESCE(NULLIF(?,\'\'), app_version) WHERE token_hash=?').bind(t, v, sess.token_hash).run().catch(() => {});
+  await env.DB.prepare('UPDATE keys SET last_seen=? WHERE key=?').bind(t, row.key).run().catch(() => {});
   const exp = Math.min(t + TICKET_TTL, row.expires_at);
   const ticket = await signTicket(env, { v: 1, uid: sess.discord_id, name: sess.username, dev, iat: t, exp, keyExp: row.expires_at });
   return json({ ok: true, ticket, exp, keyExp: row.expires_at, user: { id: sess.discord_id, name: sess.username } });
@@ -119,12 +122,12 @@ export async function licenseActivate(body, env, ip) {
   if (!sess) return json({ ok: false, error: 'session', message: 'Bitte verbinde zuerst dein Discord-Konto.' }, 401);
   const key = normKey(body.key);
   if (!KEY_RE.test(key)) return json({ ok: false, error: 'format', message: 'Ungültiges Key-Format.' }, 400);
-  return grant(env, sess, key, body.device, ip);
+  return grant(env, sess, key, body.device, ip, body.appVersion);
 }
 export async function licenseRefresh(body, env) {
   const sess = await getSession(env, body.session);
   if (!sess) return json({ ok: false, error: 'session', message: 'Bitte verbinde dein Discord-Konto erneut.' }, 401);
-  return grant(env, sess, null, body.device, null);
+  return grant(env, sess, null, body.device, null, body.appVersion);
 }
 
 /* ---------- Oeffentliche API: POST /api/verify {key, deviceId} -> {valid, expiresAt} ---------- */
