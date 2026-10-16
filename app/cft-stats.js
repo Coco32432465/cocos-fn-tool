@@ -235,5 +235,29 @@
     });
   };
 
+  /** Team: das teilt ein Spieler mit seinem Coach (nur Gesamtwerte, keine Replays). Nur echte Runden. */
+  S.teamPayload = function (games) {
+    var G = S.sorted((games || []).filter(function (g) { return g && g.real; })); if (!G.length) return null;
+    var sum = S.summary(G);
+    return { games: sum.n, avgScore: sum.score, wins: sum.wins, kills: sum.kills, avgPlace: sum.place, bestPlace: sum.best,
+      weak: S.weaknesses(G).slice(0, 3).map(function (w) { return { kind: w.kind, pct: w.pct }; }),
+      trend: G.slice(-12).map(function (g) { return Math.round(g.tot || 0); }) };
+  };
+
+  /** Team-Auswertung fuer den Coach: Durchschnitt, Staerkster/Schwaechster, gemeinsame Schwaeche. members = [{name, stats}] */
+  S.teamInsight = function (members) {
+    var M = (members || []).filter(function (m) { return m && m.stats && m.stats.games > 0; });
+    if (!M.length) return null;
+    var av = r1(avg(M.map(function (m) { return m.stats.avgScore; })));
+    var byScore = M.slice().sort(function (a, b) { return b.stats.avgScore - a.stats.avgScore; });
+    var cnt = {};
+    M.forEach(function (m) { (m.stats.weak || []).slice(0, 2).forEach(function (w) { if (S.LABEL[w.kind]) cnt[w.kind] = (cnt[w.kind] || 0) + 1; }); });
+    var kinds = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; });
+    var shared = kinds.length && cnt[kinds[0]] >= 2 ? { kind: kinds[0], label: S.LABEL[kinds[0]], count: cnt[kinds[0]], total: M.length } : null;
+    function slope(t) { return t && t.length >= 4 ? r1(avg(t.slice(-3)) - avg(t.slice(0, 3))) : 0; }
+    return { n: M.length, avg: av, best: byScore[0], worst: byScore.length > 1 ? byScore[byScore.length - 1] : null, shared: shared,
+      rising: M.map(function (m) { return { m: m, d: slope(m.stats.trend) }; }).sort(function (a, b) { return b.d - a.d; })[0] };
+  };
+
   if (typeof module !== 'undefined' && module.exports) module.exports = CFT;
 })(typeof window !== 'undefined' ? window : globalThis);
