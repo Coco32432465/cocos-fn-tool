@@ -178,7 +178,7 @@ await T('Ticket schließen: Transkript im Log-Kanal, Kanal gelöscht, Fremde nic
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_close' }, member: mem('U9') })), /Keine Berechtigung/);
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_close' }, member: mem('U1') })), /geschlossen/);
   await flush();
-  const f = S.files.find(x => x.ch === logId); assert.ok(f, 'Transkript fehlt'); assert.match(f.text, /Transkript/); assert.match(f.text, /Lizenzbestellung/); assert.match(f.name, /\.txt$/);
+  const f = S.files.find(x => x.ch === logId); assert.ok(f, 'Transkript fehlt'); assert.match(f.text, /Transkript/); assert.match(f.text, /Bestellung/); assert.match(f.name, /\.txt$/);
   assert.ok(S.deleted.includes(ch.id));
 });
 await T('/zugang: User-Rolle vergeben und entziehen', async () => {
@@ -217,7 +217,7 @@ await T('Verlängern: Erinnerung 3 Tage vorher (einmal) -> Button -> Renew-Ticke
 await T('Kauf-Ticket bestätigen: neuer Key im Ticket', async () => {
   await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U8') });
   const ch = S.channels.find(c => c.name.startsWith('kauf-useru8-'));
-  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), /Laufzeit fehlt/);
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), /Produkt fehlt/);
   await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['month'] }, member: mem('U8') });
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), KEYRE);
   assert.equal(db.prepare("SELECT SUM(amount) AS s FROM sales WHERE user_id='U8'").get().s, 15);
@@ -587,7 +587,7 @@ await T('Rangliste: Community-Durchschnitt erst ab 5 Teilnehmern, ohne Namen', a
 await T('Duo/Squad werden nicht mehr verkauft, Team kostet 30 Euro', async () => {
   await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U60') });
   const ch = S.channels.find(c => c.name.startsWith('kauf-useru60-')); assert.ok(ch);
-  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['duo'] }, member: mem('U60') })), /Unbekannte Laufzeit/);
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['duo'] }, member: mem('U60') })), /Unbekanntes Produkt/);
   assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['team'] }, member: mem('U60') })), /30 €/);
 });
 await T('Tweak-Paket: Einmalkauf schaltet Freigabe im Ticket frei, nicht fuer Verlaengerung', async () => {
@@ -599,7 +599,7 @@ await T('Tweak-Paket: Einmalkauf schaltet Freigabe im Ticket frei, nicht fuer Ve
   assert.equal(db.prepare("SELECT SUM(amount) s FROM sales WHERE user_id='U62'").get().s, 9);
   await inter({ type: 3, data: { custom_id: 'renew_open' }, user: { id: 'U63', username: 'useru63' } });
   const rc = S.channels.find(c => /^verlaengern-useru63-\d+$/.test(c.name));
-  assert.match(J(await inter({ type: 3, channel_id: rc.id, data: { custom_id: 'ticket_plan', values: ['tweaks'] }, member: mem('U63') })), /Unbekannte Laufzeit/);
+  assert.match(J(await inter({ type: 3, channel_id: rc.id, data: { custom_id: 'ticket_plan', values: ['tweaks'] }, member: mem('U63') })), /Unbekanntes Produkt/);
 });
 await T('Team-Lizenz: Kauf, Beitritt per Code, Coach-Ansicht, Limits, Rechte', async () => {
   const { sha256hex } = await import('../src/util.js');
