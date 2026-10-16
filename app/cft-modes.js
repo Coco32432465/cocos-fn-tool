@@ -245,7 +245,7 @@
     if (REF && Date.now() - REFT < 120000) return draw(REF);
     w.innerHTML = '<div class="emp"><b>Lade Vergleich …</b></div>';
     if (!(window.fn && window.fn.rankAvg)) return draw(null);
-    window.fn.rankAvg().then(function (r) { REF = r; REFT = Date.now(); if (cur === 'fort' && tab === 'cmp') draw(r); }, function () { draw(null); });
+    window.fn.rankAvg().then(function (r) { REF = r; REFT = Date.now(); if (cur === 'drop' && tab === 'cmp') draw(r); }, function () { draw(null); });
   }
 
 
@@ -348,7 +348,7 @@
   function seasonState() {
     var id = ST.seasonId(), tm = store.get('cft_team'), pv = store.get('cft_prem');
     var prem = SN.ents.indexOf('pass:' + id) >= 0 || (pv && pv === id);
-    return ST.season(CFT.games, { premium: !!prem, teamIn: !!(tm && tm.in) });
+    return ST.season(CFT.games, { premium: !!prem, teamIn: !!(tm && tm.in), bonus: ST.spinState(store.get('cft_spin')).bonus });
   }
   function saveUnlocks(sn) { // Kosmetik bleibt dauerhaft freigeschaltet, auch nach Season-Ende
     var c = ST.passCosmetics(sn.level, sn.premium), u = store.get('cft_unl') || { themes: [], titles: [] };
@@ -447,8 +447,6 @@
       };
     });
   }
-  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan'], ['team', 'Team']], render: function (t, w) { if (t === 'team') renderTeam(w); else if (t === 'train') renderTrain(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else renderTrend(w); } };
-  bind('mtFort', 'fort');
   MODES.season = { title: 'Season-Pass', tabs: [], render: function (t, w) { renderSeason(w, !hasSeason()); } };
   bind('mtSeason', 'season');
   /* ---------- Landung & Rotation ---------- */
@@ -480,7 +478,52 @@
     w.innerHTML = h;
   }
   function kpiS(l, v, sub) { return '<div class="k"><small>' + l + '</small><b>' + v + '</b><i>' + esc(sub) + '</i></div>'; }
-  MODES.drop = { title: 'Landung & Rotation', tabs: [['land', 'Landeorte'], ['rot', 'Rotation']], render: function (t, w) { if (t === 'rot') renderRot(w); else renderDrops(w); } };
+  MODES.drop = { title: 'Landung, Rotation & Fortschritt', tabs: [['land', 'Landeorte'], ['rot', 'Rotation'], ['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan']], render: function (t, w) { if (t === 'rot') renderRot(w); else if (t === 'trend') renderTrend(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else if (t === 'train') renderTrain(w); else renderDrops(w); } };
+  MODES.team = { title: 'Coach & Team', tabs: [], render: function (t, w) { renderTeam(w); } };
+  bind('mtTeam', 'team');
+  /* ---------- Daily Spin ---------- */
+  var SPN = { busy: false, rot: 0 };
+  var SEG_COL = { c: '#2a3350', r: '#1f5f8b', e: '#7a2fb8', j: '#c98a00' };
+  function spinStyle() {
+    if (document.getElementById('cmspin')) return;
+    var e = document.createElement('style'); e.id = 'cmspin';
+    e.textContent = '#cm .spw{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:28px;align-items:center}@media(max-width:800px){#cm .spw{grid-template-columns:1fr}}'
+      + '#cm .spr{position:relative;width:100%;max-width:400px;aspect-ratio:1;margin:0 auto}#cm .spr .wh{position:absolute;inset:0;border-radius:50%;border:3px solid var(--acc);box-shadow:0 0 34px rgba(var(--rgb),.35);transition:transform 4.2s cubic-bezier(.12,.7,.1,1)}'
+      + '#cm .spr .wh b{position:absolute;left:50%;top:50%;width:50%;height:0;transform-origin:0 0;font:800 15px Orbitron,sans-serif;color:#fff}#cm .spr .wh b span{position:absolute;left:46%;top:-9px;white-space:nowrap}'
+      + '#cm .spr .pt{position:absolute;left:50%;top:-12px;margin-left:-14px;border:14px solid transparent;border-top:26px solid #fff;z-index:2;filter:drop-shadow(0 0 8px var(--acc))}'
+      + '#cm .spr .hb{position:absolute;left:50%;top:50%;width:86px;height:86px;margin:-43px 0 0 -43px;border-radius:50%;background:#0A0A0C;border:3px solid var(--acc);z-index:1;display:grid;place-items:center;font:800 13px Orbitron,sans-serif;color:#fff;text-align:center}'
+      + '#cm .spi{background:rgba(18,18,24,.8);border:1px solid rgba(var(--rgb),.22);border-radius:14px;padding:20px 24px}#cm .spi h3{font:800 20px Orbitron,sans-serif;color:#fff;margin-bottom:8px}#cm .spi p{font-size:18px;line-height:1.45;color:var(--txt)}'
+      + '#cm .spi .big{font:800 40px Orbitron,sans-serif;color:var(--acc-light);margin:6px 0}#cm .spst{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}#cm .spst div{flex:1;min-width:110px;background:#0c0c11;border:1px solid #ffffff14;border-radius:10px;padding:10px 12px}#cm .spst b{display:block;font:800 22px Orbitron,sans-serif;color:#fff}#cm .spst span{color:var(--mute);font-size:13px;letter-spacing:.08em;text-transform:uppercase}'
+      + '#cm .spgo{font:800 20px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#fff;background:rgba(var(--rgb),.3);border:1px solid var(--acc);border-radius:12px;padding:14px 34px;cursor:pointer;margin-top:6px}#cm .spgo:hover{box-shadow:0 0 22px rgba(var(--rgb),.5)}#cm .spgo[disabled]{opacity:.45;cursor:default;box-shadow:none}';
+    document.head.appendChild(e);
+  }
+  function renderSpin(w, rotTo) {
+    spinStyle();
+    var P = ST.SPIN_PRIZES, n = P.length, sp = ST.spinState(store.get('cft_spin')), seg = 360 / n;
+    var grad = P.map(function (p, i) { return SEG_COL[p.tier] + ' ' + (i * seg) + 'deg ' + ((i + 1) * seg) + 'deg'; }).join(',');
+    var labels = P.map(function (p, i) { return '<b style="transform:rotate(' + (i * seg + seg / 2 - 90) + 'deg)"><span>' + esc(p.xp >= 400 ? 'JACKPOT' : '+' + p.xp) + '</span></b>'; }).join('');
+    var pr = sp.prize;
+    var right = '<div class="spi"><h3>Dein Tagesbonus</h3>'
+      + (pr ? '<div class="big">' + esc(pr.label) + '</div><p>' + (pr.sb ? '+' + pr.sb + ' XP Streak-Bonus · ' : '') + '<b>' + pr.gain + ' XP</b> für den Season-Pass gutgeschrieben.</p>' + (sp.mission ? '<div class="tip"><b>Tagesmission:</b> ' + esc(sp.mission) + '</div>' : '') + '<p>Morgen um 0:00 Uhr (Berlin) kannst du wieder drehen. Dein Streak: <b>' + sp.streak + '</b> Tag' + (sp.streak === 1 ? '' : 'e') + '.</p>'
+        : '<p>Einmal pro Tag drehen: Bonus-XP für deinen Season-Pass, eine Tagesmission, und je mehr Tage in Folge, desto mehr Streak-Bonus (bis +35 XP).</p>')
+      + '<div class="spst"><div><b>' + sp.streak + '</b><span>Streak</span></div><div><b>' + sp.bonus + '</b><span>Bonus-XP Season</span></div><div><b>' + sp.spins + '</b><span>Drehs gesamt</span></div></div>'
+      + '<button class="spgo" id="spgo"' + (sp.can && !SPN.busy ? '' : ' disabled') + '>' + (sp.can ? 'Jetzt drehen' : 'Heute schon gedreht') + '</button></div>';
+    var lastIdx = pr ? Math.max(0, P.map(function (p) { return p.id; }).indexOf(pr.id)) : 0;
+    var rest = rotTo != null ? rotTo : (pr ? 360 * 6 - (lastIdx * seg + seg / 2) : 0);
+    w.innerHTML = '<div class="spw"><div class="spr"><div class="pt"></div><div class="wh" id="spwh" style="background:conic-gradient(' + grad + ');transform:rotate(' + (rotTo != null ? SPN.rot : rest) + 'deg)">' + labels + '</div><div class="hb">DAILY<br>SPIN</div></div>' + right + '</div>';
+    SPN.rot = rest;
+    var go = $('spgo'); if (!go) return;
+    go.onclick = function () {
+      var r = ST.spinDo(store.get('cft_spin'), Date.now(), Math.random(), Math.random());
+      if (!r.ok) return renderSpin(w);
+      var idx = P.map(function (p) { return p.id; }).indexOf(r.prize.id), target = 360 * 6 - (idx * seg + seg / 2) + (Math.random() - .5) * seg * .6;
+      SPN.busy = true; go.disabled = true; var wh = $('spwh');
+      requestAnimationFrame(function () { requestAnimationFrame(function () { wh.style.transform = 'rotate(' + (360 * 6 * 2 + (target % 360)) + 'deg)'; }); });
+      setTimeout(function () { store.set('cft_spin', r.state); SPN.busy = false; SPN.rot = 360 * 6 * 2 + (target % 360); renderSpin(w, SPN.rot); if (window.cftRankSync) try { window.cftRankSync(); } catch (e) {} }, 4400);
+    };
+  }
+  MODES.spin = { title: 'Daily Spin', tabs: [], render: function (t, w) { renderSpin(w); } };
+  bind('mtSpin', 'spin');
   bind('mtDrop', 'drop');
   /* ---------- Patchnotes ---------- */
   var PQ = '', PT = '';
