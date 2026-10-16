@@ -294,6 +294,40 @@
     { id: 'team', title: 'Einem Team beitreten', unit: '', tiers: [[1, 50]] }
   ];
   /** Fortschritt in der aktuellen Season. opts: { now, premium, teamIn } */
+  /* ---------- Daily Spin: einmal pro Berliner Tag, Bonus-XP fuer den Season-Pass ---------- */
+  S.SPIN_CAP = 1500; // Bonus-XP je Season hoechstens (15 Level)
+  S.SPIN_PRIZES = [
+    { id: 'xp20', xp: 20, w: 34, label: '+20 XP', tier: 'c' }, { id: 'xp40', xp: 40, w: 28, label: '+40 XP', tier: 'c' },
+    { id: 'xp60', xp: 60, w: 18, label: '+60 XP', tier: 'r' }, { id: 'xp100', xp: 100, w: 12, label: '+100 XP', tier: 'r' },
+    { id: 'xp200', xp: 200, w: 6, label: '+200 XP', tier: 'e' }, { id: 'jack', xp: 400, w: 2, label: 'JACKPOT +400 XP', tier: 'j' }
+  ];
+  S.SPIN_MISSIONS = [
+    'Lande heute an einem Ort, den du sonst meidest, und vergleiche danach die Zahlen.', 'Spiele eine Runde nur mit Fokus auf frühe Rotation: vor dem ersten Zonenschluss in der Mitte sein.',
+    'Analysiere heute ein Replay und finde den einen Fehler, der dich am meisten Platz gekostet hat.', 'Übe 10 Minuten Bauen und Editieren im Kreativmodus vor dem ersten Match.',
+    'Spiele heute defensiv: keinen Kampf nehmen, in dem du nicht höher stehst.', 'Schau dir dein letztes Top-10-Replay an und notiere, was die Gegner in Zone 4 gemacht haben.',
+    'Setz dir heute ein Ziel: 3 Eliminierungen, bevor du dich zurückziehst.', 'Fang jede Runde mit einem festen Loot-Plan an: Waffen, Heilung, dann Mobilität.'
+  ];
+  S.dayKey = function (now) { var b = berlinParts(now == null ? Date.now() : now); return b.y * 10000 + b.m * 100 + b.d; };
+  S.spinState = function (raw, now) {
+    var st = raw && typeof raw === 'object' ? raw : {}, today = S.dayKey(now), sid = S.seasonId(now == null ? Date.now() : now);
+    var bonus = st.season === sid ? (+st.bonus || 0) : 0, last = +st.last || 0;
+    var y = new Date(now == null ? Date.now() : now); y.setUTCDate(y.getUTCDate() - 1);
+    var streak = last === today ? (+st.streak || 1) : last === S.dayKey(y.getTime()) ? (+st.streak || 0) : 0;
+    return { last: last, streak: streak, bonus: bonus, season: sid, can: last !== today, today: today, total: +st.total || 0, spins: +st.spins || 0, prize: last === today ? st.prize || null : null, mission: last === today ? st.mission || null : null };
+  };
+  S.spinPick = function (rnd) { // rnd in [0,1)
+    var sum = S.SPIN_PRIZES.reduce(function (a, p) { return a + p.w; }, 0), x = rnd * sum;
+    for (var i = 0; i < S.SPIN_PRIZES.length; i++) { x -= S.SPIN_PRIZES[i].w; if (x < 0) return S.SPIN_PRIZES[i]; }
+    return S.SPIN_PRIZES[0];
+  };
+  // Dreht (falls heute noch nicht gedreht) und liefert den neuen Zustand zum Speichern
+  S.spinDo = function (raw, now, rnd1, rnd2) {
+    var cur = S.spinState(raw, now); if (!cur.can) return { ok: false, state: cur };
+    var streak = cur.streak + 1, pr = S.spinPick(rnd1), sb = Math.min(7, streak) * 5, gain = pr.xp + sb;
+    var bonus = Math.min(S.SPIN_CAP, cur.bonus + gain), mi = Math.floor(rnd2 * S.SPIN_MISSIONS.length) % S.SPIN_MISSIONS.length;
+    return { ok: true, gain: gain, streakBonus: sb, prize: pr, state: { last: cur.today, streak: streak, bonus: bonus, season: cur.season, total: cur.total + gain, spins: cur.spins + 1, prize: { id: pr.id, label: pr.label, xp: pr.xp, tier: pr.tier, gain: gain, sb: sb }, mission: S.SPIN_MISSIONS[mi] } };
+  };
+
   S.season = function (games, opts) {
     opts = opts || {}; var now = opts.now == null ? Date.now() : opts.now, id = S.seasonId(now);
     var G = S.sorted((games || []).filter(function (g) { return g && g.real && g.m && S.seasonId(ts(g)) === id; }));
@@ -305,7 +339,7 @@
       elims: G.reduce(function (s, g) { return s + ((g.m && g.m.k) || 0); }, 0), score: last10.length >= 5 ? r1(avg(last10.map(function (g) { return g.tot || 0; }))) : 0,
       streak: best, clean: G.filter(function (g) { var m = g.mis || (g.m && g.m.mis); return Array.isArray(m) && m.length === 0; }).length, team: opts.teamIn ? 1 : 0
     };
-    var base = 0, tasks = S.SEASON_TASKS.map(function (t) {
+    var base = Math.max(0, Math.min(S.SPIN_CAP, Math.round(opts.bonus || 0))), tasks = S.SEASON_TASKS.map(function (t) {
       var v = V[t.id] || 0, xp = 0, next = null;
       var tiers = t.tiers.map(function (x) { var done = v >= x[0]; if (done) xp += x[1]; else if (!next) next = x; return { need: x[0], xp: x[1], done: done }; });
       base += xp; return { id: t.id, title: t.title, unit: t.unit, value: v, tiers: tiers, xp: xp, next: next ? { need: next[0], xp: next[1] } : null };

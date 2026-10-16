@@ -102,4 +102,17 @@ assert.ok(ro.tips.length >= 1); assert.strictEqual(S.rotation([]).n, 0); assert.
   assert.deepStrictEqual(S.passCosmetics(10, false).themes, ['neon', 'cyan', 'toxic']); assert.deepStrictEqual(S.passCosmetics(0, true), { themes: [], titles: [] });
 })();
 
+(function () {
+  var S = require('../app/cft-stats.js').stats || require('../app/cft-stats.js'), n = Date.parse('2026-10-17T12:00:00Z');
+  var a = S.spinDo(null, n, 0.5, 0.1); assert.ok(a.ok); assert.strictEqual(a.state.streak, 1); assert.strictEqual(a.gain, a.prize.xp + 5);
+  assert.strictEqual(S.spinDo(a.state, n + 3600e3, 0.5, 0.1).ok, false, 'nur einmal pro Tag');
+  var b = S.spinDo(a.state, n + 86400e3, 0.99, 0.9); assert.strictEqual(b.state.streak, 2); assert.strictEqual(b.prize.id, 'jack'); assert.strictEqual(b.state.bonus, a.state.bonus + 400 + 10);
+  assert.strictEqual(S.spinDo(a.state, n + 3 * 86400e3, 0.1, 0.1).state.streak, 1, 'Streak reisst bei Pause');
+  assert.strictEqual(S.spinDo(a.state, Date.parse('2026-11-02T10:00:00Z'), 0.1, 0.1).state.bonus, 25, 'Bonus startet je Season neu');
+  assert.strictEqual(S.spinState(a.state, n).can, false); assert.strictEqual(S.spinState(a.state, n).prize.id, a.prize.id);
+  assert.strictEqual(S.season([], { bonus: 200, now: n }).xp, 200); assert.strictEqual(S.season([], { bonus: 99999, now: n }).xp, S.SPIN_CAP);
+  var big = null; for (var i = 0; i < 400; i++) big = S.spinDo(big && big.state, n + i * 86400e3 * 0 + i * 0, 0.99, 0.5) || big;
+  assert.ok(S.spinPick(0).id === 'xp20' && S.SPIN_PRIZES.length === 6);
+})();
+
 console.log('drops ok');
