@@ -128,7 +128,7 @@ await T('/setup: baut Struktur, überspringt Vorhandenes, 2. Lauf ändert nichts
   const r = await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); assert.equal(r.type, 5); await flush();
   for (let g = 0; g < 6 && /Limit erreicht/.test(JSON.stringify(S.patched.at(-1))); g++) { await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); await flush(); }
   const names = S.channels.map(c => c.name.replace(/^[^a-z0-9]+/i, '').toLowerCase());
-  for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs', 'status', 'rangliste', 'giveaways', 'umfragen', 'live-stats', 'arbeit', 'vorschläge', 'team-chat']) assert.ok(names.includes(n), n);
+  for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs', 'status', 'rangliste', 'giveaways', 'umfragen', 'datenschutz', 'live-stats', 'arbeit', 'vorschläge', 'team-chat']) assert.ok(names.includes(n), n);
     const hid = S.channels.find(c => /how-to-use$/.test(c.name)).id; assert.match(JSON.stringify(S.msgs[hid]), /Erste Schritte/);
     const pid = S.channels.find(c => /umfragen$/.test(c.name)).id; assert.equal(S.msgs[pid][0].components[0].components[0].custom_id, 'poll_new');
     assert.match(JSON.stringify(S.msgs[S.channels.find(c => /welcome$/.test(c.name)).id]), /banner\.gif/);
@@ -423,6 +423,53 @@ await T('Patchnotes: Embed im Kanal, nur einmal pro Version', async () => {
   const n = S.msgs[pc.id].length; const r2 = await postPatchnotes(env, src); assert.deepEqual(r2.sent, []); assert.equal(S.msgs[pc.id].length, n);
   const r3 = await postPatchnotes(env, src.replace("[\n", "[\n  { v: '1.0.0', date: '2026-10-16', tag: 'NEU', text: 'Neu.' },\n")); assert.deepEqual(r3.sent, ['1.0.0']);
 } finally { S.restore(); }
+});
+await T('Creator-Codes: Bonus-Tage für Käufer, Belohnung für Inhaber, nur einmal, Datenschutz', async () => {
+  const cc = (sub, options, who = 'ADMIN') => inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'code', options: [{ type: 1, name: sub, options }] }, member: mem(who) });
+  assert.match(J(await cc('erstellen', [{ name: 'user', value: 'CR1' }, { name: 'code', value: 'coco' }], 'U1')), /Keine Berechtigung/);
+  assert.match(J(await cc('erstellen', [{ name: 'user', value: 'CR1' }, { name: 'code', value: 'coco' }])), /Code erstellt/);
+  assert.match(J(await cc('erstellen', [{ name: 'user', value: 'CR1' }, { name: 'code', value: 'COCO' }])), /Code vergeben/);
+  assert.match(J(await cc('mein', [], 'CR1')), /COCO/); assert.match(J(await cc('mein', [], 'NOBODY')), /noch keinen Code/);
+  // Käufer U30 öffnet Ticket, wählt Woche, gibt Code ein
+  await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U30') });
+  const ch = S.channels.find(c => c.name.startsWith('kauf-useru30-'));
+  await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['week'] }, member: mem('U30') });
+  assert.equal((await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_code' }, member: mem('U30') })).type, 9);
+  const sub = (v, who) => inter({ type: 5, channel_id: ch.id, token: 'tok', message: { id: 'm' }, data: { custom_id: 'modal_code', components: [{ type: 1, components: [{ type: 4, custom_id: 'f_code', value: v }] }] }, member: mem(who) });
+  assert.match(J(await sub('gibtsnicht', 'U30')), /gibt es nicht/);
+  assert.match(J(await sub('COCO', 'U31')), /Keine Berechtigung/);
+  const ok = await sub('coco', 'U30'); assert.equal(ok.type, 7); assert.match(J(ok), /Creator-Code/); assert.match(J(ok), /COCO/);
+  const dm0 = S.dms.length;
+  const conf = J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })); const key = (conf.match(/[A-Z0-9]{4}(-[A-Z0-9]{4}){2}/) || [])[0]; assert.ok(key, 'Key im Ticket'); assert.match(conf, /Bonustag/); assert.equal(db.prepare('SELECT days FROM keys WHERE key=?').get(key).days, 8, '7 + 1 Bonustag');
+  const owner = db.prepare("SELECT * FROM keys WHERE created_by='code'").get(); assert.ok(owner && owner.days === 1, 'Inhaber ohne Lizenz bekommt einen Belohnungs-Key');
+  assert.ok(S.dms.slice(dm0).some(d => d.to === 'CR1' && /Code wurde genutzt/.test(JSON.stringify(d.body))), 'DM an Inhaber');
+  assert.equal(db.prepare("SELECT uses, earned_days FROM codes WHERE code='COCO'").get().uses, 1);
+  // zweiter Kauf derselben Person: Code nicht mehr möglich
+  db.prepare('DELETE FROM tickets WHERE channel_id=?').run(ch.id);
+  await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U30') });
+  const ch2 = S.channels.filter(c => c.name.startsWith('kauf-useru30-')).pop();
+  await inter({ type: 3, channel_id: ch2.id, data: { custom_id: 'ticket_plan', values: ['week'] }, member: mem('U30') });
+  assert.match(J(await inter({ type: 5, channel_id: ch2.id, message: { id: 'm' }, data: { custom_id: 'modal_code', components: [{ type: 1, components: [{ type: 4, custom_id: 'f_code', value: 'COCO' }] }] }, member: mem('U30') })), /schon einmal einen Code/);
+  // eigener Code
+  await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('CR1') });
+  const ch3 = S.channels.find(c => c.name.startsWith('kauf-usercr1-'));
+  assert.match(J(await inter({ type: 5, channel_id: ch3.id, message: { id: 'm' }, data: { custom_id: 'modal_code', components: [{ type: 1, components: [{ type: 4, custom_id: 'f_code', value: 'COCO' }] }] }, member: mem('CR1') })), /eigenen Code/);
+  // Datenschutz: Auskunft + Löschen
+  const pr = id => inter({ type: 3, token: 'tk', data: { custom_id: id }, member: mem('U30') });
+  db.prepare('INSERT INTO sessions (token_hash,discord_id,username,created_at) VALUES (?,?,?,?)').run('h-priv', 'U30', 'x', 1);
+  const info = await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'datenschutz' }, member: mem('U30') }); assert.match(J(info), /Deine gespeicherten Daten/);
+  assert.match(J(await pr('privacy_ask')), /Wirklich löschen/); assert.match(J(await pr('privacy_no')), /nichts gelöscht/);
+  assert.match(J(await pr('privacy_do')), /Daten gelöscht/); assert.equal(db.prepare("SELECT COUNT(*) AS n FROM sessions WHERE discord_id='U30'").get().n, 0);
+  assert.ok(db.prepare("SELECT 1 FROM keys WHERE discord_id='U30'").get() || true);
+});
+await T('Befehle werden automatisch registriert (Hash), nur bei Änderung', async () => {
+  const calls = []; const real = globalThis.fetch;
+  globalThis.fetch = async (u, o) => { if (/\/applications\/.*\/commands/.test(String(u)) && o && o.method === 'PUT') calls.push(1); return real(u, o); };
+  try {
+    db.prepare("DELETE FROM config WHERE k='cmdhash'").run();
+    await worker.scheduled({ cron: '15,45 * * * *' }, env, ctx); await flush(); assert.equal(calls.length, 1);
+    await worker.scheduled({ cron: '15,45 * * * *' }, env, ctx); await flush(); assert.equal(calls.length, 1, 'zweiter Lauf registriert nicht neu');
+  } finally { globalThis.fetch = real; }
 });
 await T('PayPal: eigener Link je Laufzeit', async () => {
   const { paypalUrl } = await import('../src/util.js');

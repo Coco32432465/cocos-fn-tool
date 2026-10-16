@@ -1,8 +1,11 @@
 // Selbst-Migration: neue Tabellen/Spalten werden beim ersten Aufruf automatisch angelegt (kein manueller Schritt noetig).
 import { getCfg, setCfg } from './discord.js';
 
-const SCHEMA_V = '6';
+const SCHEMA_V = '7';
 const STEPS = [
+  'ALTER TABLE tickets ADD COLUMN code TEXT',
+  `CREATE TABLE IF NOT EXISTS codes (code TEXT PRIMARY KEY, owner TEXT NOT NULL, created_at INTEGER NOT NULL, uses INTEGER NOT NULL DEFAULT 0, earned_days REAL NOT NULL DEFAULT 0)`,
+  `CREATE TABLE IF NOT EXISTS code_uses (user_id TEXT PRIMARY KEY, code TEXT NOT NULL, plan TEXT, created_at INTEGER NOT NULL)`,
   'ALTER TABLE sessions ADD COLUMN last_seen INTEGER',
   'ALTER TABLE sessions ADD COLUMN app_version TEXT',
   'ALTER TABLE keys ADD COLUMN last_seen INTEGER',
