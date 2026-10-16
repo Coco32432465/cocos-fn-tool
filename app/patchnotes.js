@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.18.0', date: '2026-10-17', tag: 'UPDATE', text: 'Daily Spin komplett neu: richtiges Glücksrad mit Animation, Konfetti und Gewinnchancen. Menü: VOD Review groß in der Mitte, links Landung/Rotation/Fortschritt, rechts Season-Pass' },
   { v: '0.17.0', date: '2026-10-17', tag: 'NEU', text: 'Neues Menü mit 7 Modulen: Landung, Rotation und Fortschritt sind jetzt ein Modul, Coach & Team hat ein eigenes Modul, und neu ist der Daily Spin: einmal pro Tag drehen für Bonus-XP im Season-Pass, Streak-Bonus und eine Tagesmission' },
   { v: '0.16.0', date: '2026-10-17', tag: 'UPDATE', text: 'Tweak-Paket verbessert: du wählst selbst, welche Tweaks angewendet werden, und siehst bei jedem genau, was geändert wird und was es bringt. Neu: Fortnite auf die starke Grafikkarte zwingen und Hintergrund-Apps ausschalten. Grafik-Profil (Schwacher PC / Mittelklasse / High-End) lässt sich von Hand überschreiben' },
   { v: '0.15.0', date: '2026-10-17', tag: 'UPDATE', text: 'Season-Pass ist jetzt eine eigene Kachel im Hauptmenü, komplett neu gestaltet (Level-Ring, Belohnungs-Leiste, Aufgaben mit Stufen). Der große Start-Button öffnet dein neuestes echtes Replay oder die Replay-Auswahl, nie mehr ein Demo-Spiel. Nach den Tweaks zeigt die App, wann ein Neustart sinnvoll ist. Scrim-Finder-Kachel entfernt' },

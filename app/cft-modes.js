@@ -482,47 +482,76 @@
   MODES.team = { title: 'Coach & Team', tabs: [], render: function (t, w) { renderTeam(w); } };
   bind('mtTeam', 'team');
   /* ---------- Daily Spin ---------- */
-  var SPN = { busy: false, rot: 0 };
-  var SEG_COL = { c: '#2a3350', r: '#1f5f8b', e: '#7a2fb8', j: '#c98a00' };
+  var SPN = { busy: false, rot: 0, raf: 0 };
+  var SEG = { c: ['#27345a', '#1a2342'], r: ['#2b7fd1', '#164a85'], e: ['#9b4de0', '#5a1f96'], j: ['#ffcf40', '#c27a00'] };
   function spinStyle() {
     if (document.getElementById('cmspin')) return;
     var e = document.createElement('style'); e.id = 'cmspin';
-    e.textContent = '#cm .spw{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:28px;align-items:center}@media(max-width:800px){#cm .spw{grid-template-columns:1fr}}'
-      + '#cm .spr{position:relative;width:100%;max-width:400px;aspect-ratio:1;margin:0 auto}#cm .spr .wh{position:absolute;inset:0;border-radius:50%;border:3px solid var(--acc);box-shadow:0 0 34px rgba(var(--rgb),.35);transition:transform 4.2s cubic-bezier(.12,.7,.1,1)}'
-      + '#cm .spr .wh b{position:absolute;left:50%;top:50%;width:50%;height:0;transform-origin:0 0;font:800 15px Orbitron,sans-serif;color:#fff}#cm .spr .wh b span{position:absolute;left:46%;top:-9px;white-space:nowrap}'
-      + '#cm .spr .pt{position:absolute;left:50%;top:-12px;margin-left:-14px;border:14px solid transparent;border-top:26px solid #fff;z-index:2;filter:drop-shadow(0 0 8px var(--acc))}'
-      + '#cm .spr .hb{position:absolute;left:50%;top:50%;width:86px;height:86px;margin:-43px 0 0 -43px;border-radius:50%;background:#0A0A0C;border:3px solid var(--acc);z-index:1;display:grid;place-items:center;font:800 13px Orbitron,sans-serif;color:#fff;text-align:center}'
-      + '#cm .spi{background:rgba(18,18,24,.8);border:1px solid rgba(var(--rgb),.22);border-radius:14px;padding:20px 24px}#cm .spi h3{font:800 20px Orbitron,sans-serif;color:#fff;margin-bottom:8px}#cm .spi p{font-size:18px;line-height:1.45;color:var(--txt)}'
-      + '#cm .spi .big{font:800 40px Orbitron,sans-serif;color:var(--acc-light);margin:6px 0}#cm .spst{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}#cm .spst div{flex:1;min-width:110px;background:#0c0c11;border:1px solid #ffffff14;border-radius:10px;padding:10px 12px}#cm .spst b{display:block;font:800 22px Orbitron,sans-serif;color:#fff}#cm .spst span{color:var(--mute);font-size:13px;letter-spacing:.08em;text-transform:uppercase}'
-      + '#cm .spgo{font:800 20px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#fff;background:rgba(var(--rgb),.3);border:1px solid var(--acc);border-radius:12px;padding:14px 34px;cursor:pointer;margin-top:6px}#cm .spgo:hover{box-shadow:0 0 22px rgba(var(--rgb),.5)}#cm .spgo[disabled]{opacity:.45;cursor:default;box-shadow:none}';
+    e.textContent = '#cm .spw{display:grid;grid-template-columns:minmax(320px,460px) 1fr;gap:34px;align-items:center;max-width:1100px;margin:0 auto}@media(max-width:850px){#cm .spw{grid-template-columns:1fr}}'
+      + '#cm .spr{position:relative;width:100%;max-width:460px;margin:0 auto;filter:drop-shadow(0 0 40px rgba(var(--rgb),.35))}#cm .spr svg{display:block;width:100%;height:auto;overflow:visible}'
+      + '#cm .spr text{font-family:Orbitron,sans-serif;font-weight:800;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.45);stroke-width:3px}'
+      + '#cm .spi{background:linear-gradient(160deg,rgba(24,28,44,.92),rgba(12,12,18,.92));border:1px solid rgba(var(--rgb),.3);border-radius:18px;padding:26px 28px;position:relative;overflow:hidden}#cm .spi h3{font:800 14px Rajdhani,sans-serif;letter-spacing:.24em;text-transform:uppercase;color:var(--mute);margin-bottom:4px}'
+      + '#cm .spi .big{font:800 52px Orbitron,sans-serif;color:#fff;text-shadow:0 0 28px var(--acc);margin:4px 0 8px;line-height:1.05}#cm .spi .big.j{color:#ffd04a;text-shadow:0 0 30px #ffb300}#cm .spi p{font-size:18px;line-height:1.45;color:var(--txt)}'
+      + '#cm .spi .tip{margin-top:14px}#cm .spst{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}#cm .spst div{background:#0c0c11;border:1px solid #ffffff14;border-radius:12px;padding:12px 14px}#cm .spst b{display:block;font:800 26px Orbitron,sans-serif;color:#fff}#cm .spst span{color:var(--mute);font-size:12px;letter-spacing:.12em;text-transform:uppercase}'
+      + '#cm .spgo{width:100%;font:800 22px Rajdhani,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#fff;background:linear-gradient(180deg,var(--acc),rgba(var(--rgb),.55));border:0;border-radius:14px;padding:18px;cursor:pointer;box-shadow:0 0 30px rgba(var(--rgb),.45)}#cm .spgo:hover{filter:brightness(1.15)}#cm .spgo[disabled]{background:#1a1f30;color:var(--mute);box-shadow:none;cursor:default;filter:none}'
+      + '#cm .spod{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}#cm .spod i{font-style:normal;font:700 13px Rajdhani,sans-serif;letter-spacing:.06em;padding:4px 10px;border-radius:99px;border:1px solid #ffffff22;color:var(--mute)}'
+      + '#cm .cf{position:absolute;top:-10px;width:8px;height:14px;opacity:0;animation:cmcf 1.8s ease-out forwards}@keyframes cmcf{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(340px) rotate(540deg)}}';
     document.head.appendChild(e);
   }
-  function renderSpin(w, rotTo) {
+  function arc(cx, cy, r, a0, a1) {
+    var p = function (a) { var t = (a - 90) * Math.PI / 180; return [cx + r * Math.cos(t), cy + r * Math.sin(t)]; }, s0 = p(a0), s1 = p(a1);
+    return 'M' + cx + ' ' + cy + ' L' + s0[0].toFixed(2) + ' ' + s0[1].toFixed(2) + ' A' + r + ' ' + r + ' 0 0 1 ' + s1[0].toFixed(2) + ' ' + s1[1].toFixed(2) + ' Z';
+  }
+  function wheelSvg(P, rot) {
+    var n = P.length, seg = 360 / n, defs = '', body = '', lights = '', i;
+    for (i = 0; i < n; i++) { var c = SEG[P[i].tier]; defs += '<linearGradient id="spg' + i + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c[0] + '"/><stop offset="1" stop-color="' + c[1] + '"/></linearGradient>'; }
+    for (i = 0; i < n; i++) {
+      var a0 = i * seg, mid = a0 + seg / 2;
+      body += '<path d="' + arc(200, 200, 176, a0, a0 + seg) + '" fill="url(#spg' + i + ')" stroke="rgba(0,0,0,.5)" stroke-width="2"/>'
+        + '<g transform="rotate(' + mid + ' 200 200)"><text x="200" y="68" text-anchor="middle" font-size="' + (P[i].tier === 'j' ? 17 : 26) + '">' + esc(P[i].tier === 'j' ? 'JACKPOT' : '+' + P[i].xp) + '</text>'
+        + '<text x="200" y="' + (P[i].tier === 'j' ? 88 : 90) + '" text-anchor="middle" font-size="' + (P[i].tier === 'j' ? 15 : 13) + '" style="letter-spacing:.14em">' + (P[i].tier === 'j' ? '400 XP' : 'XP') + '</text></g>';
+    }
+    for (i = 0; i < 24; i++) lights += '<circle cx="200" cy="12" r="4.5" fill="#fff" opacity="' + (i % 2 ? '.95' : '.45') + '" transform="rotate(' + (i * 15) + ' 200 200)"/>';
+    return '<svg viewBox="0 0 400 420"><defs>' + defs + '<radialGradient id="sphub" cx="50%" cy="40%"><stop offset="0" stop-color="#1b2140"/><stop offset="1" stop-color="#07070b"/></radialGradient></defs>'
+      + '<g id="spwh" style="transform-origin:200px 200px;transform:rotate(' + rot + 'deg)"><circle cx="200" cy="200" r="196" fill="#0b0d16" stroke="var(--acc)" stroke-width="5"/>' + lights + body + '</g>'
+      + '<circle cx="200" cy="200" r="46" fill="url(#sphub)" stroke="var(--acc)" stroke-width="4"/><text x="200" y="196" text-anchor="middle" font-size="13">DAILY</text><text x="200" y="214" text-anchor="middle" font-size="13">SPIN</text>'
+      + '<path d="M200 28 L184 -6 Q200 -16 216 -6 Z" fill="#fff" stroke="var(--acc)" stroke-width="3" transform="translate(0 6)" style="filter:drop-shadow(0 0 8px var(--acc))"/></svg>';
+  }
+  function confetti(box) {
+    var cols = ['#ffd04a', '#4aa8ff', '#ff5a8a', '#6dff9c', '#c68bff'];
+    for (var i = 0; i < 46; i++) { var d = document.createElement('div'); d.className = 'cf'; d.style.left = (Math.random() * 100) + '%'; d.style.background = cols[i % cols.length]; d.style.animationDelay = (Math.random() * .5) + 's'; box.appendChild(d); }
+  }
+  function renderSpin(w, fresh) {
     spinStyle();
-    var P = ST.SPIN_PRIZES, n = P.length, sp = ST.spinState(store.get('cft_spin')), seg = 360 / n;
-    var grad = P.map(function (p, i) { return SEG_COL[p.tier] + ' ' + (i * seg) + 'deg ' + ((i + 1) * seg) + 'deg'; }).join(',');
-    var labels = P.map(function (p, i) { return '<b style="transform:rotate(' + (i * seg + seg / 2 - 90) + 'deg)"><span>' + esc(p.xp >= 400 ? 'JACKPOT' : '+' + p.xp) + '</span></b>'; }).join('');
-    var pr = sp.prize;
-    var right = '<div class="spi"><h3>Dein Tagesbonus</h3>'
-      + (pr ? '<div class="big">' + esc(pr.label) + '</div><p>' + (pr.sb ? '+' + pr.sb + ' XP Streak-Bonus · ' : '') + '<b>' + pr.gain + ' XP</b> für den Season-Pass gutgeschrieben.</p>' + (sp.mission ? '<div class="tip"><b>Tagesmission:</b> ' + esc(sp.mission) + '</div>' : '') + '<p>Morgen um 0:00 Uhr (Berlin) kannst du wieder drehen. Dein Streak: <b>' + sp.streak + '</b> Tag' + (sp.streak === 1 ? '' : 'e') + '.</p>'
-        : '<p>Einmal pro Tag drehen: Bonus-XP für deinen Season-Pass, eine Tagesmission, und je mehr Tage in Folge, desto mehr Streak-Bonus (bis +35 XP).</p>')
-      + '<div class="spst"><div><b>' + sp.streak + '</b><span>Streak</span></div><div><b>' + sp.bonus + '</b><span>Bonus-XP Season</span></div><div><b>' + sp.spins + '</b><span>Drehs gesamt</span></div></div>'
-      + '<button class="spgo" id="spgo"' + (sp.can && !SPN.busy ? '' : ' disabled') + '>' + (sp.can ? 'Jetzt drehen' : 'Heute schon gedreht') + '</button></div>';
-    var lastIdx = pr ? Math.max(0, P.map(function (p) { return p.id; }).indexOf(pr.id)) : 0;
-    var rest = rotTo != null ? rotTo : (pr ? 360 * 6 - (lastIdx * seg + seg / 2) : 0);
-    w.innerHTML = '<div class="spw"><div class="spr"><div class="pt"></div><div class="wh" id="spwh" style="background:conic-gradient(' + grad + ');transform:rotate(' + (rotTo != null ? SPN.rot : rest) + 'deg)">' + labels + '</div><div class="hb">DAILY<br>SPIN</div></div>' + right + '</div>';
-    SPN.rot = rest;
+    var P = ST.SPIN_PRIZES, n = P.length, seg = 360 / n, sp = ST.spinState(store.get('cft_spin')), pr = sp.prize;
+    var idx = pr ? Math.max(0, P.map(function (p) { return p.id; }).indexOf(pr.id)) : 0;
+    var rest = pr ? 360 * 6 - (idx * seg + seg / 2) : 0, sum = P.reduce(function (a, p) { return a + p.w; }, 0);
+    var right = '<div class="spi" id="spi"><h3>' + (pr ? 'Dein Gewinn heute' : 'Tagesbonus') + '</h3>'
+      + (pr ? '<div class="big' + (pr.tier === 'j' ? ' j' : '') + '">' + esc(pr.label) + '</div><p>' + (pr.sb ? '+' + pr.sb + ' XP Streak-Bonus · ' : '') + '<b>' + pr.gain + ' XP</b> sind im Season-Pass gutgeschrieben.</p>' + (sp.mission ? '<div class="tip"><b>Tagesmission:</b> ' + esc(sp.mission) + '</div>' : '')
+        : '<div class="big">1× pro Tag</div><p>Dreh das Rad für Bonus-XP im Season-Pass und eine Tagesmission. Je mehr Tage in Folge, desto mehr Streak-Bonus (bis +35 XP).</p>')
+      + '<div class="spst"><div><b>' + sp.streak + '</b><span>Tage Streak</span></div><div><b>' + sp.bonus + '</b><span>Bonus-XP Season</span></div><div><b>' + sp.spins + '</b><span>Drehs gesamt</span></div></div>'
+      + '<button class="spgo" id="spgo"' + (sp.can && !SPN.busy ? '' : ' disabled') + '>' + (sp.can ? 'Jetzt drehen' : 'Morgen wieder · 0:00 Uhr') + '</button>'
+      + '<div class="spod">' + P.map(function (p) { return '<i>' + esc(p.label.replace('JACKPOT ', '')) + ' · ' + Math.round(100 * p.w / sum) + ' %</i>'; }).join('') + '</div></div>';
+    w.innerHTML = '<div class="spw"><div class="spr">' + wheelSvg(P, rest) + '</div>' + right + '</div>';
+    if (fresh) confetti($('spi'));
     var go = $('spgo'); if (!go) return;
     go.onclick = function () {
       var r = ST.spinDo(store.get('cft_spin'), Date.now(), Math.random(), Math.random());
       if (!r.ok) return renderSpin(w);
-      var idx = P.map(function (p) { return p.id; }).indexOf(r.prize.id), target = 360 * 6 - (idx * seg + seg / 2) + (Math.random() - .5) * seg * .6;
-      SPN.busy = true; go.disabled = true; var wh = $('spwh');
-      requestAnimationFrame(function () { requestAnimationFrame(function () { wh.style.transform = 'rotate(' + (360 * 6 * 2 + (target % 360)) + 'deg)'; }); });
-      setTimeout(function () { store.set('cft_spin', r.state); SPN.busy = false; SPN.rot = 360 * 6 * 2 + (target % 360); renderSpin(w, SPN.rot); if (window.cftRankSync) try { window.cftRankSync(); } catch (e) {} }, 4400);
+      var i2 = P.map(function (p) { return p.id; }).indexOf(r.prize.id), end = 360 * 7 - (i2 * seg + seg / 2) + (Math.random() - .5) * seg * .55;
+      SPN.busy = true; go.disabled = true; go.textContent = 'Dreht …';
+      var wh = $('spwh'), t0 = performance.now(), D = 5200;
+      (function step(t) {
+        var k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 4);
+        wh.style.transform = 'rotate(' + (end * e) + 'deg)';
+        if (k < 1) { SPN.raf = requestAnimationFrame(step); return; }
+        store.set('cft_spin', r.state); SPN.busy = false;
+        if (window.cftRankSync) { try { window.cftRankSync(); } catch (x) { /* egal */ } }
+        if ($('spgo')) renderSpin(w, true);
+      })(t0);
     };
   }
-  MODES.spin = { title: 'Daily Spin', tabs: [], render: function (t, w) { renderSpin(w); } };
+  MODES.spin = { title: 'Daily Spin', tabs: [], render: function (t, w) { cancelAnimationFrame(SPN.raf); SPN.busy = false; renderSpin(w); } };
   bind('mtSpin', 'spin');
   bind('mtDrop', 'drop');
   /* ---------- Patchnotes ---------- */
