@@ -38,3 +38,15 @@ plan.started = NOW - 10 * DAY; const pr2 = S.planProgress(plan, many);
 assert.strictEqual(pr2.items[0].now, 75); assert.strictEqual(pr2.items[0].good, false);
 assert.match(S.weekKey(NOW), /^\d{4}-W\d+$/);
 console.log('plan ok');
+
+// Landeorte + Rotation
+const dg = (name, tot, pl_, k, early, rot) => ({ mtime: NOW, tot, ph: [tot, tot, tot], m: { pl: pl_, k }, mis: early ? [{ kind: 'early', sev: 900 }] : [], real: { meta: { landName: name, landNear: true, landPt: [0.3, 0.4], stormSec: 0 } }, rot: rot || [] });
+const dl = [dg('Tilted', 40, 20, 1, true), dg('Tilted', 30, 25, 0, true), dg('Tilted', 35, 18, 1, false), dg('Lazy', 80, 2, 6, false), dg('Lazy', 70, 5, 4, false), dg('Solo', 50, 10, 2, false)];
+const D = S.drops(dl); assert.strictEqual(D[0].name, 'Tilted'); assert.strictEqual(D[0].c, 3); assert.strictEqual(D[0].earlyPct, 67); assert.strictEqual(D[0].score, 35);
+const adv = S.dropAdvice(D); assert.strictEqual(adv.best.name, 'Lazy'); assert.strictEqual(adv.worst.name, 'Tilted'); assert.match(adv.text, /früh/);
+assert.strictEqual(S.dropAdvice(S.drops([dl[0]])).best, null);
+const rg = (oks) => dg('X', 50, 5, 1, false, oks.map((ok, i) => ({ k: i + 1, ok, gap: ok === false ? 5000 : -100 })));
+const ro = S.rotation([rg([true, false, false]), rg([true, false, true]), rg([false, false, null])]);
+assert.strictEqual(ro.zones[0].okPct, 67); assert.strictEqual(ro.zones[1].okPct, 0); assert.strictEqual(ro.zones[1].gapM, 50); assert.strictEqual(ro.weak.k, 2);
+assert.ok(ro.tips.length >= 1); assert.strictEqual(S.rotation([]).n, 0); assert.deepStrictEqual(S.rotation([]).tips, []);
+console.log('drops ok');
