@@ -63,6 +63,11 @@
     + '#cm .zb{display:flex;align-items:flex-end;gap:10px;height:170px;padding:10px 4px 0}#cm .zb div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;font-size:13px;color:var(--mute)}'
     + '#cm .zb div i{display:block;width:100%;max-width:56px;border-radius:7px 7px 0 0;background:linear-gradient(180deg,var(--acc),var(--acc2));min-height:3px}#cm .zb div.bd i{background:linear-gradient(180deg,#ff5a67,#a3182a)}#cm .zb div b{color:#fff;font:700 13px Orbitron,sans-serif}'
     + '#cm .tip{border-left:3px solid var(--acc);padding:8px 14px;margin:8px 0;background:rgba(var(--rgb),.07);border-radius:0 8px 8px 0;font-size:17px;line-height:1.35}'
+    + '#cm .sr{flex:1;min-width:220px;background:#0c0c11;border:1px solid #ffffff1c;border-radius:10px;color:#fff;font:600 16px Rajdhani,sans-serif;padding:10px 14px}#cm .sr:focus{outline:none;border-color:var(--acc);box-shadow:0 0 14px rgba(var(--rgb),.3)}'
+    + '#cm .pnl{display:flex;flex-direction:column;gap:12px}#cm .pnr{display:grid;grid-template-columns:150px 1fr;gap:16px;background:rgba(18,18,24,.8);border:1px solid rgba(var(--rgb),.18);border-radius:12px;padding:14px 18px}'
+    + '#cm .pnr.cur{border-color:var(--acc);box-shadow:0 0 22px rgba(var(--rgb),.25)}#cm .pnr .v b{font:800 20px Orbitron,sans-serif;color:#fff;display:block}#cm .pnr .v span{color:var(--mute);font-size:14px}'
+    + '#cm .pnr .v em{display:inline-block;margin-top:6px;font:700 11px Rajdhani,sans-serif;letter-spacing:.14em;font-style:normal;text-transform:uppercase;padding:2px 9px;border-radius:99px;border:1px solid var(--acc);color:var(--acc-light)}'
+    + '#cm .pnr p{font-size:17px;line-height:1.45;color:var(--txt)}@media(max-width:700px){#cm .pnr{grid-template-columns:1fr}}'
     + '#cm .leg{display:flex;gap:18px;flex-wrap:wrap;color:var(--mute);font-size:14px;margin-top:6px}#cm .leg i{display:inline-block;width:18px;height:3px;border-radius:3px;vertical-align:middle;margin-right:6px}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -225,5 +230,28 @@
   function kpiS(l, v, sub) { return '<div class="k"><small>' + l + '</small><b>' + v + '</b><i>' + esc(sub) + '</i></div>'; }
   MODES.drop = { title: 'Landung & Rotation', tabs: [['land', 'Landeorte'], ['rot', 'Rotation']], render: function (t, w) { if (t === 'rot') renderRot(w); else renderDrops(w); } };
   bind('mtDrop', 'drop');
+  /* ---------- Patchnotes ---------- */
+  var PQ = '', PT = '';
+  function ago(d) { if (!d) return ''; var t = Date.parse(d); if (isNaN(t)) return d; var n = Math.floor((Date.now() - t) / 864e5); return n <= 0 ? 'Heute' : n === 1 ? 'Gestern' : n < 30 ? 'vor ' + n + ' Tagen' : new Date(t).toLocaleDateString('de-DE'); }
+  function renderPatch(w) {
+    var L = (window.PATCHNOTES || []).slice();
+    var tags = []; L.forEach(function (n) { if (n.tag && tags.indexOf(n.tag) < 0) tags.push(n.tag); });
+    w.innerHTML = '<div class="cc"><input class="sr" id="pnq" placeholder="Patchnotes durchsuchen …" value="' + esc(PQ) + '" aria-label="Suchen"><button data-tg="" class="' + (PT ? '' : 'on') + '">Alle</button>' + tags.map(function (t) { return '<button data-tg="' + esc(t) + '" class="' + (PT === t ? 'on' : '') + '">' + esc(t) + '</button>'; }).join('') + '</div><div class="pnl" id="pnl"></div>';
+    var list = w.querySelector('#pnl'), cur = null;
+    var draw = function () {
+      var q = PQ.trim().toLowerCase();
+      var R = L.filter(function (n) { return (!PT || n.tag === PT) && (!q || (n.v + ' ' + n.text + ' ' + (n.tag || '')).toLowerCase().indexOf(q) >= 0); });
+      list.innerHTML = R.length ? R.map(function (n) {
+        return '<div class="pnr' + (cur && n.v === cur ? ' cur' : '') + '"><div class="v"><b>v' + esc(n.v) + '</b><span>' + esc(ago(n.date)) + (n.date ? ' · ' + esc(n.date) : '') + '</span>' + (n.tag ? '<br><em>' + esc(n.tag) + '</em>' : '') + (cur && n.v === cur ? '<br><em>Installiert</em>' : '') + '</div><p>' + esc(n.text) + '</p></div>';
+      }).join('') : '<div class="emp"><b>Nichts gefunden</b>Versuche einen anderen Suchbegriff.</div>';
+    };
+    draw();
+    if (window.fn && window.fn.version) window.fn.version().then(function (v) { cur = v; draw(); });
+    w.querySelector('#pnq').oninput = function () { PQ = this.value; draw(); };
+    [].forEach.call(w.querySelectorAll('.cc button'), function (b) { b.onclick = function () { PT = b.dataset.tg; renderPatch(w); }; });
+  }
+  MODES.patch = { title: 'Patchnotes', tabs: [], render: function (t, w) { renderPatch(w); } };
+  bind('mtPatch', 'patch');
+
 
 })();
