@@ -21,6 +21,7 @@ import { adminStats, handleTeam } from './admin.js';
 import { syncStatus, downloadTarget } from './panels.js';
 import { Gateway, pingGateway } from './gateway.js';
 import { handleGiveaway, joinGiveaway, endSweep } from './giveaway.js';
+import { handleFun, votePoll, lfgButton, lfgFullNote, pollSweep, reminderSweep } from './fun.js';
 import { runSetup, setupEmbed } from './setup.js';
 import { syncPatchnotes } from './patchnotes.js';
 import { authStart, authCallback, authPoll, licenseActivate, licenseRefresh, apiVerify, hit, blocked, cleanup, corsHeaders } from './auth.js';
@@ -49,6 +50,20 @@ const COMMANDS = [
     { type: 1, name: 'ende', description: 'Jetzt beenden und auslosen', options: [{ type: 4, name: 'id', description: 'Giveaway-ID', required: true }] },
     { type: 1, name: 'reroll', description: 'Neu auslosen', options: [{ type: 4, name: 'id', description: 'Giveaway-ID', required: true }, { type: 4, name: 'anzahl', description: 'Wie viele neu (Standard 1)', required: false, min_value: 1, max_value: 10 }] },
     { type: 1, name: 'liste', description: 'Letzte Giveaways' }] },
+  { name: 'umfrage', description: 'Umfrage starten (2–5 Optionen)', options: [
+    { type: 3, name: 'frage', description: 'Die Frage', required: true },
+    { type: 3, name: 'optionen', description: 'Optionen mit Semikolon trennen: Duo; Trio; Squad', required: true },
+    { type: 3, name: 'dauer', description: 'z. B. 30m, 2h, 3d (Standard 24h)', required: false }] },
+  { name: 'lfg', description: 'Mitspieler suchen', options: [
+    { type: 3, name: 'modus', description: 'Wie viele Spieler?', required: true, choices: [{ name: 'Duo (2)', value: 'duo' }, { name: 'Trio (3)', value: 'trio' }, { name: 'Squad (4)', value: 'squad' }] },
+    { type: 3, name: 'info', description: 'z. B. Ranked, Zero Build, Scrims, Uhrzeit', required: false }] },
+  { name: 'erinnerung', description: 'Private Erinnerung per DM', options: [
+    { type: 1, name: 'setzen', description: 'Erinnerung anlegen', options: [
+      { type: 3, name: 'in', description: 'z. B. 30m, 2h, 3d', required: true },
+      { type: 3, name: 'text', description: 'Woran soll ich dich erinnern?', required: true }] },
+    { type: 1, name: 'liste', description: 'Deine offenen Erinnerungen' },
+    { type: 1, name: 'löschen', description: 'Erinnerung löschen', options: [{ type: 4, name: 'id', description: 'ID aus /erinnerung liste', required: true }] }] },
+  { name: 'tipp', description: 'Zufälliger Pro-Tipp' },
   { name: 'rank', description: 'Community-Rangliste', options: [
     { type: 1, name: 'top', description: 'Top 10 anzeigen' },
     { type: 1, name: 'ich', description: 'Deinen Rang anzeigen' },
@@ -143,6 +158,12 @@ async function handleInteraction(i, env, ctx) {
       if (r._note) { const note = r._note; delete r._note; ctx.waitUntil(new Promise(r => setTimeout(r, 900)).then(() => fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_APP_ID}/${i.token}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ flags: 64, content: note === 'joined' ? '🎉 Du bist dabei! Viel Glück. (Nochmal klicken = austragen)' : 'Du bist nicht mehr dabei.' }) }))); }
       return r;
     }
+    if (/^poll_\d$/.test(id)) return votePoll(i, env, uid, Number(id.slice(5)));
+    if (id === 'lfg_join' || id === 'lfg_leave') {
+      const r = await lfgButton(i, env, uid, id === 'lfg_join');
+      if (r._full) { const f = r._full; delete r._full; ctx.waitUntil(new Promise(x => setTimeout(x, 700)).then(() => lfgFullNote(env, f))); }
+      return r;
+    }
     if (id === 'renew_open') return openTicket(i, env, uid, 'renew');
     if (id === 'form_feedback') return openForm('feedback');
     if (id === 'form_bug') return openForm('bug');
@@ -189,6 +210,7 @@ async function handleInteraction(i, env, ctx) {
     if (name === 'rank') return handleRank(i, env, uid);
     if (name === 'giveaway') return handleGiveaway(i, env, uid);
     if (name === 'team') return handleTeam(i, env);
+    if (['umfrage', 'lfg', 'erinnerung', 'tipp'].includes(name)) return handleFun(i, env, uid);
     if (name === 'admin') {
       if (!isAdmin(env, i)) return noPerm(env);
       return { type: 4, data: { embeds: [await adminStats(env)], flags: 64 } };
@@ -263,7 +285,7 @@ export default {
       await ensureSchema(env0);
       await safe(() => pingGateway(env0));
       const env = await withCfg(env0), cron = String(event.cron || '');
-      if (cron === '* * * * *') await safe(() => endSweep(env));
+      if (cron === '* * * * *') { await safe(() => endSweep(env)); await safe(() => pollSweep(env)); await safe(() => reminderSweep(env)); }
       else if (cron === '15,45 * * * *') { await safe(() => syncPatchnotes(env)); await safe(() => syncStatus(env)); }
       else if (cron === '30 * * * *') await safe(() => syncRank(env));
       else { await expireSweep(env, notifyExpired(env)); await safe(() => remindSweep(env)); await safe(() => endSweep(env)); await cleanup(env0); }
