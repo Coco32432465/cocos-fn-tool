@@ -1,5 +1,5 @@
 // Tickets: Kauf-Ticket (mit Laufzeit-Dropdown) und Hilfe-Ticket, Schliessen mit Transkript.
-import { now, emb, eph, bad, COL, PLANS, PLAN_ALL, price, priceNum, paypalUrl, fmtDateTime, fmtDate } from './util.js';
+import { now, emb, eph, bad, COL, PLANS, PACKS, SHOP, PLAN_ALL, price, priceNum, paypalUrl, fmtDateTime, fmtDate } from './util.js';
 import { dapi, dapiFile, adminIds, isTeam, tryDM } from './discord.js';
 import { createKeys, extendLicense, bestKey } from './keys.js';
 import { askRating } from './growth.js';
@@ -11,7 +11,7 @@ const TYPES = { buy: { prefix: 'kauf', label: 'Kauf-Ticket' }, renew: { prefix: 
 
 function components(env, type, plan, code) {
   const rows = [];
-  if (type === 'buy' || type === 'renew') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: 'Laufzeit wählen', options: Object.entries(PLANS).map(([id, p]) => ({ label: `${p.label} · ${price(env, id)}`, value: id, description: `${p.days} Tage Zugang`, default: id === plan })) }] });
+  if (type === 'buy' || type === 'renew') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: 'Laufzeit wählen', options: Object.entries(type === 'renew' ? PLANS : SHOP).map(([id, p]) => ({ label: `${p.label} · ${price(env, id)}`, value: id, description: PACKS[id] ? `${PACKS[id].count} Keys · je ${PLANS[PACKS[id].base].days} Tage Zugang` : `${p.days} Tage Zugang`, default: id === plan })) }] });
   const btns = [];
   const pp = plan ? paypalUrl(env, plan) : '';
   if (pp) btns.push({ type: 2, style: 5, label: 'Mit PayPal bezahlen', url: pp, emoji: { name: '💳' } });
@@ -49,12 +49,12 @@ function ticketEmbed(env, type, uid, plan, uname, code) {
     fields: [{ name: 'Hilfreich', value: 'Version der App, was du gemacht hast, Fehlermeldung oder Screenshot.' }, { name: 'Status', value: 'Offen' }]
   });
   const renew = type === 'renew';
-  const p = plan && PLANS[plan];
+  const p = plan && SHOP[plan];
   return emb(env, {
     title: renew ? 'Lizenz verlängern' : 'Lizenzbestellung',
     desc: `Hallo <@${uid}>, ${renew ? 'schön, dass du verlängern möchtest! Wähle unten die Laufzeit – sie wird an deine aktuelle Lizenz angehängt.' : 'wähle unten die gewünschte Laufzeit. Preis und Zahlungshinweis siehst du danach hier.'}`,
     fields: p ? payFields(env, type, plan, uname, code) : [
-      { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` },
+      { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` + (renew ? '' : `\n${PACKS.duo.label} · **${price(env, 'duo')}**\n${PACKS.squad.label} · **${price(env, 'squad')}**`) },
       { name: 'Status', value: 'Laufzeit noch nicht gewählt' }
     ]
   });
@@ -106,7 +106,7 @@ export async function selectPlan(i, env, uid) {
   if (!t || (t.type !== 'buy' && t.type !== 'renew')) return bad(env, 'Kein Kauf-Ticket', 'Die Auswahl gilt nur in Kauf- und Verlängerungs-Tickets.');
   if (t.user_id !== uid && !isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Nur der Ersteller des Tickets kann die Laufzeit wählen.');
   const plan = (i.data.values || [])[0];
-  if (!PLANS[plan]) return bad(env, 'Unbekannte Laufzeit', '');
+  if (!SHOP[plan] || (t.type === 'renew' && PACKS[plan])) return bad(env, 'Unbekannte Laufzeit', '');
   await env.DB.prepare('UPDATE tickets SET plan=? WHERE channel_id=?').bind(plan, i.channel_id).run();
   const ci = await codeInfo(env, t.code);
   return { type: 7, data: { embeds: [ticketEmbed(env, t.type, t.user_id, plan, null, ci)], components: components(env, t.type, plan, ci) } };
@@ -128,12 +128,12 @@ export async function submitCode(i, env, uid) {
 export async function confirmTicket(i, env, uid) {
   if (!isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Nur das Team kann die Zahlung bestätigen.');
   const t = await env.DB.prepare('SELECT * FROM tickets WHERE channel_id=?').bind(i.channel_id).first();
-  if (!t || !t.plan || !PLANS[t.plan]) return bad(env, 'Laufzeit fehlt', 'Der Kunde muss zuerst eine Laufzeit wählen.');
+  if (!t || !t.plan || !SHOP[t.plan]) return bad(env, 'Laufzeit fehlt', 'Der Kunde muss zuerst eine Laufzeit wählen.');
   if (t.paid) return bad(env, 'Schon bestätigt', 'Für dieses Ticket wurde die Zahlung bereits bestätigt.');
   const claim = await env.DB.prepare('UPDATE tickets SET paid=1 WHERE channel_id=? AND paid=0').bind(i.channel_id).run();
   if (!(claim.meta && claim.meta.changes)) return bad(env, 'Schon bestätigt', 'Für dieses Ticket wurde die Zahlung bereits bestätigt.');
-  const plan = PLANS[t.plan];
-  let fields, kind, r_loyal = 0;
+  const plan = SHOP[t.plan];
+  let fields, kind, r_loyal = 0, firstKey = null;
   if (t.type === 'renew') {
     const early = !!(await env.DB.prepare("SELECT 1 AS x FROM keys WHERE discord_id=? AND status='active' AND expires_at>?").bind(t.user_id, now()).first());
     const r = await extendLicense(env, t.user_id, t.plan, uid);
@@ -145,15 +145,15 @@ export async function confirmTicket(i, env, uid) {
       ? [{ name: 'Dein Key', value: '```\n' + r.key + '\n```' }, { name: 'Einlösen', value: 'In der App (Mit Discord verbinden → Key eingeben).' }]
       : [{ name: 'Neues Ablaufdatum', value: `**${fmtDate(r.expires_at)}**`, inline: true }, { name: 'Laufzeit', value: `+ ${plan.label}`, inline: true }, { name: 'Hinweis', value: 'Du musst nichts neu eingeben – die App aktualisiert sich automatisch.' }];
   } else {
-    const [key] = await createKeys(env, t.plan, 1, uid); kind = 'new';
-    fields = [{ name: 'Dein Key', value: '```\n' + key + '\n```' }, { name: 'Laufzeit', value: plan.label, inline: true }, { name: 'Einlösen', value: 'In der App: **Mit Discord verbinden**, dann den Key eingeben. Die Laufzeit startet erst beim Einlösen.' }];
+    const pk = PACKS[t.plan], keys = await createKeys(env, pk ? pk.base : t.plan, pk ? pk.count : 1, uid); kind = 'new'; firstKey = keys[0];
+    fields = [{ name: pk ? 'Deine Keys' : 'Dein Key', value: '```\n' + keys.join('\n') + '\n```' }, { name: 'Laufzeit', value: pk ? `${pk.count} × ${PLANS[pk.base].label}` : plan.label, inline: true }, { name: 'Einlösen', value: 'In der App: **Mit Discord verbinden**, dann den Key eingeben. Die Laufzeit startet erst beim Einlösen.' }];
   }
   let codeNote = null;
   if (t.code) { // Bonus-Tage fuer den Kaeufer, Belohnung fuer den Code-Inhaber
     const po = await payOut(env, t, t.user_id), bonus = po ? po.buyer : 0;
     if (po) {
       if (bonus) {
-        const keyVal = (fields.find(f => f.name === 'Dein Key') || {}).value;
+        const keyVal = firstKey || (fields.find(f => f.name === 'Dein Key') || {}).value;
         if (keyVal) await env.DB.prepare('UPDATE keys SET days=days+? WHERE key=?').bind(bonus, keyVal.replace(/`|\n/g, '').trim()).run();
         else await env.DB.prepare("UPDATE keys SET expires_at=expires_at+? WHERE discord_id=? AND status='active' AND expires_at=(SELECT MAX(expires_at) FROM keys WHERE discord_id=? AND status='active')").bind(Math.round(bonus * 86400), t.user_id, t.user_id).run();
       }
