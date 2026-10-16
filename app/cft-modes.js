@@ -197,7 +197,58 @@
     });
   }
 
-  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['train', 'Trainingsplan']], render: function (t, w) { if (t === 'train') renderTrain(w); else renderTrend(w); } };
+
+  /* ---------- Fortschritt: Session-Zusammenfassung + Momentum ---------- */
+  function momentum(L) {
+    var W = 900, H = 230, Lm = 44, R = 20, T = 14, B = 34, x = function (i) { return Lm + i * (W - Lm - R) / 2; }, y = function (v) { return T + (100 - Math.max(0, Math.min(100, v))) * (H - T - B) / 100; };
+    var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Momentum-Kurve über die drei Phasen">';
+    [75, 55, 40, 0].forEach(function (g) { s += '<line x1="' + Lm + '" x2="' + (W - R) + '" y1="' + y(g) + '" y2="' + y(g) + '" stroke="#fff" stroke-opacity=".09" stroke-dasharray="4 5"/>'; });
+    L.games.forEach(function (g) { var ph = g.ph || []; if (ph.length < 3) return; s += '<polyline fill="none" stroke="var(--acc-light)" stroke-opacity=".28" stroke-width="1.6" points="' + [0, 1, 2].map(function (i) { return x(i).toFixed(1) + ',' + y(ph[i]).toFixed(1); }).join(' ') + '"/>'; });
+    s += '<polyline fill="none" stroke="var(--acc)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 6px var(--acc))" points="' + [0, 1, 2].map(function (i) { return x(i).toFixed(1) + ',' + y(L.curve[i]).toFixed(1); }).join(' ') + '"/>';
+    [0, 1, 2].forEach(function (i) { s += '<circle cx="' + x(i) + '" cy="' + y(L.curve[i]).toFixed(1) + '" r="6" fill="var(--acc)" stroke="#0A0A0C" stroke-width="2"/><text x="' + x(i) + '" y="' + (H - 10) + '" text-anchor="middle" fill="#9a9aa6" font-size="14" font-family="Rajdhani,sans-serif">' + ST.PHASES[i] + '</text><text x="' + x(i) + '" y="' + (y(L.curve[i]) - 12).toFixed(1) + '" text-anchor="middle" fill="#fff" font-size="14" font-weight="700" font-family="Orbitron,sans-serif">' + fmt1(L.curve[i] / 10) + '</text>'; });
+    return s + '</svg>';
+  }
+  function renderSession(w) {
+    var L = ST.session(games());
+    if (!L) return empty(w);
+    var S = L.sum, nm = function (g) { return esc((g.m && g.m.n) || 'Game'); }, pl = function (g) { return g.m && g.m.pl > 0 ? '#' + g.m.pl : '–'; };
+    var tt = ST.phases(S), h = '<div class="pn"><h3>Deine letzte Session</h3><p class="s">' + L.n + ' Game' + (L.n === 1 ? '' : 's') + ' am ' + esc(new Date(L.from).toLocaleDateString('de-DE')) + ', ' + esc(new Date(L.from).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })) + ' bis ' + esc(new Date(L.to).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })) + ' Uhr.</p></div>'
+      + '<div class="kp">' + kpiS('Ø Note', fmt1(S.score / 10) + ' / 10', S.n + ' Games') + kpiS('Ø Platz', S.place ? '#' + fmt1(S.place) : '–', 'Beste: ' + (S.best ? '#' + S.best : '–')) + kpiS('Elims', S.kills, 'Ø ' + fmt1(S.kpg) + ' pro Game') + kpiS('Siege', S.wins, S.top10 + ' × Top 10') + '</div>'
+      + (L.same ? '' : '<div class="two"><div class="pn"><h3>Beste Runde</h3><p class="s"><b style="color:#4ade80">' + nm(L.best) + '</b><br>Note ' + fmt1(L.best.tot / 10) + ' · Platz ' + pl(L.best) + ' · ' + ((L.best.m && L.best.m.k) || 0) + ' Elims</p></div>'
+        + '<div class="pn"><h3>Schwächste Runde</h3><p class="s"><b style="color:#ff5a67">' + nm(L.worst) + '</b><br>Note ' + fmt1(L.worst.tot / 10) + ' · Platz ' + pl(L.worst) + ' · ' + ((L.worst.m && L.worst.m.k) || 0) + ' Elims</p></div></div>')
+      + '<div class="pn"><h3>Momentum-Kurve</h3><p class="s">So lief deine Session durch die drei Phasen (dicke Linie = Durchschnitt, dünne Linien = einzelne Games).' + (tt.weak && tt.strong.v !== tt.weak.v ? ' Dein Einbruch liegt in der <b>' + tt.weak.name + '</b>.' : '') + '</p>' + momentum(L) + '</div>'
+      + '<div class="two"><div class="pn"><h3>Deine 2 größten Fehler</h3>' + (L.mistakes.length ? L.mistakes.map(function (x) { return '<div class="bar weak"><span>' + esc(x.label) + '</span><div><i style="width:' + Math.max(3, x.pct) + '%"></i></div><b>' + x.pct + ' %</b></div>'; }).join('') : '<p class="s">Keine auffälligen Fehler. Stark!</p>') + '</div>'
+      + '<div class="pn"><h3>Ziel für die nächste Session</h3><div class="tip">' + esc(L.goal) + '</div></div></div>';
+    w.innerHTML = h;
+  }
+
+  /* ---------- Fortschritt: Vergleich mit der Community ---------- */
+  var REF = null, REFT = 0;
+  function renderCompare(w) {
+    var all = games();
+    if (!all.length) return empty(w);
+    var mine = ST.summary(ST.sorted(all));
+    var draw = function (ref) {
+      if (!ref || !ref.ok) { w.innerHTML = '<div class="emp"><b>Vergleich nicht verfügbar</b>Du bist offline oder der Server ist gerade nicht erreichbar.</div>'; return; }
+      if (!ref.all && !ref.top) { w.innerHTML = '<div class="emp"><b>Noch zu wenige Teilnehmer</b>Der Vergleich startet, sobald mindestens 5 Spieler die Rangliste aktiviert haben (Einstellungen → Rangliste). Du kannst gleich selbst mitmachen!</div>'; return; }
+      var block = function (title, r, sub) {
+        var rows = ST.compare(mine, r); if (!rows.length) return '';
+        return '<div class="pn"><h3>' + title + '</h3><p class="s">' + sub + '</p>' + rows.map(function (x) {
+          var mv = x.div === 10 ? x.mine / 10 : x.mine, rv = x.div === 10 ? x.ref / 10 : x.ref, mx = Math.max(mv, rv, 0.1);
+          return '<div class="bar ' + (x.better ? 'good' : 'weak') + '"><span>' + x.label + '<span class="ctg ' + (x.better ? 'g' : 'r') + '">' + (x.better ? 'besser' : 'darunter') + '</span></span><div><i style="width:' + Math.max(3, mv / mx * 100) + '%"></i></div><b>' + (x.unit || '') + fmt1(mv) + (x.suffix || '') + '</b></div>'
+            + '<div class="bar"><span style="color:var(--mute)">Community</span><div><i style="width:' + Math.max(3, rv / mx * 100) + '%;opacity:.5"></i></div><b style="color:var(--mute)">' + (x.unit || '') + fmt1(rv) + (x.suffix || '') + '</b></div>';
+        }).join('') + '</div>';
+      };
+      w.innerHTML = '<div class="pn"><h3>Du gegen die Community</h3><p class="s">Verglichen werden deine Werte über alle ' + mine.n + ' analysierten Games mit den freiwillig geteilten Durchschnittswerten der Rangliste. Es werden nur Durchschnitte angezeigt, keine Namen.</p></div><div class="two">'
+        + block('Alle Spieler (' + (ref.all ? ref.all.n : 0) + ')', ref.all, 'Der Durchschnitt aller Teilnehmer.') + block('Top 10', ref.top, 'Der Durchschnitt der zehn besten Spieler. Das ist dein Ziel.') + '</div>';
+    };
+    if (REF && Date.now() - REFT < 120000) return draw(REF);
+    w.innerHTML = '<div class="emp"><b>Lade Vergleich …</b></div>';
+    if (!(window.fn && window.fn.rankAvg)) return draw(null);
+    window.fn.rankAvg().then(function (r) { REF = r; REFT = Date.now(); if (cur === 'fort' && tab === 'cmp') draw(r); }, function () { draw(null); });
+  }
+
+  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan']], render: function (t, w) { if (t === 'train') renderTrain(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else renderTrend(w); } };
   bind('mtFort', 'fort');
   /* ---------- Landung & Rotation ---------- */
   function renderDrops(w) {

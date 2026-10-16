@@ -572,5 +572,13 @@ await T('Paket 2: Wochen-Sieger, Events mit Zu-/Absage + Erinnerung, Newsletter'
   await C.newsletterSweep(e2, sun - 7200); await C.newsletterSweep(e2, sun); await C.newsletterSweep(e2, sun + 60);
   assert.equal(db.prepare("SELECT COUNT(*) n FROM config WHERE k LIKE 'news:%'").get().n, 1);
 });
+await T('Rangliste: Community-Durchschnitt erst ab 5 Teilnehmern, ohne Namen', async () => {
+  db.prepare('DELETE FROM ranks').run();
+  const get = async () => { const r = await worker.fetch(new Request('https://w.dev/rank/avg', { headers: { 'cf-connecting-ip': 'avg' + (++ipn) } }), env, ctx); return r.json(); };
+  for (let k = 0; k < 4; k++) db.prepare('INSERT INTO ranks (discord_id,name,games,avg_score,wins,kills,avg_place,updated_at) VALUES (?,?,?,?,?,?,?,?)').run('A' + k, 'n' + k, 10, 50 + k, 1, 20, 10, 1);
+  let r = await get(); assert.equal(r.ok, true); assert.equal(r.all, null); assert.equal(r.top, null);
+  for (let k = 4; k < 12; k++) db.prepare('INSERT INTO ranks (discord_id,name,games,avg_score,wins,kills,avg_place,updated_at) VALUES (?,?,?,?,?,?,?,?)').run('A' + k, 'n' + k, 10, 50 + k, 1, 20, 10, 1);
+  r = await get(); assert.equal(r.all.n, 12); assert.equal(r.top.n, 10); assert.ok(r.top.avgScore > r.all.avgScore); assert.equal(r.all.kpg, 2); assert.ok(!JSON.stringify(r).includes('n1'));
+});
 console.log(`\n${ok} Tests bestanden`); S.restore();
 
