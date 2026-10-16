@@ -27,11 +27,12 @@ window.PROJEKT = {
     { status: 'offen', bereich: 'App', text: 'Erfolge und Abzeichen im Profil (10 Replays, 5 Tage Streak, erstes Top 10)', aufwand: 'S' },
     { status: 'offen', bereich: 'App', text: 'Coach-Notizen: Markierungen und Kommentare im Replay speichern', aufwand: 'L' },
     { status: 'offen', bereich: 'App', text: 'Duo-Synergie: zwei Spieler vergleichen (wer stirbt zuerst, wer rotiert früher)', aufwand: 'L' },
-    { status: 'offen', bereich: 'Discord', text: 'Probe-Key: 1 Tag gratis, einmal pro Konto', aufwand: 'S' },
+    
     { status: 'offen', bereich: 'Discord', text: 'Willkommens-DM mit Download und ersten Schritten', aufwand: 'S' },
     { status: 'offen', bereich: 'Discord', text: 'Windows-SmartScreen-Hinweis im #download-Panel', aufwand: 'S' },
     { status: 'fertig', bereich: 'App', text: 'Replay-Bibliothek mit Suche, Filtern und Favoriten (0.19.0)' },
     { status: 'fertig', bereich: 'App', text: 'Runde als Bild teilen, Post und Story (0.19.0)' },
+    { status: 'fertig', bereich: 'Discord', text: 'Probe-Key auf 3 Tage verlängert, passend zur Werbung (0.19.0)' },
     { status: 'fertig', bereich: 'App', text: 'Daily Spin als Glücksrad, neues Menü (0.18.0)' },
     { status: 'fertig', bereich: 'App', text: 'Season-Pass, Team-Lizenz, PC-Check und Tweak-Paket (0.12 bis 0.16)' },
     { status: 'fertig', bereich: 'App', text: 'Fortschritt, Trainingsplan, Landung und Rotation, Patchnotes-Modus (0.10)' }

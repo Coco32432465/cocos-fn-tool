@@ -5,7 +5,7 @@ import { createKeys } from './keys.js';
 import { grantDays } from './codes.js';
 import { hit } from './auth.js';
 
-/* ---------- Probe-Key: 1 Tag gratis, einmal pro Person ---------- */
+/* ---------- Probe-Key: 3 Tage gratis, einmal pro Person ---------- */
 export async function startTrial(i, env, uid) {
   if (!(await hit(env, 'trial:' + uid, 3, 3600))) return bad(env, 'Zu viele Versuche', 'Bitte warte kurz.');
   const had = await env.DB.prepare('SELECT 1 AS x FROM trials WHERE user_id=?').bind(uid).first();
@@ -14,8 +14,8 @@ export async function startTrial(i, env, uid) {
   if (owned) return bad(env, 'Du hattest schon eine Lizenz', 'Die Probe ist für neue Nutzer gedacht. Verlängern geht über den **Shop**.');
   const [key] = await createKeys(env, 'trial', 1, 'trial');
   await env.DB.prepare('INSERT INTO trials (user_id,key,created_at) VALUES (?,?,?)').bind(uid, key, now()).run();
-  return eph(env, { title: '🎁 Dein Probe-Key (1 Tag)', color: COL.ok, desc: '```\n' + key + '\n```',
-    fields: [{ name: 'So geht’s', value: '1. App laden (Kanal **download**)\n2. **Mit Discord verbinden**\n3. Key eingeben. Die 24 Stunden starten erst beim Einlösen.' }, { name: 'Gefällt dir das Tool?', value: 'Im Kanal **key-kaufen** gibt es Wochen- und Monatslizenzen.' }] });
+  return eph(env, { title: '🎁 Dein Probe-Key (3 Tage)', color: COL.ok, desc: '```\n' + key + '\n```',
+    fields: [{ name: 'So geht’s', value: '1. App laden (Kanal **download**)\n2. **Mit Discord verbinden**\n3. Key eingeben. Die 3 Tage starten erst beim Einlösen.' }, { name: 'Gefällt dir das Tool?', value: 'Im Kanal **key-kaufen** gibt es Wochen- und Monatslizenzen.' }] });
 }
 
 /* ---------- Ticket-Bewertung ---------- */
