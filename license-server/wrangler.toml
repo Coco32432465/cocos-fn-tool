@@ -2,9 +2,9 @@ name = "cft-license"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
-# 0: Ablauf + Erinnerung + Cleanup, 15/45: Patchnotes + Status, 30: Rangliste
+# 0: Ablauf + Erinnerung + Cleanup, 15/45: Patchnotes + Status, 30: Rangliste, jede Minute: Giveaways beenden
 [triggers]
-crons = ["0 * * * *", "15,45 * * * *", "30 * * * *"]
+crons = ["0 * * * *", "15,45 * * * *", "30 * * * *", "* * * * *"]
 
 # Bot dauerhaft online (Praesenz) ueber ein Durable Object
 [[durable_objects.bindings]]

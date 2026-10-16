@@ -4,7 +4,7 @@ import { dapi, dapiFile, adminIds, isTeam, tryDM } from './discord.js';
 import { createKeys, extendLicense, bestKey } from './keys.js';
 
 const ALLOW = String(1024 + 2048 + 32768 + 65536); // sehen, schreiben, Dateien, Verlauf
-const TYPES = { buy: { prefix: 'kauf', label: 'Kauf-Ticket' }, renew: { prefix: 'verlaengern', label: 'Verlängerungs-Ticket' }, support: { prefix: 'hilfe', label: 'Hilfe-Ticket' } };
+const TYPES = { buy: { prefix: 'kauf', label: 'Kauf-Ticket' }, renew: { prefix: 'verlaengern', label: 'Verlängerungs-Ticket' }, support: { prefix: 'support', label: 'Hilfe-Ticket' }, giveaway: { prefix: 'giveaway', label: 'Gewinn-Ticket' } };
 
 function components(env, type, plan) {
   const rows = [];
@@ -55,14 +55,19 @@ function ticketEmbed(env, type, uid, plan, uname) {
   });
 }
 
-export async function openTicket(i, env, uid, type) {
+// Fortlaufende Ticket-Nummer je Thema (kauf-ben-01, hilfe-ben-02 ...). Zaehler sinkt nie, auch wenn Tickets geschlossen werden.
+async function nextNo(env, prefix) {
+  const k = 'ticketno:' + prefix;
+  await env.DB.prepare("INSERT OR IGNORE INTO config (k,v) VALUES (?,'0')").bind(k).run();
+  await env.DB.prepare('UPDATE config SET v=CAST(CAST(v AS INTEGER)+1 AS TEXT) WHERE k=?').bind(k).run();
+  const r = await env.DB.prepare('SELECT v FROM config WHERE k=?').bind(k).first();
+  return String(Number(r && r.v) || 1).padStart(2, '0');
+}
+
+// Privaten Ticket-Kanal anlegen: <thema>-<name>-<nr>
+export async function makeTicketChannel(env, uid, type, username) {
   const T = TYPES[type] || TYPES.buy;
-  const ex = await env.DB.prepare('SELECT channel_id FROM tickets WHERE user_id=? AND type=?').bind(uid, type).first();
-  if (ex) return eph(env, { title: 'Ticket bereits geöffnet', desc: `Du hast bereits ein offenes Ticket: <#${ex.channel_id}>`, color: COL.neutral });
-  const u = (i.member && i.member.user) || i.user || {};
-  const uname = String(u.username || 'user').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'user';
-  let plan = null;
-  if (type === 'renew') { const bk = await bestKey(env, uid); if (bk && PLANS[bk.plan]) plan = bk.plan; }
+  const uname = String(username || 'user').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'user';
   const team = [env.ADMIN_ROLE_ID, env.MOD_ROLE_ID, env.SUPPORTER_ROLE_ID].filter(Boolean);
   const overwrites = [
     { id: env.GUILD_ID, type: 0, deny: '1024' },
@@ -71,7 +76,19 @@ export async function openTicket(i, env, uid, type) {
     ...adminIds(env).map(a => ({ id: a, type: 1, allow: ALLOW })),
     ...team.map(r => ({ id: r, type: 0, allow: ALLOW }))
   ];
-  const ch = await dapi(env, 'POST', `/guilds/${env.GUILD_ID}/channels`, { name: `${T.prefix}-${uname}`, type: 0, parent_id: env.TICKET_CATEGORY_ID || undefined, topic: `${type}:${uid}`, permission_overwrites: overwrites });
+  const no = await nextNo(env, T.prefix);
+  const ch = await dapi(env, 'POST', `/guilds/${env.GUILD_ID}/channels`, { name: `${T.prefix}-${uname}-${no}`, type: 0, parent_id: env.TICKET_CATEGORY_ID || undefined, topic: `${type}:${uid}`, permission_overwrites: overwrites });
+  return ch;
+}
+
+export async function openTicket(i, env, uid, type) {
+  const T = TYPES[type] || TYPES.buy;
+  const ex = await env.DB.prepare('SELECT channel_id FROM tickets WHERE user_id=? AND type=?').bind(uid, type).first();
+  if (ex) return eph(env, { title: 'Ticket bereits geöffnet', desc: `Du hast bereits ein offenes Ticket: <#${ex.channel_id}>`, color: COL.neutral });
+  const u = (i.member && i.member.user) || i.user || {};
+  let plan = null;
+  if (type === 'renew') { const bk = await bestKey(env, uid); if (bk && PLANS[bk.plan]) plan = bk.plan; }
+  const ch = await makeTicketChannel(env, uid, type, u.username);
   if (!ch.ok) return bad(env, 'Ticket nicht erstellt', 'Das Ticket konnte nicht angelegt werden. Bitte wende dich an das Team.');
   await env.DB.prepare('INSERT INTO tickets (channel_id,user_id,created_at,type,plan) VALUES (?,?,?,?,?)').bind(ch.data.id, uid, now(), type, plan).run();
   await dapi(env, 'POST', `/channels/${ch.data.id}/messages`, { content: `<@${uid}>`, embeds: [ticketEmbed(env, type, uid, plan, u.username)], components: components(env, type, plan) });

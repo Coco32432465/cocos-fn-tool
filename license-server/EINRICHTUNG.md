@@ -110,3 +110,9 @@ Discord-Login für deine Website: `…/auth/start?cid=ZUFALLSTEXT&next=https://d
 - Danach einmal `/setup` (bei Limit-Hinweis nochmal) ausführen. Neue Befehle: `/rank`, `/admin stats`, `/team`.
 - Cron-Jobs: stündlich Ablauf + 3-Tage-Erinnerung, :15/:45 Patchnotes + Status, :30 Rangliste. Alles auf dem kostenlosen Cloudflare-Plan.
 - Tabellen/Spalten legt der Worker selbst an (Selbst-Migration), kein manueller SQL-Schritt.
+
+## Giveaways & Ticket-Namen
+- `/giveaway start preis dauer [gewinner] [kanal]` (Dauer z. B. `30m`, `2h`, `3d`), `/giveaway ende id`, `/giveaway reroll id [anzahl]`, `/giveaway liste` – nur Team.
+- Teilnahme per Button (nochmal klicken = austragen). Ende automatisch (Cron jede Minute), Gewinner bekommen sofort ein privates Ticket + DM.
+- Ticket-Kanäle heißen jetzt `thema-name-nr`, z. B. `support-ben-01`, `kauf-ben-02`, `giveaway-ben-01` (Zähler je Thema, sinkt nie).
+- Neue Befehle: danach `/register` einmal neu aufrufen.
