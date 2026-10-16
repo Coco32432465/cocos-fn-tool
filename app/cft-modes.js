@@ -305,4 +305,68 @@
   bind('mtPatch', 'patch');
 
 
+  /* ---------- PC-Check & Tweak-Paket ---------- */
+  (function () {
+    var st = document.createElement('style');
+    st.textContent = '#cm .pcs{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){#cm .pcs{grid-template-columns:1fr}}'
+      + '#cm .pcbox{background:rgba(18,18,24,.8);border:1px solid rgba(var(--rgb),.22);border-radius:14px;padding:18px 20px}'
+      + '#cm .pcbox h3{font:800 16px Orbitron,sans-serif;letter-spacing:.08em;color:#fff;margin-bottom:10px}'
+      + '#cm .pcbox p{color:var(--dim,#9a9aa6);font-size:17px;line-height:1.4}#cm .pcbox p b{color:#fff}'
+      + '#cm .pcsc{display:flex;align-items:center;gap:16px}#cm .pcsc strong{font:900 44px Orbitron,sans-serif;color:var(--acc-light)}#cm .pcsc.bad strong{color:#ff5a6a}'
+      + '#cm .pcf{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:start;padding:12px 0;border-top:1px solid #ffffff12}#cm .pcf:first-child{border-top:0}'
+      + '#cm .pcf i{font-style:normal;font:800 18px Orbitron,sans-serif;text-align:center}#cm .pcf.ok i{color:#37e08a}#cm .pcf.fix i{color:#ff5a6a}#cm .pcf.na i{color:var(--mute)}'
+      + '#cm .pcf b{display:block;color:#fff;font-size:18px}#cm .pcf span{color:var(--dim,#9a9aa6);font-size:15px;display:block;margin-top:2px}'
+      + '#cm .pcf em{font-style:normal;color:var(--mute);font-size:15px;text-align:right;white-space:nowrap}'
+      + '#cm .pcbtn{font:800 16px Rajdhani,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:rgba(var(--rgb),.25);border:1px solid var(--acc);border-radius:10px;padding:12px 22px;cursor:pointer;margin:6px 10px 0 0}'
+      + '#cm .pcbtn:hover{box-shadow:0 0 18px rgba(var(--rgb),.45)}#cm .pcbtn.g{background:transparent;border-color:#ffffff30;color:var(--mute)}#cm .pcbtn[disabled]{opacity:.5;cursor:default}'
+      + '#cm .pclock{border-color:var(--acc);box-shadow:0 0 22px rgba(var(--rgb),.18)}#cm .pcbox.pcmsg{font-size:17px;color:#fff}#cm .pcbox.pcmsg.r{color:#ff5a6a;border-color:#ff5a6a66}';
+    document.head.appendChild(st);
+    var S = { scan: null, ents: [], msg: '', busy: false };
+    var hasFn = function () { return window.fn && window.fn.pcScan; };
+    function draw(w) {
+      if (!hasFn()) { w.innerHTML = '<div class="emp"><b>Nur in der Desktop-App</b>Der PC-Check braucht die installierte App.</div>'; return; }
+      var r = S.scan;
+      if (!r) { w.innerHTML = '<div class="emp"><b>Prüfe deinen PC …</b>Hardware und Einstellungen werden gelesen. Es wird nichts verändert.</div>'; return; }
+      if (!r.ok) { w.innerHTML = '<div class="emp"><b>Check nicht möglich</b>' + esc(r.error || 'Unbekannter Fehler') + '</div>'; return; }
+      var unlocked = S.ents.indexOf('tw') >= 0, hw = r.hw || {};
+      var h = (S.msg ? '<div class="pcbox pcmsg' + (S.err ? ' r' : '') + '">' + esc(S.msg) + '</div>' : '') + '<div class="pcs"><div class="pcbox"><h3>Dein PC</h3><p><b>' + esc(hw.cpu || 'CPU unbekannt') + '</b> · ' + esc(hw.cores) + ' Threads<br><b>' + esc(hw.gpu || 'Grafikkarte nicht erkannt') + '</b><br>' + esc(hw.ramGB) + ' GB RAM · Stufe: <b>' + esc(r.tierLabel) + '</b></p></div>'
+        + '<div class="pcbox"><h3>Ergebnis</h3><div class="pcsc' + (r.score < 60 ? ' bad' : '') + '"><strong>' + r.score + ' %</strong><p>' + (r.open ? '<b>' + r.open + ' Punkt' + (r.open === 1 ? '' : 'e') + '</b> kosten dich FPS oder Eingabe-Präzision.' : 'Alles optimal eingestellt. Nichts zu tun.') + '</p></div></div></div>';
+      h += '<div class="pcbox"><h3>Befunde</h3>' + r.findings.map(function (f) {
+        var ic = f.state === 'ok' ? '✓' : f.state === 'fix' ? '✗' : '–';
+        return '<div class="pcf ' + f.state + '"><i>' + ic + '</i><div><b>' + esc(f.title) + '</b><span>' + esc(f.state === 'na' ? 'Nicht gefunden, wird übersprungen.' : f.state === 'ok' ? 'Passt.' : f.why) + '</span></div><em>' + (f.state === 'fix' ? esc(f.now) + ' → ' + esc(f.want) : '') + '</em></div>';
+      }).join('') + (r.info || []).map(function (i) { return '<div class="pcf na"><i>i</i><div><b>' + esc(i.title) + '</b><span>' + esc(i.text) + '</span></div><em></em></div>'; }).join('') + '</div>';
+      if (r.open || r.backup) {
+        if (!unlocked && r.open) {
+          h += '<div class="pcbox pclock"><h3>Tweak-Paket</h3><p>Der Check ist gratis. Mit dem <b>Tweak-Paket</b> (Einmalkauf) setzt die App alle Punkte mit einem Klick: vorher wird gesichert, und mit <b>Zurücksetzen</b> ist alles wieder wie vorher. Kaufen: im Discord ein <b>Kauf-Ticket</b> öffnen und „Tweak-Paket“ wählen.</p><button class="pcbtn" data-a="ref">Schon gekauft? Aktualisieren</button></div>';
+        } else {
+          h += '<div class="pcbox"><h3>Tweaks</h3><p>Schließe <b>Fortnite</b> vorher. Es werden nur Windows-Einstellungen und die Fortnite-Config geändert, nichts am Spiel selbst. Vorher werden die alten Werte gesichert.</p>'
+            + (r.open ? '<button class="pcbtn" data-a="apply"' + (S.busy ? ' disabled' : '') + '>Alle Tweaks anwenden</button>' : '')
+            + (r.backup ? '<button class="pcbtn g" data-a="undo"' + (S.busy ? ' disabled' : '') + '>Zurücksetzen</button>' : '') + '</div>';
+        }
+      }
+      h += '<div class="cc"><button data-a="scan">Erneut prüfen</button></div>';
+      w.innerHTML = h;
+      [].forEach.call(w.querySelectorAll('[data-a]'), function (b) { b.onclick = function () { act(b.dataset.a, w); }; });
+    }
+    function load(w) {
+      S.scan = null; draw(w);
+      Promise.all([window.fn.pcScan(), window.fn.licState ? window.fn.licState() : {}]).then(function (a) { S.scan = a[0]; S.ents = (a[1] && a[1].ents) || []; draw(w); })
+        .catch(function (e) { S.scan = { ok: false, error: String(e && e.message || e) }; draw(w); });
+    }
+    function act(a, w) {
+      S.msg = ''; S.err = false;
+      if (a === 'scan') return load(w);
+      if (a === 'ref') { S.msg = 'Prüfe Freischaltung …'; draw(w); return window.fn.licRefresh().then(function (l) { S.ents = (l && l.ents) || []; S.msg = S.ents.indexOf('tw') >= 0 ? 'Tweak-Paket freigeschaltet.' : 'Noch nicht freigeschaltet. Das Team bestätigt die Zahlung im Ticket.'; S.err = S.ents.indexOf('tw') < 0; draw(w); }); }
+      S.busy = true; S.msg = a === 'apply' ? 'Wende Tweaks an … (Wiederherstellungspunkt kann etwas dauern)' : 'Setze zurück …'; draw(w);
+      (a === 'apply' ? window.fn.pcApply() : window.fn.pcRevert()).then(function (r) {
+        S.busy = false; S.err = !r.ok;
+        if (a === 'apply') S.msg = r.locked ? r.error : !r.ok ? (r.error || 'Fehlgeschlagen.') : (r.applied.length + ' Tweak' + (r.applied.length === 1 ? '' : 's') + ' angewendet' + (r.failed.length ? ', ' + r.failed.length + ' fehlgeschlagen' : '') + '. ' + (r.restore === 'yes' ? 'Windows-Wiederherstellungspunkt erstellt. ' : 'Kein Windows-Wiederherstellungspunkt möglich (App als Administrator starten), die Sicherung der alten Werte gibt es trotzdem. ') + (r.notes || []).join(' '));
+        else S.msg = r.ok ? 'Alles zurückgesetzt.' : (r.error || 'Fehlgeschlagen.');
+        return window.fn.pcScan();
+      }).then(function (sc) { S.scan = sc; draw(w); }).catch(function (e) { S.busy = false; S.msg = String(e && e.message || e); S.err = true; draw(w); });
+    }
+    MODES.pc = { title: 'PC-Check & Tweaks', tabs: [], render: function (t, w) { if (!hasFn()) return draw(w); load(w); } };
+    bind('mtPc', 'pc');
+  })();
+
 })();

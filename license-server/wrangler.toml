@@ -36,6 +36,7 @@ PRICE_WEEK = "5 €"
 PRICE_MONTH = "15 €"
 PRICE_DUO = "25 €"    # 2 Keys à 1 Monat (statt 30 €)
 PRICE_SQUAD = "45 €"  # 4 Keys à 1 Monat (statt 60 €)
+PRICE_TWEAKS = "9 €"  # Tweak-Paket, Einmalkauf
 # PayPal.me-Link (leer = Hinweis im Ticket, Team schickt Link)
 PAYPAL_URL = ""
 PAYPAL_URL_WEEK = "https://py.pl/l0gl0SycxQYIDzi338NY5Q"

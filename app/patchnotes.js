@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.12.0', date: '2026-10-17', tag: 'NEU', vod: 0, text: 'Neuer Modus „PC-Check & Tweaks“: Der Check ist gratis und zeigt, was dich FPS und Aim-Präzision kostet (Energiesparplan, Game-Aufnahme, Mausbeschleunigung, Fortnite-Grafik). Mit dem Tweak-Paket (Einmalkauf im Discord) setzt die App alles per Klick, sichert vorher die alten Werte und stellt sie mit „Zurücksetzen“ wieder her' },
   { v: '0.11.0', date: '2026-10-16', tag: 'FEATURE', text: 'Fortschritt: Session-Zusammenfassung mit Momentum-Kurve und Ziel für die nächste Session, Vergleich mit der Community und den Top 10. Replay Viewer: Clip-Marker mit Taste M (Rechtsklick löscht)' },
   { v: '0.10.9', date: '2026-10-16', tag: 'NEU', text: 'Lifetime-Lizenzen werden in der App als „Lifetime“ angezeigt' },
   { v: '0.10.8', date: '2026-10-16', tag: 'UPDATE', text: 'Datenschutz-Hinweis in den Einstellungen: was die App sendet und wie du deine Daten im Discord mit /datenschutz ansiehst oder löschst. Neu im Discord: Creator-Codes mit Bonus-Tagen, Formulare statt Befehlsfelder.', vod: 0 },

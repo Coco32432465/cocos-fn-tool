@@ -13,11 +13,12 @@ export async function sha256hex(s) {
 
 export const PLANS = { week: { days: 7, label: '1 Woche' }, month: { days: 30, label: '1 Monat' } };
 export const PACKS = { duo: { base: 'month', count: 2, label: 'Duo-Paket (2 Keys à 1 Monat)' }, squad: { base: 'month', count: 4, label: 'Squad-Paket (4 Keys à 1 Monat)' } }; // Mengenrabatt, nur Neukauf
-export const SHOP = { ...PLANS, ...PACKS };
+export const ADDONS = { tweaks: { ent: 'tw', label: 'Tweak-Paket (einmalig)' } }; // Einmalkauf ohne Key, schaltet eine App-Funktion frei
+export const SHOP = { ...PLANS, ...PACKS, ...ADDONS };
 export const TEST_PLAN = { days: 10 / 1440, label: '10 Minuten (Test)' }; // nur Admin, nicht im Shop
 export const TRIAL_PLAN = { days: 1, label: '1 Tag (Probe)' }; // kostenlose Probe, nicht im Shop
 export const LIFETIME_PLAN = { days: 36500, label: 'Lifetime ♾️' }; // nur Admin, nicht im Shop (100 Jahre)
-export const PLAN_ALL = { ...PLANS, test: TEST_PLAN, trial: TRIAL_PLAN, lifetime: LIFETIME_PLAN, duo: { days: 30, label: PACKS.duo.label }, squad: { days: 30, label: PACKS.squad.label } };
+export const PLAN_ALL = { ...PLANS, test: TEST_PLAN, trial: TRIAL_PLAN, lifetime: LIFETIME_PLAN, duo: { days: 30, label: PACKS.duo.label }, squad: { days: 30, label: PACKS.squad.label }, tweaks: { days: 0, label: ADDONS.tweaks.label } };
 export const KEY_RE = /^[A-Z0-9]{4}(-[A-Z0-9]{4}){2,3}$/; // neu: XXXX-XXXX-XXXX, aeltere 4er-Keys bleiben gueltig
 const KEY_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 Zeichen, ohne 0/O/1/I
 export function newKey() {
@@ -30,7 +31,7 @@ const TZ = 'Europe/Berlin';
 export const fmtDate = ts => ts > 3000000000 ? 'Lifetime ♾️' : new Date(ts * 1000).toLocaleDateString('de-DE', { timeZone: TZ });
 export const fmtDateTime = ts => ts > 3000000000 ? 'Lifetime ♾️' : new Date(ts * 1000).toLocaleString('de-DE', { timeZone: TZ, dateStyle: 'short', timeStyle: 'short' });
 export const priceNum = s => parseFloat(String(s || '').replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
-export const price = (env, planId) => ({ week: env.PRICE_WEEK, month: env.PRICE_MONTH, duo: env.PRICE_DUO || '25 €', squad: env.PRICE_SQUAD || '45 €' }[planId]) || env.PRICE_MONTH || '';
+export const price = (env, planId) => ({ week: env.PRICE_WEEK, month: env.PRICE_MONTH, duo: env.PRICE_DUO || '25 €', squad: env.PRICE_SQUAD || '45 €', tweaks: env.PRICE_TWEAKS || '9 €' }[planId]) || env.PRICE_MONTH || '';
 
 /* ---------- Embeds ---------- */
 export const COL = { brand: 0x1e6bff, ok: 0x2ecc71, bad: 0xe5484d, neutral: 0x4f545c };
@@ -50,7 +51,7 @@ export const noPerm = env => bad(env, 'Keine Berechtigung', 'Dieser Befehl ist d
 
 // PayPal-Link mit Betrag (paypal.me/name -> paypal.me/name/5EUR); andere Links bleiben unveraendert
 export function paypalUrl(env, planId) {
-  const per = String(({ week: env.PAYPAL_URL_WEEK, month: env.PAYPAL_URL_MONTH, duo: env.PAYPAL_URL_DUO, squad: env.PAYPAL_URL_SQUAD }[planId]) || '').trim();
+  const per = String(({ week: env.PAYPAL_URL_WEEK, month: env.PAYPAL_URL_MONTH, duo: env.PAYPAL_URL_DUO, squad: env.PAYPAL_URL_SQUAD, tweaks: env.PAYPAL_URL_TWEAKS }[planId]) || '').trim();
   if (per) return per; // eigener Link je Laufzeit (Betrag steckt im Link)
   const u = String(env.PAYPAL_URL || '').trim();
   if (!u) return '';
