@@ -424,5 +424,11 @@ await T('Patchnotes: Embed im Kanal, nur einmal pro Version', async () => {
   const r3 = await postPatchnotes(env, src.replace("[\n", "[\n  { v: '1.0.0', date: '2026-10-16', tag: 'NEU', text: 'Neu.' },\n")); assert.deepEqual(r3.sent, ['1.0.0']);
 } finally { S.restore(); }
 });
+await T('PayPal: eigener Link je Laufzeit', async () => {
+  const { paypalUrl } = await import('../src/util.js');
+  const e = { PAYPAL_URL_WEEK: 'https://py.pl/w', PAYPAL_URL_MONTH: 'https://py.pl/m', PAYPAL_URL: 'https://paypal.me/x', PRICE_WEEK: '5 €', PRICE_MONTH: '15 €' };
+  assert.equal(paypalUrl(e, 'week'), 'https://py.pl/w'); assert.equal(paypalUrl(e, 'month'), 'https://py.pl/m');
+  assert.equal(paypalUrl({ PAYPAL_URL: 'https://paypal.me/x', PRICE_WEEK: '5 €' }, 'week'), 'https://paypal.me/x/5EUR');
+});
 console.log(`\n${ok} Tests bestanden`); S.restore();
 
