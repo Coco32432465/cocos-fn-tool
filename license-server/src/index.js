@@ -44,7 +44,7 @@ const COMMANDS = [
       { type: 3, name: 'preis', description: 'Was gibt es zu gewinnen?', required: true },
       { type: 3, name: 'dauer', description: 'z. B. 30m, 2h, 3d', required: true },
       { type: 4, name: 'gewinner', description: 'Anzahl Gewinner (1–10)', required: false, min_value: 1, max_value: 10 },
-      { type: 7, name: 'kanal', description: 'Kanal (Standard: dieser)', required: false, channel_types: [0, 5] }] },
+      { type: 7, name: 'kanal', description: 'Kanal (Standard: #giveaways)', required: false, channel_types: [0, 5] }] },
     { type: 1, name: 'ende', description: 'Jetzt beenden und auslosen', options: [{ type: 4, name: 'id', description: 'Giveaway-ID', required: true }] },
     { type: 1, name: 'reroll', description: 'Neu auslosen', options: [{ type: 4, name: 'id', description: 'Giveaway-ID', required: true }, { type: 4, name: 'anzahl', description: 'Wie viele neu (Standard 1)', required: false, min_value: 1, max_value: 10 }] },
     { type: 1, name: 'liste', description: 'Letzte Giveaways' }] },
