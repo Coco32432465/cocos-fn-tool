@@ -340,9 +340,10 @@
     [].forEach.call(w.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { tmCall(w, 'kick', { id: b.dataset.k }); }; });
   }
 
-  /* ---------- Season-Pass ---------- */
+  /* ---------- Season-Pass (eigener Modus im Hauptmenü) ---------- */
   var SN = { claimed: [], ents: [], msg: '', err: false, busy: false };
   var MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  var TASK_ICON = { analyze: '🎬', wins: '👑', top10: '🏅', elims: '🎯', score: '📈', streak: '🔥', clean: '✨', team: '👥' };
   var hasSeason = function () { return window.fn && window.fn.season; };
   function seasonState() {
     var id = ST.seasonId(), tm = store.get('cft_team'), pv = store.get('cft_prem');
@@ -358,26 +359,42 @@
   function seasonStyle() {
     if (document.getElementById('sncss')) return;
     var st = document.createElement('style'); st.id = 'sncss';
-    st.textContent = '#cm .snl{display:grid;grid-template-columns:repeat(10,minmax(86px,1fr));gap:8px;overflow-x:auto;padding-bottom:6px}'
-      + '#cm .snc{display:flex;flex-direction:column;gap:6px;align-items:stretch}#cm .snc>b{font:800 14px Orbitron,sans-serif;color:var(--mute);text-align:center;letter-spacing:.08em}#cm .snc.on>b{color:var(--acc-light)}'
-      + '#cm .snt{min-height:78px;border-radius:12px;border:1px solid #ffffff1c;background:rgba(18,18,24,.8);padding:8px 6px;text-align:center;font-size:14px;color:var(--mute);display:flex;flex-direction:column;justify-content:center;gap:4px}'
-      + '#cm .snt em{font-style:normal;font:800 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}#cm .snt strong{color:#fff;font-size:16px;line-height:1.1}'
-      + '#cm .snt.got{border-color:var(--acc);background:rgba(var(--rgb),.14);box-shadow:0 0 14px rgba(var(--rgb),.25)}#cm .snt.got em{color:var(--acc-light)}#cm .snt.pre{border-style:dashed}#cm .snt.pre.got{border-style:solid;border-color:#ffc83d;background:rgba(255,200,61,.12);box-shadow:0 0 14px rgba(255,200,61,.22)}'
-      + '#cm .snt button{font:800 12px Rajdhani,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--acc);border:0;border-radius:7px;padding:5px 6px;cursor:pointer}'
-      + '#cm .snk{background:rgba(18,18,24,.8);border:1px solid rgba(var(--rgb),.2);border-radius:12px;padding:14px 16px}#cm .snk h4{font:800 17px Rajdhani,sans-serif;color:#fff;letter-spacing:.04em}'
-      + '#cm .snk p{color:var(--dim,#9a9aa6);font-size:15px;margin-top:4px}#cm .snk .pb2{margin:8px 0 6px}#cm .snx{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}'
-      + '#cm .snx span{font:700 12px Rajdhani,sans-serif;letter-spacing:.08em;padding:2px 9px;border-radius:99px;border:1px solid #ffffff22;color:var(--mute)}#cm .snx span.d{color:var(--acc-light);border-color:var(--acc);background:rgba(var(--rgb),.14)}'
-      + '#cm .snh{display:flex;gap:22px;align-items:center;flex-wrap:wrap}#cm .snh strong{font:900 44px Orbitron,sans-serif;color:var(--acc-light)}#cm .snh select{font:700 16px Rajdhani,sans-serif;color:#fff;background:#0c0c11;border:1px solid #ffffff2a;border-radius:9px;padding:8px 12px}';
+    st.textContent = '#cm .snhero{position:relative;overflow:hidden;display:grid;grid-template-columns:auto 1fr auto;gap:28px;align-items:center;padding:24px 28px;border-radius:18px;border:1px solid rgba(var(--rgb),.35);background:radial-gradient(120% 140% at 0% 0%,rgba(var(--rgb),.22),transparent 60%),linear-gradient(135deg,#12121a,#0c0c11);box-shadow:0 0 40px rgba(var(--rgb),.14)}'
+      + '#cm .snhero.prem{border-color:#ffc83d88;box-shadow:0 0 44px rgba(255,200,61,.16)}@media(max-width:860px){#cm .snhero{grid-template-columns:1fr;justify-items:center;text-align:center}}'
+      + '#cm .snring{position:relative;width:132px;height:132px}#cm .snring svg{width:100%;height:100%;transform:rotate(-90deg)}#cm .snring circle{fill:none;stroke-width:10}#cm .snring .bg{stroke:#ffffff14}#cm .snring .fg{stroke:var(--acc);stroke-linecap:round;filter:drop-shadow(0 0 8px var(--acc));transition:stroke-dashoffset .6s}'
+      + '#cm .snhero.prem .snring .fg{stroke:#ffc83d;filter:drop-shadow(0 0 8px #ffc83d)}#cm .snring b{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font:900 38px Orbitron,sans-serif;color:#fff;line-height:1}#cm .snring b small{font:700 12px Rajdhani,sans-serif;letter-spacing:.2em;color:var(--mute);margin-bottom:4px}'
+      + '#cm .snhero h2{font:900 26px Orbitron,sans-serif;letter-spacing:.06em;color:#fff}#cm .snhero p{color:var(--dim,#9a9aa6);font-size:17px;margin-top:6px}#cm .snhero p b{color:#fff}'
+      + '#cm .snchip{display:inline-block;font:800 12px Rajdhani,sans-serif;letter-spacing:.16em;text-transform:uppercase;padding:4px 12px;border-radius:99px;border:1px solid rgba(var(--rgb),.5);color:var(--acc-light);margin:0 8px 8px 0}#cm .snchip.g{border-color:#ffc83d99;color:#ffc83d;background:rgba(255,200,61,.1)}'
+      + '#cm .snnext{margin-top:12px;font-size:17px;color:#fff;background:rgba(255,255,255,.05);border:1px solid #ffffff14;border-radius:10px;padding:9px 14px;display:inline-block}'
+      + '#cm .snhero select{font:700 16px Rajdhani,sans-serif;color:#fff;background:#0c0c11;border:1px solid #ffffff2a;border-radius:9px;padding:8px 12px;margin-top:6px}'
+      + '#cm .sntrack{position:relative;display:grid;grid-template-columns:repeat(10,minmax(104px,1fr));gap:10px;overflow-x:auto;padding:4px 2px 10px}'
+      + '#cm .snc{display:flex;flex-direction:column;gap:8px;align-items:stretch;position:relative}#cm .snc .nd{position:relative;height:30px;display:flex;align-items:center;justify-content:center}'
+      + '#cm .snc .nd:before{content:"";position:absolute;left:-6px;right:-6px;top:50%;height:4px;margin-top:-2px;background:#ffffff14}#cm .snc.on .nd:before{background:var(--acc);box-shadow:0 0 10px rgba(var(--rgb),.6)}'
+      + '#cm .snc .nd i{position:relative;font-style:normal;font:900 13px Orbitron,sans-serif;min-width:30px;height:30px;border-radius:99px;display:flex;align-items:center;justify-content:center;background:#0c0c11;border:2px solid #ffffff2a;color:var(--mute)}'
+      + '#cm .snc.on .nd i{border-color:var(--acc);color:#fff;background:rgba(var(--rgb),.35);box-shadow:0 0 14px rgba(var(--rgb),.5)}#cm .snc.cur .nd i{background:var(--acc)}'
+      + '#cm .snt{min-height:92px;border-radius:12px;border:1px solid #ffffff1c;background:rgba(18,18,24,.8);padding:10px 6px;text-align:center;font-size:14px;color:var(--mute);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px}'
+      + '#cm .snt .ic{font-size:22px;line-height:1}#cm .snt em{font-style:normal;font:800 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}#cm .snt strong{color:#fff;font-size:16px;line-height:1.1}'
+      + '#cm .snt.got{border-color:var(--acc);background:rgba(var(--rgb),.14);box-shadow:0 0 14px rgba(var(--rgb),.25)}#cm .snt.got em{color:var(--acc-light)}#cm .snt.pre{border-style:dashed}#cm .snt.pre.got{border-style:solid;border-color:#ffc83d;background:rgba(255,200,61,.12);box-shadow:0 0 14px rgba(255,200,61,.22)}#cm .snt.pre.got em{color:#ffc83d}'
+      + '#cm .snt.lock{opacity:.55}#cm .snt button{font:800 12px Rajdhani,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--acc);border:0;border-radius:7px;padding:6px 10px;cursor:pointer;box-shadow:0 0 12px rgba(var(--rgb),.5)}'
+      + '#cm .snk{position:relative;background:rgba(18,18,24,.8);border:1px solid rgba(var(--rgb),.2);border-radius:14px;padding:16px 18px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center}#cm .snk.rec{border-color:var(--acc);box-shadow:0 0 22px rgba(var(--rgb),.22)}#cm .snk.fin{opacity:.7}#cm .snk.rec h4,#cm .snk.fin h4{padding-right:96px}'
+      + '#cm .snk .ic{grid-row:1/3;font-size:30px;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:rgba(var(--rgb),.12);border:1px solid rgba(var(--rgb),.3)}'
+      + '#cm .snk h4{font:800 18px Rajdhani,sans-serif;color:#fff;letter-spacing:.03em}#cm .snk p{color:var(--dim,#9a9aa6);font-size:15px}#cm .snk .tag{position:absolute;top:10px;right:12px;font:800 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--acc-light)}'
+      + '#cm .snseg{grid-column:1/-1;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:6px;margin-top:8px}#cm .snseg div{position:relative;height:10px;border-radius:99px;background:#ffffff14;overflow:hidden}#cm .snseg div i{display:block;height:100%;background:var(--acc);box-shadow:0 0 8px var(--acc)}#cm .snseg div.d i{background:#37e08a;box-shadow:0 0 8px #37e08a}'
+      + '#cm .snsl{grid-column:1/-1;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:6px;font:700 12px Rajdhani,sans-serif;letter-spacing:.06em;color:var(--mute);text-align:center}#cm .snsl .d{color:#37e08a}';
     document.head.appendChild(st);
   }
   function tile(r, sn, kind) {
-    var x = r[kind]; if (!x) return '<div class="snt' + (kind === 'prem' ? ' pre' : '') + '"></div>';
-    var got = sn.level >= r.lvl && (kind === 'free' || sn.premium), cls = 'snt' + (got ? ' got' : '') + (kind === 'prem' ? ' pre' : '');
-    var nm = x.type === 'days' ? '+' + x.days + ' Tag' + (x.days === 1 ? '' : 'e') : x.type === 'theme' ? x.label : x.id, em = x.type === 'days' ? 'Bonustage' : x.type === 'theme' ? 'Farbschema' : 'Titel';
+    var x = r[kind]; if (!x) return '<div class="snt' + (kind === 'prem' ? ' pre' : '') + ' lock"><em>' + (kind === 'prem' ? 'Premium' : '') + '</em><span class="ic" style="opacity:.25">' + (kind === 'prem' ? '★' : '·') + '</span></div>';
+    var got = sn.level >= r.lvl && (kind === 'free' || sn.premium), cls = 'snt' + (got ? ' got' : '') + (kind === 'prem' ? ' pre' : '') + (!got && sn.level < r.lvl ? ' lock' : '');
+    var ic = x.type === 'days' ? '⏳' : x.type === 'theme' ? '🎨' : '🏷️', nm = x.type === 'days' ? '+' + x.days + ' Tag' + (x.days === 1 ? '' : 'e') : x.type === 'theme' ? x.label : x.id, em = x.type === 'days' ? 'Bonustage' : x.type === 'theme' ? 'Farbschema' : 'Titel';
     var extra = '';
     if (x.type === 'days' && got) extra = SN.claimed.indexOf(r.lvl) >= 0 ? '<em>✓ abgeholt</em>' : '<button data-c="' + r.lvl + '"' + (SN.busy ? ' disabled' : '') + '>Abholen</button>';
-    else if (kind === 'prem' && !sn.premium) extra = '<em>Premium</em>';
-    return '<div class="' + cls + '"><em>' + em + '</em><strong>' + esc(nm) + '</strong>' + extra + '</div>';
+    else if (kind === 'prem' && !sn.premium) extra = '<em>🔒 Premium</em>';
+    return '<div class="' + cls + '"><span class="ic">' + ic + '</span><em>' + em + '</em><strong>' + esc(nm) + '</strong>' + extra + '</div>';
+  }
+  function nextReward(sn) {
+    for (var i = 0; i < ST.PASS.length; i++) { var r = ST.PASS[i]; if (r.lvl > sn.level) { var x = r.free; return { lvl: r.lvl, x: x, need: r.lvl * ST.LEVEL_XP - sn.xp }; } }
+    return null;
   }
   function renderSeason(w, keep) {
     seasonStyle();
@@ -389,19 +406,30 @@
         renderSeason(w, true);
       }).catch(function () { renderSeason(w, true); });
     }
-    var sn = seasonState(), u = saveUnlocks(sn), parts = sn.id.split('-'), h = '';
+    var sn = seasonState(), u = saveUnlocks(sn), parts = sn.id.split('-'), h = '', R = 54, C = 2 * Math.PI * R;
     if (SN.msg) h += '<div class="pcbox"><p style="color:' + (SN.err ? '#ff5a6a' : '#fff') + '">' + esc(SN.msg) + '</p></div>';
     var title = store.get('cft_title'); if (title && u.titles.indexOf(title) < 0) title = null;
-    h += '<div class="pcbox"><div class="snh"><div><h3>Season ' + MONTHS[+parts[1] - 1] + ' ' + parts[0] + '</h3><p>Noch <b>' + sn.daysLeft + ' Tag' + (sn.daysLeft === 1 ? '' : 'e') + '</b> · ' + sn.games + ' Games gewertet · ' + (sn.premium ? '<b style="color:#ffc83d">Premium aktiv (+25 % XP)</b>' : 'Kostenloser Pass') + '</p></div>'
-      + '<div><strong>' + (sn.max ? 'MAX' : 'Lv ' + sn.level) + '</strong></div><div style="flex:1;min-width:220px"><div class="pb2"><i style="width:' + sn.pct + '%"></i></div><p>' + sn.xp + ' XP' + (sn.max ? '' : ' · noch ' + (S_LEVEL - sn.into) + ' XP bis Level ' + (sn.level + 1)) + '</p></div>'
-      + (u.titles.length ? '<div><p style="margin:0 0 4px">Dein Titel</p><select id="sntitle"><option value="">Kein Titel</option>' + u.titles.map(function (t) { return '<option' + (t === title ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></div>' : '') + '</div>'
-      + (sn.premium ? '' : '<p style="margin-top:10px">Mit dem <b>Season-Pass Premium</b> bekommst du Extra-Belohnungen (goldene Felder) und 25 % mehr XP. Kaufen: im Discord ein Kauf-Ticket öffnen und „Season-Pass Premium“ wählen.</p>') + '</div>';
-    h += '<div class="pcbox"><h3>Belohnungen</h3><div class="snl">' + ST.PASS.map(function (r) { return '<div class="snc' + (sn.level >= r.lvl ? ' on' : '') + '"><b>LV ' + r.lvl + '</b>' + tile(r, sn, 'free') + tile(r, sn, 'prem') + '</div>'; }).join('') + '</div>'
-      + '<p style="margin-top:8px;color:var(--mute);font-size:14px">Farbschemata schaltest du dauerhaft frei und wählst sie unter Einstellungen. Bonustage holst du hier ab, einmal je Level und Season.</p></div>';
-    h += '<div class="pcbox"><h3>Aufgaben</h3><div class="gr" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">' + sn.tasks.map(function (t) {
-      var nx = t.next, pct = nx ? Math.min(100, Math.round(100 * t.value / nx.need)) : 100;
-      return '<div class="snk"><h4>' + esc(t.title) + '</h4><p>' + (nx ? esc(fmt1(t.value).replace(/,0$/, '')) + ' / ' + nx.need + ' ' + esc(t.unit) + ' für +' + nx.xp + ' XP' : '<b style="color:#37e08a">Alles erledigt</b>') + '</p>'
-        + '<div class="pb2"><i style="width:' + pct + '%"></i></div><div class="snx">' + t.tiers.map(function (x) { return '<span class="' + (x.done ? 'd' : '') + '">' + (x.done ? '✓ ' : '') + x.need + ' · ' + x.xp + ' XP</span>'; }).join('') + '</div></div>';
+    var nx = nextReward(sn), rec = null;
+    sn.tasks.forEach(function (t) { if (t.next) { var p = t.value / t.next.need; if (!rec || p > rec.p) rec = { id: t.id, p: p }; } });
+    h += '<div class="snhero' + (sn.premium ? ' prem' : '') + '"><div class="snring"><svg viewBox="0 0 132 132"><circle class="bg" cx="66" cy="66" r="' + R + '"/><circle class="fg" cx="66" cy="66" r="' + R + '" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - sn.pct / 100)).toFixed(1) + '"/></svg><b><small>LEVEL</small>' + sn.level + '</b></div>'
+      + '<div><span class="snchip">Season ' + MONTHS[+parts[1] - 1] + ' ' + parts[0] + '</span><span class="snchip">Noch ' + sn.daysLeft + ' Tag' + (sn.daysLeft === 1 ? '' : 'e') + '</span>' + (sn.premium ? '<span class="snchip g">★ Premium</span>' : '') + '<h2>' + sn.xp + ' XP</h2>'
+      + '<p>' + (sn.max ? '<b>Maximales Level erreicht.</b> Stark!' : 'Noch <b>' + (ST.LEVEL_XP - sn.into) + ' XP</b> bis Level ' + (sn.level + 1)) + ' · ' + sn.games + ' Game' + (sn.games === 1 ? '' : 's') + ' in dieser Season' + (sn.premium ? ' · +25 % XP' : '') + '</p>'
+      + (nx && nx.x ? '<div class="snnext">Nächste Belohnung (Lv ' + nx.lvl + '): <b>' + esc(nx.x.type === 'days' ? '+' + nx.x.days + ' Bonustag' + (nx.x.days === 1 ? '' : 'e') : nx.x.type === 'theme' ? 'Farbschema ' + nx.x.label : 'Titel ' + nx.x.id) + '</b> · noch ' + nx.need + ' XP</div>' : '') + '</div>'
+      + '<div style="text-align:center">' + (u.titles.length ? '<p style="margin:0 0 4px;font-size:14px">Dein Titel</p><select id="sntitle"><option value="">Kein Titel</option>' + u.titles.map(function (t) { return '<option' + (t === title ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>' : '<p style="font-size:14px">Titel schaltest du mit Leveln frei</p>') + '</div></div>';
+    if (!sn.premium) h += '<div class="pcbox pclock"><p>★ <b>Season-Pass Premium</b> bringt dir goldene Extra-Belohnungen (Farbschemata und Titel) und <b>25 % mehr XP</b>. Kaufen: im Discord im Kanal <b>Shop</b> ein Ticket öffnen und „Season-Pass Premium“ wählen, danach hier auf Aktualisieren.</p></div>';
+    h += '<div class="pcbox"><h3>Belohnungs-Leiste</h3><div class="sntrack">' + ST.PASS.map(function (r) {
+      return '<div class="snc' + (sn.level >= r.lvl ? ' on' : '') + (sn.level === r.lvl ? ' cur' : '') + '"><div class="nd"><i>' + r.lvl + '</i></div>' + tile(r, sn, 'free') + tile(r, sn, 'prem') + '</div>';
+    }).join('') + '</div><p style="margin-top:6px;color:var(--mute);font-size:14px">Oben: kostenloser Pass · Unten: Premium. Farbschemata und Titel behältst du dauerhaft (Einstellungen → Farben). Bonustage holst du hier ab, einmal je Level und Season.</p></div>';
+    h += '<div class="pcbox"><h3>Aufgaben</h3><div class="gr" style="grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px">' + sn.tasks.map(function (t) {
+      var n = t.tiers.length, nxt = t.next, fin = !nxt, prev = 0, segs = '', labs = '';
+      t.tiers.forEach(function (x) {
+        var pct = x.done ? 100 : Math.max(0, Math.min(100, Math.round(100 * (t.value - prev) / (x.need - prev))));
+        segs += '<div class="' + (x.done ? 'd' : '') + '"><i style="width:' + pct + '%"></i></div>'; labs += '<span class="' + (x.done ? 'd' : '') + '">' + (x.done ? '✓ ' : '') + x.need + ' · ' + x.xp + ' XP</span>'; prev = x.need;
+      });
+      var val = fmt1(t.value).replace(/,0$/, '');
+      return '<div class="snk' + (rec && rec.id === t.id ? ' rec' : '') + (fin ? ' fin' : '') + '">' + (rec && rec.id === t.id ? '<span class="tag">Fast geschafft</span>' : fin ? '<span class="tag" style="color:#37e08a">Erledigt</span>' : '') + '<div class="ic">' + (TASK_ICON[t.id] || '⭐') + '</div><h4>' + esc(t.title) + '</h4>'
+        + '<p>' + (fin ? 'Alle Stufen geschafft' + (t.unit ? ' (' + val + ' ' + esc(t.unit) + ')' : '') : val + ' / ' + nxt.need + ' ' + esc(t.unit) + ' · +' + nxt.xp + ' XP') + '</p>'
+        + '<div class="snseg" style="--n:' + n + '">' + segs + '</div><div class="snsl" style="--n:' + n + '">' + labs + '</div></div>';
     }).join('') + '</div></div>';
     h += '<div class="cc"><button id="snref">Aktualisieren</button></div>';
     w.innerHTML = h;
@@ -419,9 +447,10 @@
       };
     });
   }
-  var S_LEVEL = ST.LEVEL_XP;
-  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan'], ['team', 'Team'], ['season', 'Season']], render: function (t, w) { if (t === 'season') renderSeason(w, !hasSeason()); else if (t === 'team') renderTeam(w); else if (t === 'train') renderTrain(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else renderTrend(w); } };
+  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan'], ['team', 'Team']], render: function (t, w) { if (t === 'team') renderTeam(w); else if (t === 'train') renderTrain(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else renderTrend(w); } };
   bind('mtFort', 'fort');
+  MODES.season = { title: 'Season-Pass', tabs: [], render: function (t, w) { renderSeason(w, !hasSeason()); } };
+  bind('mtSeason', 'season');
   /* ---------- Landung & Rotation ---------- */
   function renderDrops(w) {
     var G = ST.sorted(games()).filter(function (g) { return g.real; });
@@ -532,7 +561,7 @@
       S.busy = true; S.msg = a === 'apply' ? 'Wende Tweaks an … (Wiederherstellungspunkt kann etwas dauern)' : 'Setze zurück …'; draw(w);
       (a === 'apply' ? window.fn.pcApply() : window.fn.pcRevert()).then(function (r) {
         S.busy = false; S.err = !r.ok;
-        if (a === 'apply') S.msg = r.locked ? r.error : !r.ok ? (r.error || 'Fehlgeschlagen.') : (r.applied.length + ' Tweak' + (r.applied.length === 1 ? '' : 's') + ' angewendet' + (r.failed.length ? ', ' + r.failed.length + ' fehlgeschlagen' : '') + '. ' + (r.restore === 'yes' ? 'Windows-Wiederherstellungspunkt erstellt. ' : 'Kein Windows-Wiederherstellungspunkt möglich (App als Administrator starten), die Sicherung der alten Werte gibt es trotzdem. ') + (r.notes || []).join(' '));
+        if (a === 'apply') S.msg = r.locked ? r.error : !r.ok ? (r.error || 'Fehlgeschlagen.') : (r.applied.length + ' Tweak' + (r.applied.length === 1 ? '' : 's') + ' angewendet' + (r.failed.length ? ', ' + r.failed.length + ' fehlgeschlagen' : '') + '. ' + (r.restore === 'yes' ? 'Windows-Wiederherstellungspunkt erstellt. ' : 'Kein Windows-Wiederherstellungspunkt möglich (App als Administrator starten), die Sicherung der alten Werte gibt es trotzdem. ') + 'Starte Fortnite neu, damit die Grafik greift.' + (r.restart ? ' Für Maus, Game-Aufnahme und Spielmodus am besten Windows neu starten (oder dich einmal ab- und wieder anmelden).' : ''));
         else S.msg = r.ok ? 'Alles zurückgesetzt.' : (r.error || 'Fehlgeschlagen.');
         return window.fn.pcScan();
       }).then(function (sc) { S.scan = sc; draw(w); }).catch(function (e) { S.busy = false; S.msg = String(e && e.message || e); S.err = true; draw(w); });
