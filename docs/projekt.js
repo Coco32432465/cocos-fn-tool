@@ -13,7 +13,7 @@ window.PROJEKT = {
   freigabe: {
     version: '0.19.0',
     titel: 'Replay-Bibliothek und Runde als Bild teilen',
-    pr: 'https://github.com/Coco32432465/cocos-fn-tool/pulls',
+    pr: 'https://github.com/Coco32432465/cocos-fn-tool/pull/47',
     hinweis: 'Liegt als Draft-PR bereit. Erst nach deinem Okay wird gemergt, dann baut GitHub den Release automatisch.'
   },
 
