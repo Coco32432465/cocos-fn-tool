@@ -56,7 +56,10 @@ function ticketEmbed(env, type, uid, plan, uname, code) {
     title: renew ? 'Lizenz verlängern' : 'Lizenzbestellung',
     desc: `Hallo <@${uid}>, ${renew ? 'schön, dass du verlängern möchtest! Wähle unten die Laufzeit – sie wird an deine aktuelle Lizenz angehängt.' : 'wähle unten die gewünschte Laufzeit. Preis und Zahlungshinweis siehst du danach hier.'}`,
     fields: p ? payFields(env, type, plan, uname, code) : [
-      { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` + (renew ? '' : `\n${PACKS.duo.label} · **${price(env, 'duo')}**\n${PACKS.squad.label} · **${price(env, 'squad')}**\n${TEAMS.team.label} · **${price(env, 'team')}**\n${ADDONS.tweaks.label} · **${price(env, 'tweaks')}**\n${ADDONS.pass.label} · **${price(env, 'pass')}**`) },
+      { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` + (renew ? '' : `
+${TEAMS.team.label} · **${price(env, 'team')}**
+${ADDONS.tweaks.label} · **${price(env, 'tweaks')}**
+${ADDONS.pass.label} · **${price(env, 'pass')}**`) },
       { name: 'Status', value: 'Laufzeit noch nicht gewählt' }
     ]
   });

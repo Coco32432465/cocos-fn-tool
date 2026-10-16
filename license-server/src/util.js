@@ -15,7 +15,7 @@ export const PLANS = { week: { days: 7, label: '1 Woche' }, month: { days: 30, l
 export const PACKS = { duo: { base: 'month', count: 2, label: 'Duo-Paket (2 Keys à 1 Monat)' }, squad: { base: 'month', count: 4, label: 'Squad-Paket (4 Keys à 1 Monat)' } }; // Mengenrabatt, nur Neukauf
 export const ADDONS = { tweaks: { ent: 'tw', label: 'Tweak-Paket (einmalig)' }, pass: { ent: 'pass', label: 'Season-Pass Premium (aktuelle Season)' } }; // Einmalkauf ohne Key, schaltet eine App-Funktion frei
 export const TEAMS = { team: { base: 'month', count: 5, label: 'Team-Lizenz (5 Keys + Coach-Dashboard, 1 Monat)' } }; // Keys + Coach-Team, jeder Kauf = +30 Tage Team
-export const SHOP = { ...PLANS, ...PACKS, ...TEAMS, ...ADDONS };
+export const SHOP = { ...PLANS, ...TEAMS, ...ADDONS }; // PACKS (Duo/Squad) werden nicht mehr verkauft, alte Verkäufe bleiben über PLAN_ALL lesbar
 export const TEST_PLAN = { days: 10 / 1440, label: '10 Minuten (Test)' }; // nur Admin, nicht im Shop
 export const TRIAL_PLAN = { days: 1, label: '1 Tag (Probe)' }; // kostenlose Probe, nicht im Shop
 export const LIFETIME_PLAN = { days: 36500, label: 'Lifetime ♾️' }; // nur Admin, nicht im Shop (100 Jahre)
@@ -32,7 +32,7 @@ const TZ = 'Europe/Berlin';
 export const fmtDate = ts => ts > 3000000000 ? 'Lifetime ♾️' : new Date(ts * 1000).toLocaleDateString('de-DE', { timeZone: TZ });
 export const fmtDateTime = ts => ts > 3000000000 ? 'Lifetime ♾️' : new Date(ts * 1000).toLocaleString('de-DE', { timeZone: TZ, dateStyle: 'short', timeStyle: 'short' });
 export const priceNum = s => parseFloat(String(s || '').replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
-export const price = (env, planId) => ({ week: env.PRICE_WEEK, month: env.PRICE_MONTH, duo: env.PRICE_DUO || '25 €', squad: env.PRICE_SQUAD || '45 €', tweaks: env.PRICE_TWEAKS || '9 €', team: env.PRICE_TEAM || '59 €', pass: env.PRICE_PASS || '5 €' }[planId]) || env.PRICE_MONTH || '';
+export const price = (env, planId) => ({ week: env.PRICE_WEEK, month: env.PRICE_MONTH, duo: env.PRICE_DUO || '25 €', squad: env.PRICE_SQUAD || '45 €', tweaks: env.PRICE_TWEAKS || '9 €', team: env.PRICE_TEAM || '30 €', pass: env.PRICE_PASS || '5 €' }[planId]) || env.PRICE_MONTH || '';
 
 /* ---------- Embeds ---------- */
 export const COL = { brand: 0x1e6bff, ok: 0x2ecc71, bad: 0xe5484d, neutral: 0x4f545c };

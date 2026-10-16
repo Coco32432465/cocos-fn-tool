@@ -133,10 +133,10 @@ await T('/setup: baut Struktur, überspringt Vorhandenes, 2. Lauf ändert nichts
   for (let g = 0; g < 6 && /Limit erreicht/.test(JSON.stringify(S.patched.at(-1))); g++) { await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); await flush(); }
   const names = S.channels.map(c => c.name.replace(/^[^a-z0-9]+/i, '').toLowerCase());
   for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs', 'status', 'rangliste', 'giveaways', 'umfragen', 'datenschutz', 'live-stats', 'arbeit', 'vorschläge', 'team-chat']) assert.ok(names.includes(n), n);
-    const hid = S.channels.find(c => /how-to-use$/.test(c.name)).id; assert.match(JSON.stringify(S.msgs[hid]), /Erste Schritte/);
+    const hid = S.channels.find(c => /how-to-use$/.test(c.name)).id; assert.match(JSON.stringify(S.msgs[hid]), /So nutzt du Cocos Tool/);
     const pid = S.channels.find(c => /umfragen$/.test(c.name)).id; assert.equal(S.msgs[pid][0].components[0].components[0].custom_id, 'poll_new');
     assert.match(JSON.stringify(S.msgs[S.channels.find(c => /welcome$/.test(c.name)).id]), /banner\.gif/);
-  assert.equal(names.filter(n => n === 'key-kaufen').length, 1); // vorhanden, nicht doppelt
+  assert.equal(names.filter(n => n === 'shop').length, 1); assert.equal(names.filter(n => n === 'key-kaufen').length, 0); // alter Kanal wird umbenannt, nicht doppelt
   for (const n of ['Admin', 'Moderator', 'Supporter', 'Developer', 'Content Creator', 'Top 10', 'Customer', 'Member', 'Tester', 'User']) assert.equal(S.roles.filter(x => x.name === n).length, 1, n);
   globalThis.byBase = b => S.channels.find(c => c.name.replace(/^[^a-z0-9]+/i, '') === b);
   assert.equal(byBase('rules').name, '📜│rules'); assert.equal(S.channels.find(c => c.name === '🚀 START').type, 4);
@@ -147,7 +147,7 @@ await T('/setup: baut Struktur, überspringt Vorhandenes, 2. Lauf ändert nichts
   const dl = S.msgs[byBase('download').id][0]; assert.equal(dl.components[0].components[0].style, 5); assert.match(dl.components[0].components[0].url, /^https:/);
   assert.ok(S.msgs[byBase('welcome').id][0].embeds[0].color === 0x1e6bff);
   assert.ok(S.msgs[byBase('rules').id][0].components[0].components[0].custom_id === 'rules_accept');
-  assert.ok(S.msgs['KEYCH'][0].components[0].components[0].label === 'Key kaufen');
+  assert.ok(S.msgs['KEYCH'][0].components[0].components[0].label === 'Kaufen');
   const before = S.channels.length, msgsBefore = Object.values(S.msgs).flat().length;
   await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); await flush();
   assert.equal(S.channels.length, before); const pc = S.chPatched || 0; assert.equal(Object.values(S.msgs).flat().length, msgsBefore);
@@ -584,18 +584,11 @@ await T('Rangliste: Community-Durchschnitt erst ab 5 Teilnehmern, ohne Namen', a
   for (let k = 4; k < 12; k++) db.prepare('INSERT INTO ranks (discord_id,name,games,avg_score,wins,kills,avg_place,updated_at) VALUES (?,?,?,?,?,?,?,?)').run('A' + k, 'n' + k, 10, 50 + k, 1, 20, 10, 1);
   r = await get(); assert.equal(r.all.n, 12); assert.equal(r.top.n, 10); assert.ok(r.top.avgScore > r.all.avgScore); assert.equal(r.all.kpg, 2); assert.ok(!JSON.stringify(r).includes('n1'));
 });
-await T('Pakete: Duo/Squad liefern mehrere Keys, nicht fuer Verlaengerung', async () => {
+await T('Duo/Squad werden nicht mehr verkauft, Team kostet 30 Euro', async () => {
   await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U60') });
   const ch = S.channels.find(c => c.name.startsWith('kauf-useru60-')); assert.ok(ch);
-  const k0 = db.prepare("SELECT COUNT(*) n FROM keys WHERE plan='month' AND status='unused'").get().n;
-  await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['duo'] }, member: mem('U60') });
-  const conf = J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') }));
-  assert.match(conf, /Deine Keys/);
-  assert.equal(db.prepare("SELECT COUNT(*) n FROM keys WHERE plan='month' AND status='unused'").get().n - k0, 2);
-  assert.equal(db.prepare("SELECT SUM(amount) s FROM sales WHERE user_id='U60'").get().s, 25);
-  await inter({ type: 3, data: { custom_id: 'renew_open' }, user: { id: 'U61', username: 'useru61' } });
-  const rc = S.channels.find(c => /^verlaengern-useru61-\d+$/.test(c.name)); assert.ok(rc);
-  assert.match(J(await inter({ type: 3, channel_id: rc.id, data: { custom_id: 'ticket_plan', values: ['squad'] }, member: mem('U61') })), /Unbekannte Laufzeit/);
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['duo'] }, member: mem('U60') })), /Unbekannte Laufzeit/);
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['team'] }, member: mem('U60') })), /30 €/);
 });
 await T('Tweak-Paket: Einmalkauf schaltet Freigabe im Ticket frei, nicht fuer Verlaengerung', async () => {
   await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('U62') });

@@ -44,7 +44,7 @@ export async function syncStatus(env) {
         { name: 'Rangliste', value: `${ranked} Spieler`, inline: true },
         { name: 'Update', value: 'Die App lädt neue Versionen automatisch.', inline: true },
         { name: 'Aktualisiert', value: `<t:${t}:R>`, inline: true }] })],
-      components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Download', url: dlLink(env, rel), emoji: { name: '📥' } }, { type: 2, style: 5, label: 'Alle Versionen', url: rel.url.replace(/\/tag\/.*$/, '') }] }]
+      components: [] // Downloads gibt es nur im Kanal #download
     });
   }
   // Download-Panel: Button immer auf die aktuelle Datei zeigen lassen

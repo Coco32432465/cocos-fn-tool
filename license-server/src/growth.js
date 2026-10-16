@@ -9,9 +9,9 @@ import { hit } from './auth.js';
 export async function startTrial(i, env, uid) {
   if (!(await hit(env, 'trial:' + uid, 3, 3600))) return bad(env, 'Zu viele Versuche', 'Bitte warte kurz.');
   const had = await env.DB.prepare('SELECT 1 AS x FROM trials WHERE user_id=?').bind(uid).first();
-  if (had) return bad(env, 'Probe schon genutzt', 'Jede Person kann die Probe einmal nutzen. Hol dir gern eine Lizenz über **Key kaufen**.');
+  if (had) return bad(env, 'Probe schon genutzt', 'Jede Person kann die Probe einmal nutzen. Hol dir gern eine Lizenz über den **Shop**.');
   const owned = await env.DB.prepare("SELECT 1 AS x FROM keys WHERE discord_id=? AND status<>'unused'").bind(uid).first();
-  if (owned) return bad(env, 'Du hattest schon eine Lizenz', 'Die Probe ist für neue Nutzer gedacht. Verlängern geht über **Key kaufen**.');
+  if (owned) return bad(env, 'Du hattest schon eine Lizenz', 'Die Probe ist für neue Nutzer gedacht. Verlängern geht über den **Shop**.');
   const [key] = await createKeys(env, 'trial', 1, 'trial');
   await env.DB.prepare('INSERT INTO trials (user_id,key,created_at) VALUES (?,?,?)').bind(uid, key, now()).run();
   return eph(env, { title: '🎁 Dein Probe-Key (1 Tag)', color: COL.ok, desc: '```\n' + key + '\n```',
