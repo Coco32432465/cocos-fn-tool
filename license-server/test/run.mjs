@@ -658,5 +658,30 @@ await T('Team-Lizenz: Kauf, Beitritt per Code, Coach-Ansicht, Limits, Rechte', a
   await inter({ type: 3, data: { custom_id: 'privacy_do' }, member: mem('UP1') });
   assert.equal(db.prepare("SELECT COUNT(*) n FROM team_members WHERE user_id='UP1'").get().n, 0);
 });
+await T('Season-Pass: Bonustage einmal je Level, nur mit Lizenz, Premium per Ticket', async () => {
+  const { sha256hex } = await import('../src/util.js'); const { seasonId } = await import('../src/season.js');
+  const tok = 'tok-season-1'; db.prepare('INSERT INTO sessions (token_hash,discord_id,username,created_at) VALUES (?,?,?,?)').run(await sha256hex(tok), 'US1', 'Saison', 1);
+  const call = async (a, b) => (await post('/season/' + a, { session: tok, ...b })).body; const cur = seasonId();
+  assert.match(cur, /^\d{4}-\d{2}$/); assert.equal((await post('/season/me', { session: 'x' })).status, 401);
+  assert.deepEqual((await call('me', {})).claimed, []);
+  assert.equal((await call('claim', { season: cur, level: 3, xp: 300 })).error, 'license');
+  const exp0 = Math.floor(Date.now() / 1000) + 5 * 86400;
+  db.prepare("INSERT INTO keys (key,plan,days,status,discord_id,created_at,redeemed_at,expires_at) VALUES ('SEAS-ONKE-Y000-0001','month',30,'active','US1',1,1,?)").run(exp0);
+  assert.equal((await call('claim', { season: '2020-01', level: 3, xp: 300 })).error, 'season');
+  assert.equal((await call('claim', { season: cur, level: 4, xp: 400 })).error, 'level');
+  assert.equal((await call('claim', { season: cur, level: 3, xp: 120 })).error, 'xp');
+  const ok1 = await call('claim', { season: cur, level: 3, xp: 300 }); assert.ok(ok1.ok); assert.equal(ok1.days, 1); assert.deepEqual(ok1.claimed, [3]);
+  assert.equal(db.prepare("SELECT expires_at e FROM keys WHERE key='SEAS-ONKE-Y000-0001'").get().e, exp0 + 86400);
+  assert.equal((await call('claim', { season: cur, level: 3, xp: 999 })).error, 'done');
+  assert.equal(db.prepare("SELECT expires_at e FROM keys WHERE key='SEAS-ONKE-Y000-0001'").get().e, exp0 + 86400, 'nicht doppelt');
+  assert.equal((await call('claim', { season: cur, level: 10, xp: 1000 })).days, 2);
+  // Premium: Ticket-Kauf schaltet pass:<Season> frei
+  await inter({ type: 3, data: { custom_id: 'ticket_buy' }, member: mem('US2') });
+  const ch = S.channels.find(c => c.name.startsWith('kauf-userus2-')); assert.ok(ch);
+  await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_plan', values: ['pass'] }, member: mem('US2') });
+  assert.match(J(await inter({ type: 3, channel_id: ch.id, data: { custom_id: 'ticket_confirm' }, member: mem('ADMIN') })), /Season/);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM entitlements WHERE user_id='US2' AND ent=?").get('pass:' + cur).n, 1);
+  assert.equal(db.prepare("SELECT SUM(amount) s FROM sales WHERE user_id='US2'").get().s, 5);
+});
 console.log(`\n${ok} Tests bestanden`); S.restore();
 
