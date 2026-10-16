@@ -519,10 +519,13 @@
       + '#cm .pcf b{display:block;color:#fff;font-size:18px}#cm .pcf span{color:var(--dim,#9a9aa6);font-size:15px;display:block;margin-top:2px}'
       + '#cm .pcf em{font-style:normal;color:var(--mute);font-size:15px;text-align:right;white-space:nowrap}'
       + '#cm .pcbtn{font:800 16px Rajdhani,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:rgba(var(--rgb),.25);border:1px solid var(--acc);border-radius:10px;padding:12px 22px;cursor:pointer;margin:6px 10px 0 0}'
+      + '#cm .pctier{margin-top:10px}#cm .pctier .pcbtn{padding:6px 12px;font-size:14px;margin:4px 6px 0 0}#cm .pctier .pcbtn.on{color:#fff;border-color:var(--acc);background:rgba(var(--rgb),.25)}#cm .pcf small{color:var(--mute);font-size:14px}#cm .pcf u{text-decoration:none;font-size:12px;letter-spacing:.1em;color:var(--acc);border:1px solid var(--acc);border-radius:6px;padding:1px 6px;margin-left:6px}#cm .pcf input{accent-color:var(--acc)}'
       + '#cm .pcbtn:hover{box-shadow:0 0 18px rgba(var(--rgb),.45)}#cm .pcbtn.g{background:transparent;border-color:#ffffff30;color:var(--mute)}#cm .pcbtn[disabled]{opacity:.5;cursor:default}'
       + '#cm .pclock{border-color:var(--acc);box-shadow:0 0 22px rgba(var(--rgb),.18)}#cm .pcbox.pcmsg{font-size:17px;color:#fff}#cm .pcbox.pcmsg.r{color:#ff5a6a;border-color:#ff5a6a66}';
     document.head.appendChild(st);
-    var S = { scan: null, ents: [], msg: '', busy: false };
+    var S = { scan: null, ents: [], msg: '', busy: false, tier: null, off: {} };
+    var opts = function () { return S.tier ? { tier: S.tier } : {}; };
+    var chosen = function (r) { return r.findings.filter(function (f) { return f.state === 'fix' && !S.off[f.id]; }).map(function (f) { return f.id; }); };
     var hasFn = function () { return window.fn && window.fn.pcScan; };
     function draw(w) {
       if (!hasFn()) { w.innerHTML = '<div class="emp"><b>Nur in der Desktop-App</b>Der PC-Check braucht die installierte App.</div>'; return; }
@@ -530,28 +533,32 @@
       if (!r) { w.innerHTML = '<div class="emp"><b>Prüfe deinen PC …</b>Hardware und Einstellungen werden gelesen. Es wird nichts verändert.</div>'; return; }
       if (!r.ok) { w.innerHTML = '<div class="emp"><b>Check nicht möglich</b>' + esc(r.error || 'Unbekannter Fehler') + '</div>'; return; }
       var unlocked = S.ents.indexOf('tw') >= 0, hw = r.hw || {};
-      var h = (S.msg ? '<div class="pcbox pcmsg' + (S.err ? ' r' : '') + '">' + esc(S.msg) + '</div>' : '') + '<div class="pcs"><div class="pcbox"><h3>Dein PC</h3><p><b>' + esc(hw.cpu || 'CPU unbekannt') + '</b> · ' + esc(hw.cores) + ' Threads<br><b>' + esc(hw.gpu || 'Grafikkarte nicht erkannt') + '</b><br>' + esc(hw.ramGB) + ' GB RAM · Stufe: <b>' + esc(r.tierLabel) + '</b></p></div>'
+      var h = (S.msg ? '<div class="pcbox pcmsg' + (S.err ? ' r' : '') + '">' + esc(S.msg) + '</div>' : '') + '<div class="pcs"><div class="pcbox"><h3>Dein PC</h3><p><b>' + esc(hw.cpu || 'CPU unbekannt') + '</b> · ' + esc(hw.cores) + ' Threads<br><b>' + esc(hw.gpu || 'Grafikkarte nicht erkannt') + '</b><br>' + esc(hw.ramGB) + ' GB RAM · Stufe: <b>' + esc(r.tierLabel) + '</b>' + (S.tier && r.auto !== r.tier ? ' (von dir gewählt)' : '') + '</p><p class="pctier">Grafik-Profil: ' + (r.tiers || []).map(function (t) { return '<button class="pcbtn g' + (t.id === r.tier ? ' on' : '') + '" data-t="' + t.id + '">' + esc(t.label) + '</button>'; }).join('') + '</p></div>'
         + '<div class="pcbox"><h3>Ergebnis</h3><div class="pcsc' + (r.score < 60 ? ' bad' : '') + '"><strong>' + r.score + ' %</strong><p>' + (r.open ? '<b>' + r.open + ' Punkt' + (r.open === 1 ? '' : 'e') + '</b> kosten dich FPS oder Eingabe-Präzision.' : 'Alles optimal eingestellt. Nichts zu tun.') + '</p></div></div></div>';
       h += '<div class="pcbox"><h3>Befunde</h3>' + r.findings.map(function (f) {
         var ic = f.state === 'ok' ? '✓' : f.state === 'fix' ? '✗' : '–';
-        return '<div class="pcf ' + f.state + '"><i>' + ic + '</i><div><b>' + esc(f.title) + '</b><span>' + esc(f.state === 'na' ? 'Nicht gefunden, wird übersprungen.' : f.state === 'ok' ? 'Passt.' : f.why) + '</span></div><em>' + (f.state === 'fix' ? esc(f.now) + ' → ' + esc(f.want) : '') + '</em></div>';
+        var cb = f.state === 'fix' && unlocked ? '<input type="checkbox" data-c="' + f.id + '"' + (S.off[f.id] ? '' : ' checked') + '> ' : '';
+        return '<div class="pcf ' + f.state + '"><i>' + ic + '</i><div><b>' + cb + esc(f.title) + (f.gain && f.state === 'fix' ? ' <u>' + esc(f.gain) + '</u>' : '') + '</b><span>' + esc(f.state === 'na' ? 'Nicht gefunden, wird übersprungen.' : f.state === 'ok' ? 'Passt.' : f.why) + (f.state === 'fix' && f.what ? '<br><small>Geändert wird: ' + esc(f.what) + '</small>' : '') + '</span></div><em>' + (f.state === 'fix' ? esc(f.now) + ' → ' + esc(f.want) : '') + '</em></div>';
       }).join('') + (r.info || []).map(function (i) { return '<div class="pcf na"><i>i</i><div><b>' + esc(i.title) + '</b><span>' + esc(i.text) + '</span></div><em></em></div>'; }).join('') + '</div>';
       if (r.open || r.backup) {
         if (!unlocked && r.open) {
           h += '<div class="pcbox pclock"><h3>Tweak-Paket</h3><p>Der Check ist gratis. Mit dem <b>Tweak-Paket</b> (Einmalkauf) setzt die App alle Punkte mit einem Klick: vorher wird gesichert, und mit <b>Zurücksetzen</b> ist alles wieder wie vorher. Kaufen: im Discord ein <b>Kauf-Ticket</b> öffnen und „Tweak-Paket“ wählen.</p><button class="pcbtn" data-a="ref">Schon gekauft? Aktualisieren</button></div>';
         } else {
           h += '<div class="pcbox"><h3>Tweaks</h3><p>Schließe <b>Fortnite</b> vorher. Es werden nur Windows-Einstellungen und die Fortnite-Config geändert, nichts am Spiel selbst. Vorher werden die alten Werte gesichert.</p>'
-            + (r.open ? '<button class="pcbtn" data-a="apply"' + (S.busy ? ' disabled' : '') + '>Alle Tweaks anwenden</button>' : '')
+            + (r.open ? '<button class="pcbtn" data-a="apply"' + (S.busy || !chosen(r).length ? ' disabled' : '') + '>' + (chosen(r).length === r.open ? 'Alle Tweaks anwenden' : chosen(r).length + ' von ' + r.open + ' Tweaks anwenden') + '</button>' : '')
             + (r.backup ? '<button class="pcbtn g" data-a="undo"' + (S.busy ? ' disabled' : '') + '>Zurücksetzen</button>' : '') + '</div>';
         }
       }
       h += '<div class="cc"><button data-a="scan">Erneut prüfen</button></div>';
       w.innerHTML = h;
       [].forEach.call(w.querySelectorAll('[data-a]'), function (b) { b.onclick = function () { act(b.dataset.a, w); }; });
+      [].forEach.call(w.querySelectorAll('[data-t]'), function (b) { b.onclick = function () { S.tier = b.dataset.t === r.auto ? null : b.dataset.t; load(w, true); }; });
+      [].forEach.call(w.querySelectorAll('[data-c]'), function (b) { b.onchange = function () { S.off[b.dataset.c] = !b.checked; draw(w); }; });
     }
-    function load(w) {
+    function load(w, keep) {
+      if (!keep) S.tier = null;
       S.scan = null; draw(w);
-      Promise.all([window.fn.pcScan(), window.fn.licState ? window.fn.licState() : {}]).then(function (a) { S.scan = a[0]; S.ents = (a[1] && a[1].ents) || []; draw(w); })
+      Promise.all([window.fn.pcScan(opts()), window.fn.licState ? window.fn.licState() : {}]).then(function (a) { S.scan = a[0]; S.ents = (a[1] && a[1].ents) || []; draw(w); })
         .catch(function (e) { S.scan = { ok: false, error: String(e && e.message || e) }; draw(w); });
     }
     function act(a, w) {
@@ -559,11 +566,11 @@
       if (a === 'scan') return load(w);
       if (a === 'ref') { S.msg = 'Prüfe Freischaltung …'; draw(w); return window.fn.licRefresh().then(function (l) { S.ents = (l && l.ents) || []; S.msg = S.ents.indexOf('tw') >= 0 ? 'Tweak-Paket freigeschaltet.' : 'Noch nicht freigeschaltet. Das Team bestätigt die Zahlung im Ticket.'; S.err = S.ents.indexOf('tw') < 0; draw(w); }); }
       S.busy = true; S.msg = a === 'apply' ? 'Wende Tweaks an … (Wiederherstellungspunkt kann etwas dauern)' : 'Setze zurück …'; draw(w);
-      (a === 'apply' ? window.fn.pcApply() : window.fn.pcRevert()).then(function (r) {
+      (a === 'apply' ? window.fn.pcApply(chosen(S.scan), opts()) : window.fn.pcRevert()).then(function (r) {
         S.busy = false; S.err = !r.ok;
         if (a === 'apply') S.msg = r.locked ? r.error : !r.ok ? (r.error || 'Fehlgeschlagen.') : (r.applied.length + ' Tweak' + (r.applied.length === 1 ? '' : 's') + ' angewendet' + (r.failed.length ? ', ' + r.failed.length + ' fehlgeschlagen' : '') + '. ' + (r.restore === 'yes' ? 'Windows-Wiederherstellungspunkt erstellt. ' : 'Kein Windows-Wiederherstellungspunkt möglich (App als Administrator starten), die Sicherung der alten Werte gibt es trotzdem. ') + 'Starte Fortnite neu, damit die Grafik greift.' + (r.restart ? ' Für Maus, Game-Aufnahme und Spielmodus am besten Windows neu starten (oder dich einmal ab- und wieder anmelden).' : ''));
         else S.msg = r.ok ? 'Alles zurückgesetzt.' : (r.error || 'Fehlgeschlagen.');
-        return window.fn.pcScan();
+        return window.fn.pcScan(opts());
       }).then(function (sc) { S.scan = sc; draw(w); }).catch(function (e) { S.busy = false; S.msg = String(e && e.message || e); S.err = true; draw(w); });
     }
     MODES.pc = { title: 'PC-Check & Tweaks', tabs: [], render: function (t, w) { if (!hasFn()) return draw(w); load(w); } };

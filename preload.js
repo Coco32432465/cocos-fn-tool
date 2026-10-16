@@ -20,8 +20,8 @@ contextBridge.exposeInMainWorld('fn', {
   rankSync: (stats) => ipcRenderer.invoke('lic-rank-sync', stats),
   season: (a, b) => ipcRenderer.invoke('lic-season', a, b),
   team: (a, b) => ipcRenderer.invoke('lic-team', a, b),
-  pcScan: () => ipcRenderer.invoke('pc-scan'),
-  pcApply: (ids) => ipcRenderer.invoke('pc-apply', ids),
+  pcScan: (o) => ipcRenderer.invoke('pc-scan', o),
+  pcApply: (ids, o) => ipcRenderer.invoke('pc-apply', ids, o),
   pcRevert: () => ipcRenderer.invoke('pc-revert'),
   onUpdate: (cb) => ipcRenderer.on('update-status', (_e, s) => cb(s))
 });

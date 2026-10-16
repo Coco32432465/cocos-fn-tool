@@ -13,7 +13,7 @@ const TYPES = { buy: { prefix: 'kauf', label: 'Kauf-Ticket' }, renew: { prefix: 
 
 function components(env, type, plan, code) {
   const rows = [];
-  if (type === 'buy' || type === 'renew') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: 'Laufzeit wählen', options: Object.entries(type === 'renew' ? PLANS : SHOP).map(([id, p]) => ({ label: `${p.label} · ${price(env, id)}`, value: id, description: TEAMS[id] ? '5 Keys + Coach-Dashboard für dein Team' : ADDONS[id] ? (id === 'pass' ? 'Premium-Belohnungen + 25 % XP für diese Season' : 'Einmalkauf · PC-Tweaks in der App') : PACKS[id] ? `${PACKS[id].count} Keys · je ${PLANS[PACKS[id].base].days} Tage Zugang` : `${p.days} Tage Zugang`, default: id === plan })) }] });
+  if (type === 'buy' || type === 'renew') rows.push({ type: 1, components: [{ type: 3, custom_id: 'ticket_plan', placeholder: type === 'renew' ? 'Laufzeit wählen' : 'Produkt wählen', options: Object.entries(type === 'renew' ? PLANS : SHOP).map(([id, p]) => ({ label: `${p.label} · ${price(env, id)}`, value: id, description: TEAMS[id] ? '5 Keys + Coach-Dashboard für dein Team' : ADDONS[id] ? (id === 'pass' ? 'Premium-Belohnungen + 25 % XP für diese Season' : 'Einmalkauf · PC-Tweaks in der App') : PACKS[id] ? `${PACKS[id].count} Keys · je ${PLANS[PACKS[id].base].days} Tage Zugang` : `${p.days} Tage Zugang`, default: id === plan })) }] });
   const btns = [];
   const pp = plan ? paypalUrl(env, plan) : '';
   if (pp) btns.push({ type: 2, style: 5, label: 'Mit PayPal bezahlen', url: pp, emoji: { name: '💳' } });
@@ -30,12 +30,15 @@ function payFields(env, type, plan, uname, code) {
   const how = [
     pay ? `**1.** Klicke auf **Mit PayPal bezahlen** und sende **${price(env, plan)}**.` : `**1.** Das Team schickt dir gleich hier den PayPal-Link für **${price(env, plan)}**.`,
     `**2.** Mache einen **Screenshot der Zahlung** (Betrag, Datum und Empfänger müssen sichtbar sein) und sende ihn **hier in dieses Ticket**.`,
-    type === 'renew' ? '**3.** Das Team prüft die Zahlung und **verlängert deine bestehende Lizenz** – du musst nichts neu eingeben.' : '**3.** Das Team prüft die Zahlung und schickt dir hier **deinen Key**. Den gibst du in der App ein.'
+    type === 'renew' ? '**3.** Das Team prüft die Zahlung und **verlängert deine bestehende Lizenz** – du musst nichts neu eingeben.'
+      : ADDONS[plan] ? '**3.** Das Team prüft die Zahlung und **schaltet dein Produkt frei**. In der App auf **Aktualisieren** klicken, fertig.'
+      : TEAMS[plan] ? '**3.** Das Team prüft die Zahlung und schickt dir hier **5 Keys und deinen Team-Code**. Die Keys verteilst du an dein Team.'
+      : '**3.** Das Team prüft die Zahlung und schickt dir hier **deinen Key**. Den gibst du in der App ein.'
   ].join('\n');
   return [
-    { name: 'Laufzeit', value: p.label, inline: true },
+    { name: type === 'renew' ? 'Laufzeit' : 'Produkt', value: p.label, inline: true },
     { name: 'Preis', value: `**${price(env, plan)}**`, inline: true },
-    { name: 'Geräte', value: '1 pro Key', inline: true },
+    ...(ADDONS[plan] ? [] : [{ name: 'Geräte', value: '1 pro Key', inline: true }]),
     { name: '💳 So bezahlst du', value: how },
     { name: 'Verwendungszweck', value: `Dein Discord-Name${uname ? ` (\`${uname}\`)` : ''}`, inline: true },
     { name: 'Sicherheit', value: 'Zahle nur über den Link in diesem Ticket. Das Team schreibt dich nie zuerst privat an.', inline: true },
@@ -53,14 +56,14 @@ function ticketEmbed(env, type, uid, plan, uname, code) {
   const renew = type === 'renew';
   const p = plan && SHOP[plan];
   return emb(env, {
-    title: renew ? 'Lizenz verlängern' : 'Lizenzbestellung',
-    desc: `Hallo <@${uid}>, ${renew ? 'schön, dass du verlängern möchtest! Wähle unten die Laufzeit – sie wird an deine aktuelle Lizenz angehängt.' : 'wähle unten die gewünschte Laufzeit. Preis und Zahlungshinweis siehst du danach hier.'}`,
+    title: renew ? 'Lizenz verlängern' : '🛒 Bestellung',
+    desc: `Hallo <@${uid}>, ${renew ? 'schön, dass du verlängern möchtest! Wähle unten die Laufzeit – sie wird an deine aktuelle Lizenz angehängt.' : 'wähle unten dein **Produkt**. Preis und Zahlungshinweis siehst du danach hier.'}`,
     fields: p ? payFields(env, type, plan, uname, code) : [
-      { name: 'Tarife', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` + (renew ? '' : `
+      { name: renew ? 'Tarife' : 'Produkte', value: `1 Woche · **${price(env, 'week')}**\n1 Monat · **${price(env, 'month')}**` + (renew ? '' : `
 ${TEAMS.team.label} · **${price(env, 'team')}**
 ${ADDONS.tweaks.label} · **${price(env, 'tweaks')}**
 ${ADDONS.pass.label} · **${price(env, 'pass')}**`) },
-      { name: 'Status', value: 'Laufzeit noch nicht gewählt' }
+      { name: 'Status', value: renew ? 'Laufzeit noch nicht gewählt' : 'Noch kein Produkt gewählt' }
     ]
   });
 }
@@ -105,13 +108,13 @@ export async function openTicket(i, env, uid, type) {
   return eph(env, { title: 'Ticket eröffnet', desc: `Dein Ticket: <#${ch.data.id}>`, color: COL.ok });
 }
 
-// Dropdown "Laufzeit": zeigt Preis + Zahlungshinweis
+// Dropdown "Produkt": zeigt Preis + Zahlungshinweis
 export async function selectPlan(i, env, uid) {
   const t = await env.DB.prepare('SELECT * FROM tickets WHERE channel_id=?').bind(i.channel_id).first();
   if (!t || (t.type !== 'buy' && t.type !== 'renew')) return bad(env, 'Kein Kauf-Ticket', 'Die Auswahl gilt nur in Kauf- und Verlängerungs-Tickets.');
-  if (t.user_id !== uid && !isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Nur der Ersteller des Tickets kann die Laufzeit wählen.');
+  if (t.user_id !== uid && !isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Nur der Ersteller des Tickets kann das Produkt wählen.');
   const plan = (i.data.values || [])[0];
-  if (!SHOP[plan] || (t.type === 'renew' && (PACKS[plan] || TEAMS[plan] || ADDONS[plan]))) return bad(env, 'Unbekannte Laufzeit', '');
+  if (!SHOP[plan] || (t.type === 'renew' && (PACKS[plan] || TEAMS[plan] || ADDONS[plan]))) return bad(env, 'Unbekanntes Produkt', '');
   await env.DB.prepare('UPDATE tickets SET plan=? WHERE channel_id=?').bind(plan, i.channel_id).run();
   const ci = await codeInfo(env, t.code);
   return { type: 7, data: { embeds: [ticketEmbed(env, t.type, t.user_id, plan, null, ci)], components: components(env, t.type, plan, ci) } };
@@ -133,7 +136,7 @@ export async function submitCode(i, env, uid) {
 export async function confirmTicket(i, env, uid) {
   if (!isTeam(env, i)) return bad(env, 'Keine Berechtigung', 'Nur das Team kann die Zahlung bestätigen.');
   const t = await env.DB.prepare('SELECT * FROM tickets WHERE channel_id=?').bind(i.channel_id).first();
-  if (!t || !t.plan || !SHOP[t.plan]) return bad(env, 'Laufzeit fehlt', 'Der Kunde muss zuerst eine Laufzeit wählen.');
+  if (!t || !t.plan || !SHOP[t.plan]) return bad(env, 'Produkt fehlt', 'Der Kunde muss zuerst ein Produkt wählen.');
   if (t.paid) return bad(env, 'Schon bestätigt', 'Für dieses Ticket wurde die Zahlung bereits bestätigt.');
   const claim = await env.DB.prepare('UPDATE tickets SET paid=1 WHERE channel_id=? AND paid=0').bind(i.channel_id).run();
   if (!(claim.meta && claim.meta.changes)) return bad(env, 'Schon bestätigt', 'Für dieses Ticket wurde die Zahlung bereits bestätigt.');

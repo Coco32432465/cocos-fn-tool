@@ -11,7 +11,7 @@ function fakeSys(over = {}) {
   const files = { [INI]: '[/Script/FortniteGame.FortGameUserSettings]\r\nbUseVSync=True\r\nbMotionBlur=True\r\nFrameRateLimit=144.000000\r\n\r\n[ScalabilityGroups]\r\nsg.ShadowQuality=3\r\nsg.TextureQuality=3\r\n', ...(over.files || {}) };
   const log = []; let plan = { guid: 'a1841308-3541-4fab-bc81-f71556f20b4a', name: 'Ausbalanciert' };
   const sys = {
-    platform: 'win32', env: { LOCALAPPDATA: 'C:\\L' }, log,
+    platform: 'win32', env: { LOCALAPPDATA: 'C:\\L', PROGRAMDATA: 'C:\\PD' }, log,
     cpus: () => Array.from({ length: over.cores || 8 }, () => ({ model: 'AMD Ryzen 5 5600' })), totalmem: () => (over.ram || 16) * 1073741824,
     async run(cmd, args) {
       log.push([cmd, ...args].join(' '));
@@ -23,6 +23,7 @@ function fakeSys(over = {}) {
     },
     read: p => { if (!(p in files)) throw new Error('nf'); return files[p]; }, write: (p, t) => { files[p] = t; }, exists: p => p in files, mkdir() {}, copy: (a, b) => { files[b] = files[a]; },
     async regGet(k, nme) { const v = reg[k + '|' + nme]; return v === undefined ? null : v; },
+    async regDel(k, nme) { delete reg[k + '|' + nme]; return true; },
     async regSet(k, nme, type, v) { reg[k + '|' + nme] = type === 'REG_DWORD' ? Number(v) : String(v); return true; }
   };
   return { sys, reg, files, getPlan: () => plan };
@@ -50,13 +51,14 @@ const tmp = () => require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'p
     const f = fakeSys(); const P = T.create(f.sys, { userDataDir: tmp() });
     const r = await P.scan();
     assert.equal(r.tier, 'mid'); assert.equal(r.hw.gpu, 'NVIDIA GeForce RTX 3060');
-    assert.deepEqual(r.findings.filter(x => x.state === 'fix').map(x => x.id).sort(), ['dvr', 'fnini', 'gmode', 'mouse', 'power']);
+    assert.deepEqual(r.findings.filter(x => x.state === 'fix').map(x => x.id).sort(), ['bgapps', 'dvr', 'fnini', 'gmode', 'mouse', 'power']);
+    assert.equal(r.findings.find(x => x.id === 'gpu').state, 'na'); assert.ok(r.findings.every(x => x.what), 'jede Karte erklaert, was geaendert wird');
     assert.equal(r.score, 0); assert.equal(f.getPlan().name, 'Ausbalanciert'); assert.equal(f.reg['HKCU\\Control Panel\\Mouse|MouseSpeed'], '1');
   });
   await ok('Anwenden setzt alles, Zurueck stellt alles wieder her', async () => {
     const f = fakeSys(); const dir = tmp(); const P = T.create(f.sys, { userDataDir: dir });
     const orig = f.files[INI];
-    const a = await P.apply(); assert.deepEqual(a.applied.sort(), ['dvr', 'fnini', 'gmode', 'mouse', 'power']); assert.equal(a.restore, 'yes'); assert.deepEqual(a.failed, []);
+    const a = await P.apply(); assert.deepEqual(a.applied.sort(), ['bgapps', 'dvr', 'fnini', 'gmode', 'mouse', 'power']); assert.equal(a.restore, 'yes'); assert.deepEqual(a.failed, []);
     assert.equal(f.getPlan().guid, T.HIGH_PERF); assert.equal(f.reg['HKCU\\System\\GameConfigStore|GameDVR_Enabled'], 0); assert.equal(f.reg['HKCU\\Software\\Microsoft\\GameBar|AutoGameModeEnabled'], 1); assert.equal(f.reg['HKCU\\Control Panel\\Mouse|MouseSpeed'], '0');
     const ini = f.files[INI];
     assert.equal(T.iniGet(ini, 'ScalabilityGroups', 'sg.ShadowQuality'), '0'); assert.equal(T.iniGet(ini, 'ScalabilityGroups', 'sg.ViewDistanceQuality'), '3'); assert.equal(T.iniGet(ini, 'ScalabilityGroups', 'sg.TextureQuality'), '1');
@@ -75,11 +77,21 @@ const tmp = () => require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'p
   await ok('Ohne Fortnite-Datei: Grafik wird uebersprungen; ohne Wiederherstellungspunkt trotzdem weiter', async () => {
     const f = fakeSys({ noRestore: true }); delete f.files[INI];
     const P = T.create(f.sys, { userDataDir: tmp() }); const s = await P.scan(); assert.equal(s.findings.find(x => x.id === 'fnini').state, 'na');
-    const a = await P.apply(); assert.ok(!a.applied.includes('fnini')); assert.equal(a.restore, 'no'); assert.equal(a.applied.length, 4);
+    const a = await P.apply(); assert.ok(!a.applied.includes('fnini')); assert.equal(a.restore, 'no'); assert.equal(a.applied.length, 5);
   });
   await ok('Schwacher PC bekommt niedrigeres Profil, Sichtweite bleibt hoch', async () => {
     const p = T.fortProfile('low'); assert.equal(p.sg['sg.TextureQuality'], 0); assert.equal(p.sg['sg.ViewDistanceQuality'], 3);
     assert.ok(T.fortProfile('high').sg['sg.TextureQuality'] > p.sg['sg.TextureQuality']);
+  });
+  await ok('Auswahl: nur gewaehlte Tweaks; Stufe von Hand; GPU-Praeferenz fuer Fortnite und Zurueck', async () => {
+    const DAT = path.join('C:\\PD', 'Epic', 'UnrealEngineLauncher', 'LauncherInstalled.dat'), EXE = path.join('C:\\Games\\Fortnite', 'FortniteGame', 'Binaries', 'Win64', 'FortniteClient-Win64-Shipping.exe');
+    const f = fakeSys({ files: { [DAT]: JSON.stringify({ InstallationList: [{ AppName: 'Fortnite', InstallLocation: 'C:\\Games\\Fortnite' }] }), [EXE]: 'x' } });
+    const P = T.create(f.sys, { userDataDir: tmp() });
+    const s = await P.scan({ tier: 'low' }); assert.equal(s.tier, 'low'); assert.equal(s.auto, 'mid'); assert.equal(s.findings.find(x => x.id === 'gpu').state, 'fix');
+    const a = await P.apply(['gpu', 'mouse'], { tier: 'low' }); assert.deepEqual(a.applied.sort(), ['gpu', 'mouse']);
+    assert.equal(f.reg['HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences|' + EXE], 'GpuPreference=2;'); assert.equal(f.reg['HKCU\\System\\GameConfigStore|GameDVR_Enabled'], 1, 'nicht gewaehlt = unberuehrt');
+    await P.revert(); assert.ok(!(('HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences|' + EXE) in f.reg)); assert.equal(f.reg['HKCU\\Control Panel\\Mouse|MouseSpeed'], '1');
+    const a2 = await P.apply(['fnini'], { tier: 'low' }); assert.equal(T.iniGet(f.files[INI], 'ScalabilityGroups', 'sg.TextureQuality'), '0');
   });
   await ok('Nicht-Windows: keine Aenderungen, klare Meldung', async () => {
     const f = fakeSys(); f.sys.platform = 'linux'; const P = T.create(f.sys, { userDataDir: tmp() });

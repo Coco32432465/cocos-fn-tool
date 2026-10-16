@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.16.0', date: '2026-10-17', tag: 'UPDATE', text: 'Tweak-Paket verbessert: du wählst selbst, welche Tweaks angewendet werden, und siehst bei jedem genau, was geändert wird und was es bringt. Neu: Fortnite auf die starke Grafikkarte zwingen und Hintergrund-Apps ausschalten. Grafik-Profil (Schwacher PC / Mittelklasse / High-End) lässt sich von Hand überschreiben' },
   { v: '0.15.0', date: '2026-10-17', tag: 'UPDATE', text: 'Season-Pass ist jetzt eine eigene Kachel im Hauptmenü, komplett neu gestaltet (Level-Ring, Belohnungs-Leiste, Aufgaben mit Stufen). Der große Start-Button öffnet dein neuestes echtes Replay oder die Replay-Auswahl, nie mehr ein Demo-Spiel. Nach den Tweaks zeigt die App, wann ein Neustart sinnvoll ist. Scrim-Finder-Kachel entfernt' },
   { v: '0.14.0', date: '2026-10-17', tag: 'NEU', vod: 0, text: 'Season-Pass: Jeden Monat neue Season mit Aufgaben (Replays, Siege, Top 10, Elims, Note, Serien) und 10 Leveln. Belohnungen: Bonustage auf deinen Key, neue Farbschemata und Titel. Mit dem Premium-Pass gibt es Extra-Belohnungen und 25 % mehr XP. Zu finden unter Fortschritt → Season' },
   { v: '0.13.0', date: '2026-10-17', tag: 'FEATURE', text: 'Team-Lizenz: Unter Fortschritt gibt es den neuen Tab „Team“. Spieler treten mit dem Team-Code ihres Coaches bei und teilen freiwillig ihre Gesamtwerte. Der Coach sieht alle im Dashboard: Ø Note, Verlauf, häufigste Fehler und die gemeinsame Team-Schwäche' },
