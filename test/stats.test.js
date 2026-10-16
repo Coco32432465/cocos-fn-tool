@@ -81,4 +81,25 @@ assert.ok(ro.tips.length >= 1); assert.strictEqual(S.rotation([]).n, 0); assert.
   assert.strictEqual(S.teamInsight([]), null); assert.strictEqual(S.teamInsight([{ name: 'A', stats: { games: 3, avgScore: 50, weak: [{ kind: 'rot', pct: 5 }] } }]).shared, null);
 })();
 
+(function () {
+  var S = CFT.stats;
+  assert.strictEqual(S.seasonId(Date.UTC(2026, 9, 17, 12)), '2026-10'); assert.strictEqual(S.seasonId(Date.UTC(2026, 9, 31, 23, 30)), '2026-11', '23:30 UTC am 31.10. ist in Berlin schon November');
+  assert.strictEqual(S.seasonDaysLeft(Date.UTC(2026, 9, 17, 12)), 15); assert.strictEqual(S.seasonDaysLeft(Date.UTC(2026, 9, 31, 12)), 1);
+  var NOW = Date.UTC(2026, 9, 17, 12), D = 864e5;
+  var mk = function (daysAgo, tot, pl, k, mis, real) { return { tot: tot, real: real === undefined ? true : real, mtime: NOW - daysAgo * D, m: { pl: pl, k: k }, mis: mis === undefined ? [] : mis }; };
+  var s0 = S.season([], { now: NOW }); assert.strictEqual(s0.xp, 0); assert.strictEqual(s0.level, 0); assert.strictEqual(s0.tasks.length, 8); assert.strictEqual(s0.id, '2026-10');
+  var G = []; for (var i = 0; i < 12; i++) G.push(mk(i % 5, 70, i === 0 ? 1 : 5, 3, i % 2 ? [{ kind: 'rot' }] : []));
+  G.push(mk(40, 90, 1, 9, [])); G.push(mk(1, 90, 1, 9, [], false));
+  var s1 = S.season(G, { now: NOW }), by = function (id) { return s1.tasks.filter(function (t) { return t.id === id; })[0]; };
+  assert.strictEqual(s1.games, 12, 'Vormonat und unechte Runden zaehlen nicht'); assert.strictEqual(by('analyze').value, 12); assert.strictEqual(by('analyze').xp, 60);
+  assert.strictEqual(by('wins').value, 1); assert.strictEqual(by('top10').value, 12); assert.strictEqual(by('score').value, 70); assert.strictEqual(by('score').xp, 130, '55 und 65 erreicht, 75 nicht');
+  assert.strictEqual(by('streak').value, 5); assert.strictEqual(by('clean').value, 6); assert.strictEqual(by('elims').value, 36); assert.strictEqual(by('team').xp, 0);
+  var base = s1.base; assert.strictEqual(s1.xp, base); assert.strictEqual(S.season(G, { now: NOW, premium: true }).xp, Math.round(base * 1.25)); assert.ok(S.season(G, { now: NOW, teamIn: true }).base === base + 50);
+  assert.strictEqual(s1.level, Math.floor(base / 100)); assert.ok(s1.into >= 0 && s1.into < 100);
+  var big = []; for (var j = 0; j < 80; j++) big.push(mk(j % 15, 80, 1, 10, [])); var sb = S.season(big, { now: NOW, teamIn: true, premium: true }); assert.strictEqual(sb.level, 10); assert.strictEqual(sb.max, true); assert.strictEqual(sb.pct, 100);
+  var c3 = S.passCosmetics(3, false); assert.deepStrictEqual(c3.themes, ['neon']); assert.deepStrictEqual(c3.titles, ['Rookie']);
+  var c10 = S.passCosmetics(10, true); assert.strictEqual(c10.themes.length, 6); assert.strictEqual(c10.titles.length, 6);
+  assert.deepStrictEqual(S.passCosmetics(10, false).themes, ['neon', 'cyan', 'toxic']); assert.deepStrictEqual(S.passCosmetics(0, true), { themes: [], titles: [] });
+})();
+
 console.log('drops ok');

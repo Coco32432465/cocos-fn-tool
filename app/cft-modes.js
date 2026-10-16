@@ -339,7 +339,88 @@
     if ($q('tmref')) $q('tmref').onclick = function () { TM.d = null; TM.msg = ''; renderTeam(w); };
     [].forEach.call(w.querySelectorAll('[data-k]'), function (b) { b.onclick = function () { tmCall(w, 'kick', { id: b.dataset.k }); }; });
   }
-  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan'], ['team', 'Team']], render: function (t, w) { if (t === 'team') renderTeam(w); else if (t === 'train') renderTrain(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else renderTrend(w); } };
+
+  /* ---------- Season-Pass ---------- */
+  var SN = { claimed: [], ents: [], msg: '', err: false, busy: false };
+  var MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  var hasSeason = function () { return window.fn && window.fn.season; };
+  function seasonState() {
+    var id = ST.seasonId(), tm = store.get('cft_team'), pv = store.get('cft_prem');
+    var prem = SN.ents.indexOf('pass:' + id) >= 0 || (pv && pv === id);
+    return ST.season(CFT.games, { premium: !!prem, teamIn: !!(tm && tm.in) });
+  }
+  function saveUnlocks(sn) { // Kosmetik bleibt dauerhaft freigeschaltet, auch nach Season-Ende
+    var c = ST.passCosmetics(sn.level, sn.premium), u = store.get('cft_unl') || { themes: [], titles: [] };
+    c.themes.forEach(function (x) { if (u.themes.indexOf(x) < 0) u.themes.push(x); }); c.titles.forEach(function (x) { if (u.titles.indexOf(x) < 0) u.titles.push(x); });
+    store.set('cft_unl', u); return u;
+  }
+  window.cftSeasonRefresh = function () { try { saveUnlocks(seasonState()); } catch (e) { /* ohne Season weiter */ } };
+  function seasonStyle() {
+    if (document.getElementById('sncss')) return;
+    var st = document.createElement('style'); st.id = 'sncss';
+    st.textContent = '#cm .snl{display:grid;grid-template-columns:repeat(10,minmax(86px,1fr));gap:8px;overflow-x:auto;padding-bottom:6px}'
+      + '#cm .snc{display:flex;flex-direction:column;gap:6px;align-items:stretch}#cm .snc>b{font:800 14px Orbitron,sans-serif;color:var(--mute);text-align:center;letter-spacing:.08em}#cm .snc.on>b{color:var(--acc-light)}'
+      + '#cm .snt{min-height:78px;border-radius:12px;border:1px solid #ffffff1c;background:rgba(18,18,24,.8);padding:8px 6px;text-align:center;font-size:14px;color:var(--mute);display:flex;flex-direction:column;justify-content:center;gap:4px}'
+      + '#cm .snt em{font-style:normal;font:800 11px Rajdhani,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}#cm .snt strong{color:#fff;font-size:16px;line-height:1.1}'
+      + '#cm .snt.got{border-color:var(--acc);background:rgba(var(--rgb),.14);box-shadow:0 0 14px rgba(var(--rgb),.25)}#cm .snt.got em{color:var(--acc-light)}#cm .snt.pre{border-style:dashed}#cm .snt.pre.got{border-style:solid;border-color:#ffc83d;background:rgba(255,200,61,.12);box-shadow:0 0 14px rgba(255,200,61,.22)}'
+      + '#cm .snt button{font:800 12px Rajdhani,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--acc);border:0;border-radius:7px;padding:5px 6px;cursor:pointer}'
+      + '#cm .snk{background:rgba(18,18,24,.8);border:1px solid rgba(var(--rgb),.2);border-radius:12px;padding:14px 16px}#cm .snk h4{font:800 17px Rajdhani,sans-serif;color:#fff;letter-spacing:.04em}'
+      + '#cm .snk p{color:var(--dim,#9a9aa6);font-size:15px;margin-top:4px}#cm .snk .pb2{margin:8px 0 6px}#cm .snx{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}'
+      + '#cm .snx span{font:700 12px Rajdhani,sans-serif;letter-spacing:.08em;padding:2px 9px;border-radius:99px;border:1px solid #ffffff22;color:var(--mute)}#cm .snx span.d{color:var(--acc-light);border-color:var(--acc);background:rgba(var(--rgb),.14)}'
+      + '#cm .snh{display:flex;gap:22px;align-items:center;flex-wrap:wrap}#cm .snh strong{font:900 44px Orbitron,sans-serif;color:var(--acc-light)}#cm .snh select{font:700 16px Rajdhani,sans-serif;color:#fff;background:#0c0c11;border:1px solid #ffffff2a;border-radius:9px;padding:8px 12px}';
+    document.head.appendChild(st);
+  }
+  function tile(r, sn, kind) {
+    var x = r[kind]; if (!x) return '<div class="snt' + (kind === 'prem' ? ' pre' : '') + '"></div>';
+    var got = sn.level >= r.lvl && (kind === 'free' || sn.premium), cls = 'snt' + (got ? ' got' : '') + (kind === 'prem' ? ' pre' : '');
+    var nm = x.type === 'days' ? '+' + x.days + ' Tag' + (x.days === 1 ? '' : 'e') : x.type === 'theme' ? x.label : x.id, em = x.type === 'days' ? 'Bonustage' : x.type === 'theme' ? 'Farbschema' : 'Titel';
+    var extra = '';
+    if (x.type === 'days' && got) extra = SN.claimed.indexOf(r.lvl) >= 0 ? '<em>✓ abgeholt</em>' : '<button data-c="' + r.lvl + '"' + (SN.busy ? ' disabled' : '') + '>Abholen</button>';
+    else if (kind === 'prem' && !sn.premium) extra = '<em>Premium</em>';
+    return '<div class="' + cls + '"><em>' + em + '</em><strong>' + esc(nm) + '</strong>' + extra + '</div>';
+  }
+  function renderSeason(w, keep) {
+    seasonStyle();
+    if (!keep && hasSeason()) {
+      w.innerHTML = '<div class="emp"><b>Lade Season …</b></div>';
+      return Promise.all([window.fn.licState ? window.fn.licState() : {}, window.fn.season('me')]).then(function (a) {
+        SN.ents = (a[0] && a[0].ents) || []; if (a[1] && a[1].ok) SN.claimed = a[1].claimed || [];
+        if (SN.ents.indexOf('pass:' + ST.seasonId()) >= 0) store.set('cft_prem', ST.seasonId());
+        renderSeason(w, true);
+      }).catch(function () { renderSeason(w, true); });
+    }
+    var sn = seasonState(), u = saveUnlocks(sn), parts = sn.id.split('-'), h = '';
+    if (SN.msg) h += '<div class="pcbox"><p style="color:' + (SN.err ? '#ff5a6a' : '#fff') + '">' + esc(SN.msg) + '</p></div>';
+    var title = store.get('cft_title'); if (title && u.titles.indexOf(title) < 0) title = null;
+    h += '<div class="pcbox"><div class="snh"><div><h3>Season ' + MONTHS[+parts[1] - 1] + ' ' + parts[0] + '</h3><p>Noch <b>' + sn.daysLeft + ' Tag' + (sn.daysLeft === 1 ? '' : 'e') + '</b> · ' + sn.games + ' Games gewertet · ' + (sn.premium ? '<b style="color:#ffc83d">Premium aktiv (+25 % XP)</b>' : 'Kostenloser Pass') + '</p></div>'
+      + '<div><strong>' + (sn.max ? 'MAX' : 'Lv ' + sn.level) + '</strong></div><div style="flex:1;min-width:220px"><div class="pb2"><i style="width:' + sn.pct + '%"></i></div><p>' + sn.xp + ' XP' + (sn.max ? '' : ' · noch ' + (S_LEVEL - sn.into) + ' XP bis Level ' + (sn.level + 1)) + '</p></div>'
+      + (u.titles.length ? '<div><p style="margin:0 0 4px">Dein Titel</p><select id="sntitle"><option value="">Kein Titel</option>' + u.titles.map(function (t) { return '<option' + (t === title ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></div>' : '') + '</div>'
+      + (sn.premium ? '' : '<p style="margin-top:10px">Mit dem <b>Season-Pass Premium</b> bekommst du Extra-Belohnungen (goldene Felder) und 25 % mehr XP. Kaufen: im Discord ein Kauf-Ticket öffnen und „Season-Pass Premium“ wählen.</p>') + '</div>';
+    h += '<div class="pcbox"><h3>Belohnungen</h3><div class="snl">' + ST.PASS.map(function (r) { return '<div class="snc' + (sn.level >= r.lvl ? ' on' : '') + '"><b>LV ' + r.lvl + '</b>' + tile(r, sn, 'free') + tile(r, sn, 'prem') + '</div>'; }).join('') + '</div>'
+      + '<p style="margin-top:8px;color:var(--mute);font-size:14px">Farbschemata schaltest du dauerhaft frei und wählst sie unter Einstellungen. Bonustage holst du hier ab, einmal je Level und Season.</p></div>';
+    h += '<div class="pcbox"><h3>Aufgaben</h3><div class="gr" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">' + sn.tasks.map(function (t) {
+      var nx = t.next, pct = nx ? Math.min(100, Math.round(100 * t.value / nx.need)) : 100;
+      return '<div class="snk"><h4>' + esc(t.title) + '</h4><p>' + (nx ? esc(fmt1(t.value).replace(/,0$/, '')) + ' / ' + nx.need + ' ' + esc(t.unit) + ' für +' + nx.xp + ' XP' : '<b style="color:#37e08a">Alles erledigt</b>') + '</p>'
+        + '<div class="pb2"><i style="width:' + pct + '%"></i></div><div class="snx">' + t.tiers.map(function (x) { return '<span class="' + (x.done ? 'd' : '') + '">' + (x.done ? '✓ ' : '') + x.need + ' · ' + x.xp + ' XP</span>'; }).join('') + '</div></div>';
+    }).join('') + '</div></div>';
+    h += '<div class="cc"><button id="snref">Aktualisieren</button></div>';
+    w.innerHTML = h;
+    var ti = w.querySelector('#sntitle'); if (ti) ti.onchange = function () { store.set('cft_title', ti.value || null); };
+    w.querySelector('#snref').onclick = function () { SN.msg = ''; renderSeason(w, false); };
+    [].forEach.call(w.querySelectorAll('[data-c]'), function (b) {
+      b.onclick = function () {
+        SN.busy = true; SN.msg = ''; renderSeason(w, true);
+        window.fn.season('claim', { season: sn.id, level: +b.dataset.c, xp: sn.xp }).then(function (r) {
+          SN.busy = false; SN.err = !(r && r.ok);
+          if (r && r.claimed) SN.claimed = r.claimed;
+          SN.msg = r && r.ok ? '+' + r.days + ' Bonustag' + (r.days === 1 ? '' : 'e') + ' sind auf deinem Key gutgeschrieben.' : ((r && (r.message || r.error)) || 'Das hat nicht geklappt.');
+          renderSeason(w, true);
+        });
+      };
+    });
+  }
+  var S_LEVEL = ST.LEVEL_XP;
+  MODES.fort = { title: 'Fortschritt & Training', tabs: [['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan'], ['team', 'Team'], ['season', 'Season']], render: function (t, w) { if (t === 'season') renderSeason(w, !hasSeason()); else if (t === 'team') renderTeam(w); else if (t === 'train') renderTrain(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else renderTrend(w); } };
   bind('mtFort', 'fort');
   /* ---------- Landung & Rotation ---------- */
   function renderDrops(w) {

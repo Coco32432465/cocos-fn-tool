@@ -169,6 +169,17 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
     } catch (e) { return { ok: false, error: 'Lizenz-Server nicht erreichbar.' }; }
   }
 
+  // Season-Pass: nur Bonustage-Belohnungen laufen ueber den Server (einmal je Level und Season)
+  async function season(action, body) {
+    const s = load();
+    if (!enabled() || !s.session) return { ok: false, error: 'Bitte zuerst mit Discord verbinden.' };
+    if (!['me', 'claim'].includes(action)) return { ok: false, error: 'Unbekannte Aktion.' };
+    const b = { session: s.session };
+    if (action === 'claim') { b.season = String((body && body.season) || '').slice(0, 7); b.level = Number(body && body.level); b.xp = Number(body && body.xp); }
+    try { const j = await post('/season/' + action, b); if (j && j.error === 'session') return { ok: false, error: 'Sitzung abgelaufen. Bitte neu mit Discord verbinden.' }; return j || { ok: false, error: 'Keine Antwort.' }; }
+    catch (e) { return { ok: false, error: 'Lizenz-Server nicht erreichbar.' }; }
+  }
+
   function logout() { try { fs.unlinkSync(file); } catch (e) { /* weg */ } return state(); }
 
   // Lebenszeichen alle 5 Min (nur mit Discord-Sitzung): der Server zeigt damit, wie viele die App gerade nutzen
@@ -181,7 +192,7 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
   function start() { refresh(); ping(); timer = setInterval(refresh, REFRESH_EVERY); pingTimer = setInterval(ping, 5 * 60 * 1000); }
   function stop() { clearInterval(timer); clearInterval(pingTimer); }
 
-  return { team, hasEnt, rankSet, rankSync, rankAvg, state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
+  return { season, team, hasEnt, rankSet, rankSync, rankAvg, state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
 }
 
 function register(ipcMain, opts) {
@@ -194,6 +205,7 @@ function register(ipcMain, opts) {
   ipcMain.handle('lic-logout', () => L.logout());
   ipcMain.handle('lic-rank-set', (_e, on, stats) => L.rankSet(!!on, stats));
   ipcMain.handle('lic-rank-avg', () => L.rankAvg());
+  ipcMain.handle('lic-season', (_e, a, b) => L.season(String(a), b));
   ipcMain.handle('lic-team', (_e, a, b) => L.team(String(a), b));
   ipcMain.handle('lic-rank-sync', (_e, stats) => L.rankSync(stats));
   return L;
