@@ -1865,7 +1865,7 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
   var CC=window.CFT_CONFIG||{},F=window.fn||{},$=function(i){return document.getElementById(i)};
   var HAS=!!F.licState,S={enabled:false,required:false,valid:true,connected:false,user:null},busy=false;
   function ok(){return !(S.enabled&&S.required)||!!S.valid}
-  function fd(t){return new Date(t*1000).toLocaleDateString('de-DE')}
+  function fd(t){return t>3000000000?'Lifetime ♾️':new Date(t*1000).toLocaleDateString('de-DE')}
   function chip(){var b=$('mdc'),t=$('mdcs');if(!b)return;b.classList.remove('on','warn');
     if(!S.enabled){t.textContent='Discord';return}
     if(S.valid){b.classList.add('on');t.textContent='✓ '+(S.user&&S.user.name||'Aktiv')}
@@ -1880,7 +1880,7 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
     $('licgo').style.display=(c&&!v)?'':'none';
     $('lico').style.display=c?'':'none';
     var w=$('licw');
-    if(v){w.style.display='';w.innerHTML='Lizenz aktiv'+(S.keyExp?' bis <b>'+fd(S.keyExp)+'</b>':'')+(S.user?' · '+esc(S.user.name):'')}
+    if(v){w.style.display='';w.innerHTML='Lizenz aktiv'+(S.keyExp?(S.keyExp>3000000000?' · <b>Lifetime</b>':' bis <b>'+fd(S.keyExp)+'</b>'):'')+(S.user?' · '+esc(S.user.name):'')}
     else if(c){w.style.display='';w.innerHTML='Verbunden als <b>'+esc(S.user&&S.user.name||'Discord')+'</b>'}
     else w.style.display='none';
     $('licl').textContent=v?'Schließen':'Später';

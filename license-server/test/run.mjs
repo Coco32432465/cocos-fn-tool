@@ -527,5 +527,14 @@ await T('Wachstum: Probe-Key, Treue-Bonus, Bewertung, Belohnung', async () => {
   assert.ok(S.dms.slice(d1).some(d => /Vorschlag umgesetzt/.test(JSON.stringify(d.body))), 'DM mit Grund');
   assert.equal(db.prepare('SELECT days FROM reward_log').get().days, 3);
 });
+await T('Lifetime-Key: nur Admin, läuft nicht ab, keine Erinnerung', async () => {
+  assert.match(J(await cmd('erstellen', [{ name: 'dauer', value: 'lifetime' }], 'U1')), /Keine Berechtigung/);
+  const r = J(await cmd('erstellen', [{ name: 'dauer', value: 'lifetime' }])); const k = (r.match(/[A-Z0-9]{4}(-[A-Z0-9]{4}){2}/) || [])[0]; assert.ok(k, 'Key'); assert.match(r, /Lifetime/);
+  const red = J(await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'key', options: [{ type: 1, name: 'einlösen', options: [{ name: 'key', value: k }] }] }, member: mem('U60') }));
+  assert.match(red, /Lifetime/);
+  const row = db.prepare('SELECT * FROM keys WHERE key=?').get(k); assert.equal(row.status, 'active'); assert.ok(row.expires_at > Math.floor(Date.now() / 1000) + 365 * 86400 * 50);
+  await worker.scheduled({ cron: '0 * * * *' }, env, ctx); await flush();
+  assert.ok(!S.dms.some(d => d.to === 'U60' && /läuft bald ab/.test(JSON.stringify(d.body))));
+});
 console.log(`\n${ok} Tests bestanden`); S.restore();
 

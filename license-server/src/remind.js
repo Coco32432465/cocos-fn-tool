@@ -19,7 +19,7 @@ export function reminderPayload(env, row) {
 // Kostenlose Cloudflare-Version: wenige Nutzer je Lauf, der Rest beim naechsten Stundenlauf.
 export async function remindSweep(env, max = 8) {
   const t = now();
-  const rows = (await env.DB.prepare("SELECT * FROM keys WHERE status='active' AND reminded=0 AND discord_id IS NOT NULL AND plan NOT IN ('test','trial') AND expires_at>? AND expires_at<=? ORDER BY expires_at LIMIT ?").bind(t, t + 3 * 86400, max).all()).results || [];
+  const rows = (await env.DB.prepare("SELECT * FROM keys WHERE status='active' AND reminded=0 AND discord_id IS NOT NULL AND plan NOT IN ('test','trial','lifetime') AND expires_at>? AND expires_at<=? ORDER BY expires_at LIMIT ?").bind(t, t + 3 * 86400, max).all()).results || [];
   let n = 0;
   for (const r of rows) {
     const later = await env.DB.prepare("SELECT 1 AS x FROM keys WHERE discord_id=? AND status='active' AND expires_at>?").bind(r.discord_id, t + 3 * 86400).first();
