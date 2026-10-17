@@ -5,6 +5,7 @@ import { statsEmbed, statsRows } from './stats.js';
 import { PRIVACY_FIELDS } from './privacy.js';
 import { dapi, setCfg, getCfg } from './discord.js';
 import { boardEmbed } from './rank.js';
+import { cupBoard } from './cup.js';
 import { downloadComponents } from './panels.js';
 import { renamePatchnotes } from './patchnotes.js';
 
@@ -148,6 +149,7 @@ export async function runSetup(env, renew) {
       ['datenschutz', 'privacy', { embeds: [emb(env, { title: '🔒 Datenschutz', desc: 'Kurz und ehrlich: Wir speichern nur, was für Lizenz, Support und Community nötig ist. Deine **Replays bleiben auf deinem PC**.', fields: PRIVACY_FIELDS })] }],
       ['status', 'status', { embeds: [emb(env, { title: '📊 Ninjago Tools · Status', desc: 'Der Status wird in wenigen Minuten automatisch aktualisiert.' })] }],
       ['rangliste', 'rankboard', { embeds: [boardEmbed(env, [], 0)] }],
+      ['rangliste', 'cupboard', { embeds: [await cupBoard(env)] }],
       ['feedback', 'feedback-panel', { embeds: [emb(env, { title: '💌 Feedback senden', desc: 'Dir gefällt etwas, du vermisst etwas oder hast eine Idee? Klicke auf den Button und schreib uns – dein Feedback landet direkt beim Team.', fields: [{ name: 'Größere Ideen', value: `Poste sie im Forum ${M('vorschläge')}, dort kann die Community abstimmen.` }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Feedback senden', custom_id: 'form_feedback', emoji: { name: '💌' } }] }] }],
       ['bug-reports', 'bug-panel', { embeds: [emb(env, { title: '🐛 Fehler melden', desc: 'Etwas funktioniert nicht? Klicke auf den Button, beschreibe den Fehler und nenne die App-Version. Das Team setzt den Status (Offen → In Arbeit → Erledigt).', fields: [{ name: 'Tipp', value: 'Schreib, was du vorher gemacht hast und welche Replay-Datei betroffen ist.' }] })], components: [{ type: 1, components: [{ type: 2, style: 4, label: 'Fehler melden', custom_id: 'form_bug', emoji: { name: '🐛' } }] }] }],
       ['support', 'support-panel', { embeds: [emb(env, { title: 'Support', desc: 'Du brauchst Hilfe mit dem Tool oder deinem Key? Eröffne ein privates Ticket, das Team meldet sich.', fields: [{ name: 'Tipp', value: `Häufige Fragen findest du in ${M('questions')} und ${M('how-to-use')}.` }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Hilfe-Ticket öffnen', custom_id: 'ticket_support' }] }] }]

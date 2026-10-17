@@ -120,7 +120,8 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
   }
 
   // Community-Rangliste (freiwillig): Opt-in wird lokal gemerkt, Werte gehen nur bei aktivem Opt-in raus.
-  const cleanStats = st => { st = st || {}; const n = k => Number(st[k]); return { games: n('games'), avgScore: n('avgScore'), wins: n('wins'), kills: n('kills'), avgPlace: n('avgPlace') || undefined, bestPlace: n('bestPlace') || undefined }; };
+  const cleanCup = c => c && typeof c === 'object' ? { games: Number(c.games) || 0, score: Number(c.score) || 0, best: Number(c.best) || 0, wins: Number(c.wins) || 0, kills: Number(c.kills) || 0 } : undefined;
+  const cleanStats = st => { st = st || {}; const n = k => Number(st[k]); return { games: n('games'), avgScore: n('avgScore'), wins: n('wins'), kills: n('kills'), avgPlace: n('avgPlace') || undefined, bestPlace: n('bestPlace') || undefined, cup: cleanCup(st.cup) }; };
   async function rankSet(on, stats) {
     const s = load();
     if (!enabled() || !s.session) return state({ error: 'Bitte zuerst mit Discord verbinden.' });

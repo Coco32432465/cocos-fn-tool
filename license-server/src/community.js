@@ -1,9 +1,9 @@
-// Community-Paket 2: Wochen-Sieger der Rangliste, Event-Kalender mit Zu-/Absage, woechentlicher Newsletter.
+// Community-Paket 2: Wochen-Cup (cup.js), Event-Kalender mit Zu-/Absage, woechentlicher Newsletter.
 import { now, emb, eph, bad, COL } from './util.js';
 import { dapi, tryDM, getCfg, setCfg, editMsg, isTeam, isCodeManager } from './discord.js';
-import { grantDays } from './codes.js';
 import { topRanks } from './rank.js';
 import { TIPS } from './fun.js';
+import { cupFinish } from './cup.js';
 
 const TZ = 'Europe/Berlin';
 const mrow = (id, label, style, max, ph, req = true) => ({ type: 1, components: [{ type: 4, custom_id: id, label, style, max_length: max, required: req, placeholder: ph }] });
@@ -27,22 +27,10 @@ export function parseBerlin(str, t = now()) {
   return ts;
 }
 // Kalenderwoche als Schluessel (Montag der Woche, Berlin)
-const weekKey = t => { const b = berlin(t), mon = new Date(Date.UTC(b.y, b.mo - 1, b.d - b.wd)); return mon.toISOString().slice(0, 10); };
+export const weekKey = t => { const b = berlin(t), mon = new Date(Date.UTC(b.y, b.mo - 1, b.d - b.wd)); return mon.toISOString().slice(0, 10); };
 
-/* ---------- Wochen-Sieger ---------- */
-export async function weeklySweep(env, t = now()) {
-  const b = berlin(t); if (b.wd !== 0 || b.h < 10) return; // Montag ab 10 Uhr
-  const key = 'weekly:' + weekKey(t); if (await getCfg(env, key)) return;
-  await setCfg(env, key, '1');
-  const w = (await env.DB.prepare('SELECT * FROM ranks WHERE games>=3 AND updated_at>? ORDER BY avg_score DESC, wins DESC, games DESC LIMIT 1').bind(t - 7 * 86400).first());
-  if (!w) return;
-  const days = Number(env.WEEKLY_PRIZE_DAYS) >= 0 && env.WEEKLY_PRIZE_DAYS ? Number(env.WEEKLY_PRIZE_DAYS) : 3;
-  if (days > 0) await grantDays(env, w.discord_id, days, '🏆 Spieler der Woche!', `Du warst diese Woche der Beste der Rangliste (Ø Note **${Math.round(w.avg_score)}**). Als Preis bekommst du **+${days} Bonustage**.`);
-  if (env.RANK_CHANNEL_ID) await dapi(env, 'POST', `/channels/${env.RANK_CHANNEL_ID}/messages`, { content: `<@${w.discord_id}>`, embeds: [emb(env, { title: '🏆 Spieler der Woche', color: 0xf1c40f,
-    desc: `Glückwunsch <@${w.discord_id}>!\nØ Note **${Math.round(w.avg_score)}** · ${w.games} Runden · ${w.wins} Sieg${w.wins === 1 ? '' : 'e'}${days > 0 ? `\n\n🎁 Preis: **+${days} Bonustage**` : ''}`,
-    fields: [{ name: 'Mitmachen', value: 'App → Einstellungen → **Rangliste** aktivieren. Jeden Montag wird der beste aktive Spieler belohnt.' }] })] });
-  return w.discord_id;
-}
+/* ---------- Wochen-Sieger = Wöchentlicher Cup (cup.js) ---------- */
+export const weeklySweep = (env, t = now()) => cupFinish(env, t);
 
 /* ---------- Newsletter ---------- */
 export async function newsletterSweep(env, t = now()) {

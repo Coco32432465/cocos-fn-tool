@@ -264,6 +264,26 @@ await T('Rangliste: Opt-in per Sitzung, Top 10, Rolle, /rank ich + austragen', a
   await worker.scheduled({ cron: '30 * * * *' }, env, ctx); await flush();
   assert.ok(!S.members.U7.roles.includes(e2.RANK_ROLE_ID));
 });
+await T('Wochen-Cup: Werte mit /rank/submit, Tabelle im Kanal, /rank cup, austragen löscht', async () => {
+  const e2 = await (await import('../src/discord.js')).withCfg(env);
+  db.prepare('DELETE FROM cup').run();
+  const st = (g, sc) => ({ games: 10, avgScore: 70, wins: 1, kills: 10, cup: { games: g, score: sc, best: 95, wins: 0, kills: 4 } });
+  assert.equal((await post('/rank/submit', { session: 'tok-U1', stats: st(4, 82.4) })).status, 200);
+  assert.equal((await post('/rank/submit', { session: 'tok-U7', stats: st(6, 88) })).status, 200);
+  assert.equal((await post('/rank/submit', { session: 'tok-U8', stats: st(2, 99) })).status, 200); // < 3 Runden: nicht gewertet
+  assert.equal((await post('/rank/submit', { session: 'tok-U1', stats: { ...st(5, 84), cup: { games: 'x', score: 1 } } })).status, 200); // kaputte Cup-Werte: Rangliste trotzdem ok
+  assert.equal(db.prepare("SELECT score FROM cup WHERE discord_id='U1'").get().score, 82.4);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM cup').get().n, 3);
+  const c = J(await inter({ type: 2, data: { name: 'rank', options: [{ type: 1, name: 'cup' }] }, member: mem('U1') }));
+  assert.match(c, /Wöchentlicher Cup/); assert.ok(c.indexOf('Bravo') < c.indexOf('Alpha')); assert.ok(!/Charlie/.test(c)); assert.match(c, /Platz \*\*2\*\*/); assert.match(c, /\+7 Bonustage/);
+  const cid = '1234567'; S.msgs[e2.RANK_CHANNEL_ID] = S.msgs[e2.RANK_CHANNEL_ID] || []; S.msgs[e2.RANK_CHANNEL_ID].push({ id: cid, embeds: [] });
+  db.prepare("INSERT OR REPLACE INTO config (k,v) VALUES ('posted:cupboard','1234567')").run();
+  const before = S.edited || 0; await worker.scheduled({ cron: '30 * * * *' }, env, ctx); await flush();
+  assert.ok((S.edited || 0) > before + 1, 'Cup-Tabelle nicht aktualisiert');
+  assert.match(J(await inter({ type: 2, data: { name: 'rank', options: [{ type: 1, name: 'austragen' }] }, member: mem('U8') })), /entfernt/);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM cup WHERE discord_id='U8'").get().n, 0);
+  assert.match(JSON.stringify(S.msgs[e2.RANK_CHANNEL_ID].find(m => m.id === cid).embeds), /Bravo/);
+});
 await T('/admin stats + /team: nur Admin', async () => {
   const st = { type: 2, data: { name: 'admin', options: [{ type: 1, name: 'stats' }] } };
   assert.match(J(await inter({ ...st, member: mem('U1') })), /Keine Berechtigung/);
@@ -577,16 +597,20 @@ await T('Paket 2: Wochen-Sieger, Events mit Zu-/Absage + Erinnerung, Newsletter'
   const d0 = S.dms.length; await C.eventSweep(await withCfg(env)); await C.eventSweep(await withCfg(env));
   const rem = S.dms.slice(d0).filter(d => /Gleich geht/.test(JSON.stringify(d.body))); assert.equal(rem.length, 1); assert.equal(rem[0].to, 'U70');
   await C.eventSweep(await withCfg(env), Math.floor(Date.now() / 1000) + 3 * 3600); assert.equal(db.prepare('SELECT status FROM events').get().status, 'done');
-  // Wochen-Sieger: Montag 19.10.2026 11:00 MESZ
-  const mon = Date.UTC(2026, 9, 19, 9) / 1000, ct = Math.floor(Date.now() / 1000);
-  db.prepare('DELETE FROM ranks').run();
-  for (const [id, sc] of [['W1', 80], ['W2', 91], ['W3', 70]]) db.prepare('INSERT INTO ranks (discord_id,name,games,avg_score,wins,kills,updated_at) VALUES (?,?,?,?,?,?,?)').run(id, 'Spieler' + id, 5, sc, 1, 3, mon - 86400);
+  // Wochen-Cup-Auswertung: Montag 19.10.2026 11:00 MESZ wertet die Woche ab 12.10. aus
+  const mon = Date.UTC(2026, 9, 19, 9) / 1000;
+  db.prepare('DELETE FROM cup').run();
+  const cupIns = (id, wk, g, sc) => db.prepare('INSERT INTO cup (discord_id,week,name,games,score,best,wins,kills,updated_at) VALUES (?,?,?,?,?,?,?,?,?)').run(id, wk, 'Spieler' + id, g, sc, 95, 0, 3, 1);
+  cupIns('W1', '2026-10-12', 5, 80); cupIns('W2', '2026-10-12', 4, 91); cupIns('W3', '2026-10-12', 2, 99); cupIns('W4', '2026-10-19', 9, 99); cupIns('W5', '2026-09-07', 9, 50);
   const e2 = await withCfg(env);
   assert.equal(await C.weeklySweep(e2, Date.UTC(2026, 9, 20, 9) / 1000), undefined); // Dienstag: nichts
-  const d1 = S.dms.length;
-  assert.equal(await C.weeklySweep(e2, mon), 'W2'); assert.equal(await C.weeklySweep(e2, mon + 3600), undefined); // nur einmal pro Woche
-  assert.ok(S.dms.slice(d1).some(d => d.to === 'W2' && /Spieler der Woche/.test(JSON.stringify(d.body))), 'DM an Sieger');
-  assert.equal(db.prepare("SELECT days FROM keys WHERE created_by='bonus' AND days=3").all().length >= 1, true);
+  assert.equal(await C.weeklySweep(e2, Date.UTC(2026, 9, 19, 7) / 1000), undefined); // Montag 9 Uhr: noch nicht
+  const d1 = S.dms.length, p1 = (S.msgs[e2.RANK_CHANNEL_ID] || []).length;
+  assert.equal(await C.weeklySweep(e2, mon), 'W2'); assert.equal(await C.weeklySweep(e2, mon + 3600), undefined); // nur einmal pro Woche, W3 hat zu wenig Runden, W4 zählt erst nächste Woche
+  assert.ok(S.dms.slice(d1).some(d => d.to === 'W2' && /Wochen-Cup gewonnen/.test(JSON.stringify(d.body)) && /\+7 Bonustage/.test(JSON.stringify(d.body))), 'DM an Sieger');
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM keys WHERE created_by='bonus' AND days=7").get().n >= 1, true);
+  const res = S.msgs[e2.RANK_CHANNEL_ID].slice(p1).map(m => JSON.stringify(m)).join(''); assert.match(res, /Cup-Sieger/); assert.ok(res.indexOf('SpielerW2') < res.indexOf('SpielerW1')); assert.ok(!/SpielerW3/.test(res));
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM cup WHERE discord_id='W5'").get().n, 0, 'alte Wochen aufgeräumt');
   // Newsletter: Sonntag 25.10.2026 18:30
   const sun = Date.UTC(2026, 9, 25, 17, 30) / 1000, p0 = S.posts ? S.posts.length : 0;
   await C.newsletterSweep(e2, sun - 7200); await C.newsletterSweep(e2, sun); await C.newsletterSweep(e2, sun + 60);

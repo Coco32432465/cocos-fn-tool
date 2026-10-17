@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.22.0', date: '2026-10-17', tag: 'NEU', text: 'Wöchentlicher Cup: Unter Fortschritt → Wochenziele siehst du deine Cup-Note (Ø deiner besten 5 Noten der Woche, ab 3 Runden gewertet). Mit aktiver Rangliste zählt jede analysierte Runde automatisch. Im Discord steht die Live-Tabelle im Ranglisten-Kanal und unter /rank cup. Jeden Montag um 10 Uhr bekommt Platz 1 7 Bonustage, dann startet der nächste Cup' },
   { v: '0.21.0', date: '2026-10-17', tag: 'UPDATE', vod: 0, text: 'Discord: Wer die Regeln akzeptiert, bekommt jetzt eine Willkommens-DM mit Download, den 3 Schritten zur ersten VOD-Review und einem Button für den 3-Tage-Probe-Key. Das #download-Panel erklärt jetzt die Windows-Warnung beim ersten Start (Weitere Informationen → Trotzdem ausführen)' },
   { v: '0.20.0', date: '2026-10-17', tag: 'NEU', text: 'Wochenziele und Erfolge: Unter Fortschritt gibt es die neuen Tabs „Wochenziele“ (Runden, Top 10, Elims und Ø Note pro Woche, Ziele mit + und − anpassbar) und „Erfolge“ mit 12 Abzeichen. Deine Woche lässt sich als Bild speichern, und im Replay Viewer speichert „Bild teilen“ die aktuelle Runde als Bild. Discord-Einladung aktualisiert' },
   { v: '0.19.1', date: '2026-10-17', tag: 'UPDATE', text: 'Die App heißt jetzt „Ninjago Tools“: neuer Name im Fenster, Startbildschirm, Hauptmenü, auf geteilten Bildern, im Startmenü und beim Discord-Bot. Lizenz, Einstellungen und Replays bleiben wie sie sind.' },

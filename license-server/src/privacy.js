@@ -6,7 +6,7 @@ const ROWS = [{ type: 1, components: [{ type: 2, style: 4, label: 'Meine Daten l
 const CONFIRM = [{ type: 1, components: [{ type: 2, style: 4, label: 'Ja, endgültig löschen', custom_id: 'privacy_do' }, { type: 2, style: 2, label: 'Abbrechen', custom_id: 'privacy_no' }] }];
 
 export const PRIVACY_FIELDS = [
-  { name: 'Was wir speichern', value: '• **Discord-ID und -Name** (beim Verbinden mit Discord, nur Kennung, keine E-Mail, keine Freunde)\\n• **Keys**: Laufzeit, Gerätebindung (anonyme Geräte-Kennung), Zeitpunkt der letzten Nutzung\\n• **App**: Version und „zuletzt online“ (Lebenszeichen alle paar Minuten)\\n• **Rangliste** nur, wenn du freiwillig teilnimmst: Name, Ø Note, Runden, Siege, Kills\\n• **Tickets**: Chatverlauf als Transkript für das Team, Zahlungsnachweise\\n• Umfragestimmen, Giveaway-Teilnahmen, Erinnerungen, Creator-Codes' },
+  { name: 'Was wir speichern', value: '• **Discord-ID und -Name** (beim Verbinden mit Discord, nur Kennung, keine E-Mail, keine Freunde)\\n• **Keys**: Laufzeit, Gerätebindung (anonyme Geräte-Kennung), Zeitpunkt der letzten Nutzung\\n• **App**: Version und „zuletzt online“ (Lebenszeichen alle paar Minuten)\\n• **Rangliste** nur, wenn du freiwillig teilnimmst: Name, Ø Note, Runden, Siege, Kills und deine Wochenwerte für den Cup\\n• **Tickets**: Chatverlauf als Transkript für das Team, Zahlungsnachweise\\n• Umfragestimmen, Giveaway-Teilnahmen, Erinnerungen, Creator-Codes' },
   { name: 'Was NICHT passiert', value: 'Deine Replays und Analysen bleiben **lokal auf deinem PC**. Wir lesen keine Epic-Zugangsdaten, keine Nachrichten außerhalb des Bots und verkaufen nichts an Dritte.' },
   { name: 'Wofür', value: 'Lizenzprüfung und Support (Vertragserfüllung), Missbrauchsschutz und Statistiken für das Team (berechtigtes Interesse), Rangliste und Community-Funktionen (deine Einwilligung).' },
   { name: 'Dienstleister', value: 'Discord (Server, Login), Cloudflare (Hosting des Lizenz-Servers, Datenbank), GitHub (App-Updates), PayPal (Zahlung, läuft direkt zwischen dir und uns).' },
@@ -32,7 +32,7 @@ export const askDelete = env => ({ type: 4, data: { flags: 64, embeds: [emb(env,
 
 export async function doDelete(i, env, uid) {
   for (const [sql, ...b] of [
-    ['DELETE FROM sessions WHERE discord_id=?', uid], ['DELETE FROM logins WHERE discord_id=?', uid], ['DELETE FROM ranks WHERE discord_id=?', uid], ['DELETE FROM team_members WHERE user_id=?', uid],
+    ['DELETE FROM sessions WHERE discord_id=?', uid], ['DELETE FROM logins WHERE discord_id=?', uid], ['DELETE FROM ranks WHERE discord_id=?', uid], ['DELETE FROM cup WHERE discord_id=?', uid], ['DELETE FROM team_members WHERE user_id=?', uid],
     ['DELETE FROM poll_votes WHERE user_id=?', uid], ['DELETE FROM gw_entries WHERE user_id=?', uid], ['DELETE FROM reminders WHERE user_id=?', uid],
     ['UPDATE keys SET last_seen=NULL WHERE discord_id=?', uid]]) { await env.DB.prepare(sql).bind(...b).run().catch(() => {}); }
   return { type: 7, data: { embeds: [emb(env, { title: '✅ Daten gelöscht', color: COL.ok, desc: 'App-Verbindungen, Rangliste, Stimmen, Giveaway-Teilnahmen und Erinnerungen sind entfernt. Für ein Ticket-Transkript oder weitere Anliegen öffne bitte ein Support-Ticket.' })], components: [] } };
