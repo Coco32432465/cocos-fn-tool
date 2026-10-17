@@ -1,4 +1,4 @@
-/* Cocos Tool – Runde als Bild teilen (PNG für Discord, TikTok, Instagram).
+/* Ninjago Tools – Runde als Bild teilen (PNG für Discord, TikTok, Instagram).
  * cardData() ist rein (Tests in Node), draw()/save() laufen nur im Browser. */
 (function (root) {
   'use strict';
@@ -28,7 +28,7 @@
       date: g && g.mtime ? new Date(g.mtime).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''
     };
   };
-  SH.fileName = function (d) { return 'cocos-tool-' + String(d.title || 'game').toLowerCase().replace(/[^a-z0-9äöüß]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) + '.png'; };
+  SH.fileName = function (d) { return 'ninjago-tools-' + String(d.title || 'game').toLowerCase().replace(/[^a-z0-9äöüß]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) + '.png'; };
 
   function css(name, fb) { try { var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fb; } catch (e) { return fb; } }
   function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
@@ -48,8 +48,8 @@
     for (var y = 0; y < H; y += 54) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
     var P = 80, st = H > 1500, V = function (v) { return Math.round(v * (st ? 1.18 : 0.9)); }, cy = st ? 230 : 104;
     c.textBaseline = 'alphabetic'; c.textAlign = 'left';
-    c.fillStyle = '#fff'; c.font = '900 46px Orbitron, sans-serif'; c.fillText('COCOS', P, cy);
-    var cw = c.measureText('COCOS ').width; c.fillStyle = acc; c.shadowColor = acc; c.shadowBlur = 24; c.fillText('TOOL', P + cw, cy); c.shadowBlur = 0;
+    c.fillStyle = '#fff'; c.font = '900 46px Orbitron, sans-serif'; c.fillText('NINJAGO', P, cy);
+    var cw = c.measureText('NINJAGO ').width; c.fillStyle = acc; c.shadowColor = acc; c.shadowBlur = 24; c.fillText('TOOLS', P + cw, cy); c.shadowBlur = 0;
     c.textAlign = 'right'; c.fillStyle = '#9a9aa6'; c.font = '600 30px Rajdhani, sans-serif'; c.fillText(d.date, W - P, cy); c.textAlign = 'left';
     cy += V(90);
     c.fillStyle = acc2; c.font = '700 30px Rajdhani, sans-serif'; c.fillText([d.win ? 'VICTORY ROYALE' : 'ROUND REPORT', d.mode].filter(Boolean).join('  ·  ').toUpperCase(), P, cy);
@@ -87,7 +87,7 @@
     }
     /* Fuß */
     c.textAlign = 'center'; c.fillStyle = '#9a9aa6'; c.font = '600 30px Rajdhani, sans-serif';
-    c.fillText('Analysiert mit Cocos Tool  ·  ' + ((root.CFT_CONFIG && root.CFT_CONFIG.discordInvite) || '').replace(/^https?:\/\//, ''), W / 2, H - (st ? 70 : 40));
+    c.fillText('Analysiert mit Ninjago Tools  ·  ' + ((root.CFT_CONFIG && root.CFT_CONFIG.discordInvite) || '').replace(/^https?:\/\//, ''), W / 2, H - (st ? 70 : 40));
     c.textAlign = 'left';
     return cv;
   };

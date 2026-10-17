@@ -37,7 +37,7 @@ export async function syncStatus(env) {
   const msg = await getCfg(env, 'posted:status');
   if (msg && env.STATUS_CHANNEL_ID && /^\d+$/.test(msg)) {
     await editMsg(env, env.STATUS_CHANNEL_ID, msg, {
-      embeds: [emb(env, { title: '📊 Cocos Tool · Status', color: 0x2ecc71, desc: '🟢 **Lizenz-Server online**', fields: [
+      embeds: [emb(env, { title: '📊 Ninjago Tools · Status', color: 0x2ecc71, desc: '🟢 **Lizenz-Server online**', fields: [
         { name: 'Aktuelle Version', value: `**v${rel.tag}**`, inline: true },
         { name: 'Veröffentlicht', value: rel.at ? `<t:${rel.at}:R>` : '–', inline: true },
         { name: 'Aktive Lizenzen', value: String(act), inline: true },

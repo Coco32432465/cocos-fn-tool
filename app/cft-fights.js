@@ -1,4 +1,4 @@
-/* Coco's Fn Tool – Fight-Analyse
+/* Ninjago Tools – Fight-Analyse
  *
  * Findet alle Kämpfe deines Teams in einem geparsten Replay (R aus CFT.parse) und bewertet jeden:
  * Ausgangslage (HP/Schild, Mats, Höhe, Mates in der Nähe, Gegner in der Nähe), Ausgang und was besser gewesen wäre.

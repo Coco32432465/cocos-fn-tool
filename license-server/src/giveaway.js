@@ -31,7 +31,7 @@ const countOf = async (env, id) => (await env.DB.prepare('SELECT COUNT(*) AS n F
 const mrow = (id, label, style, max, ph, req = true) => ({ type: 1, components: [{ type: 4, custom_id: id, label, style, max_length: max, required: req, placeholder: ph }] });
 const mval = (i, id) => { for (const r of i.data.components || []) for (const c of r.components || []) if (c.custom_id === id) return String(c.value || '').trim(); return ''; };
 export const openGiveawayModal = () => ({ type: 9, data: { custom_id: 'modal_giveaway', title: 'Giveaway starten', components: [
-  mrow('f_prize', 'Was gibt es zu gewinnen?', 1, 200, 'z. B. 1 Monat Cocos Tool Lizenz'),
+  mrow('f_prize', 'Was gibt es zu gewinnen?', 1, 200, 'z. B. 1 Monat Ninjago Tools Lizenz'),
   mrow('f_dur', 'Dauer (z. B. 30m, 2h, 3d)', 1, 6, '3d'),
   mrow('f_win', 'Anzahl Gewinner (1 bis 10)', 1, 2, '1', false)] } });
 

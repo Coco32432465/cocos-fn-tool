@@ -1,4 +1,4 @@
-/* Cocos Tool – Zusatz-Modi (Overlay über dem Menü): Fortschritt & Training, Landung & Rotation, Patchnotes.
+/* Ninjago Tools – Zusatz-Modi (Overlay über dem Menü): Fortschritt & Training, Landung & Rotation, Patchnotes.
  * Eigenständig: legt CSS und DOM selbst an, nutzt nur die Theme-Variablen der App und CFT.stats. */
 (function () {
   'use strict';

@@ -33,7 +33,7 @@ export function patchEmbed(env, n) {
   const [label, color] = TAGS[n.tag] || ['🆕 Update', COL.brand];
   const ts = /^\d{4}-\d{2}-\d{2}$/.test(n.date) ? Math.floor(Date.parse(n.date + 'T12:00:00Z') / 1000) : Math.floor(Date.now() / 1000);
   const e = {
-    author: { name: 'COCOS TOOL · PATCHNOTES', icon_url: env.ICON_URL && env.ICON_URL !== '-' ? env.ICON_URL : DEFAULT_ICON },
+    author: { name: 'NINJAGO TOOLS · PATCHNOTES', icon_url: env.ICON_URL && env.ICON_URL !== '-' ? env.ICON_URL : DEFAULT_ICON },
     title: `⚡ Version ${n.v} ist da!`,
     description: `**${label}**\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n${bullets(n.text)}\n\n▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬`,
     color,
@@ -42,7 +42,7 @@ export function patchEmbed(env, n) {
       { name: '📆 Datum', value: `<t:${ts}:D>`, inline: true },
       { name: '⬇️ Update', value: 'Lädt die App automatisch', inline: true }
     ],
-    footer: { text: `Cocos Tool · v${n.v} · ${n.tag}` },
+    footer: { text: `Ninjago Tools · v${n.v} · ${n.tag}` },
     timestamp: new Date(ts * 1000).toISOString()
   };
   if (env.ICON_URL !== '-') e.thumbnail = { url: env.ICON_URL || DEFAULT_ICON };
@@ -55,7 +55,7 @@ async function ensureChannel(env) {
   const ex = chans.find(c => c.type === 0 && baseCh(c.name) === 'patchnotes');
   if (ex) return ex;
   const ann = chans.find(c => c.type === 0 && baseCh(c.name) === 'announcements') || chans.find(c => c.type === 0 && baseCh(c.name) === 'rules');
-  const body = { name: '🧩│patchnotes', type: 0, topic: 'Patchnotes zu Cocos Tool – neue Versionen erscheinen hier automatisch' };
+  const body = { name: '🧩│patchnotes', type: 0, topic: 'Patchnotes zu Ninjago Tools – neue Versionen erscheinen hier automatisch' };
   if (ann) { body.parent_id = ann.parent_id; body.permission_overwrites = ann.permission_overwrites; }
   const r = await dapi(env, 'POST', `/guilds/${env.GUILD_ID}/channels`, body);
   return r.ok ? r.data : null;

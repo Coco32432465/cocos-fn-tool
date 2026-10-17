@@ -8,7 +8,7 @@ export function reminderPayload(env, row) {
   const left = Math.max(1, Math.ceil((row.expires_at - now()) / 86400));
   return { embeds: [emb(env, {
     title: '⏰ Deine Lizenz läuft bald ab', color: 0xf1c40f,
-    desc: `Deine Cocos-Tool-Lizenz endet in **${left} Tag${left === 1 ? '' : 'en'}**. Verlängere **vor Ablauf** und du bekommst **+1 Bonustag** geschenkt.`,
+    desc: `Deine Ninjago-Tools-Lizenz endet in **${left} Tag${left === 1 ? '' : 'en'}**. Verlängere **vor Ablauf** und du bekommst **+1 Bonustag** geschenkt.`,
     fields: [
       { name: 'Läuft ab am', value: `**${fmtDate(row.expires_at)}**`, inline: true },
       { name: 'Aktuelle Laufzeit', value: (PLAN_ALL[row.plan] || {}).label || row.plan, inline: true },

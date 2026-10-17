@@ -1,4 +1,4 @@
-/* Cocos Tool – Auswertungen über mehrere Games (Trend, Schwächen, Trainingsplan, Landeorte, Rotation)
+/* Ninjago Tools – Auswertungen über mehrere Games (Trend, Schwächen, Trainingsplan, Landeorte, Rotation)
  * Reine Funktionen auf CFT.games (siehe cft-import.js). Läuft im Browser (window.CFT.stats) und in Node (Tests). */
 (function (root) {
   'use strict';

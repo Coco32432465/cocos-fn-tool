@@ -24,7 +24,7 @@ export async function statsEmbed(env) {
   const rk = await one(env, 'SELECT COUNT(*) AS n FROM ranks');
   const g = await dapi(env, 'GET', `/guilds/${env.GUILD_ID}?with_counts=true`);
   const mem = g.ok && g.data ? g.data : {};
-  return emb(env, { title: '📈 Cocos Tool · Live-Stats', color: COL.brand, fields: [
+  return emb(env, { title: '📈 Ninjago Tools · Live-Stats', color: COL.brand, fields: [
     { name: '🟢 App jetzt online', value: `**${app.now10 || 0}** (letzte 10 Min)\nHeute aktiv: ${app.d1 || 0}\n7 Tage aktiv: ${app.d7 || 0}\nMit Discord verbunden: ${app.tot || 0}`, inline: true },
     { name: '🔑 Keys', value: `Eingelöst gesamt: **${k.used || 0}**\nAktiv: **${k.act || 0}** (${dev.n || 0} mit Gerät)\nLäuft in 3 Tagen ab: ${k.soon || 0}\nAbgelaufen: ${k.exp || 0} · Gesperrt: ${k.rev || 0}\nNoch nicht eingelöst: ${k.unused || 0}`, inline: true },
     { name: '💶 Umsatz', value: `7 Tage: **${eur(s7.sum)}** (${s7.n})\n30 Tage: **${eur(s30.sum)}** (${s30.n})`, inline: true },

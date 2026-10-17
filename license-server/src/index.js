@@ -1,4 +1,4 @@
-// Coco's Fn Tool – Lizenz-Server + Discord-Bot (Cloudflare Worker, D1/SQLite)
+// Ninjago Tools – Lizenz-Server + Discord-Bot (Cloudflare Worker, D1/SQLite)
 //   POST /interactions        Discord (Slash-Commands, Buttons, Dropdowns)
 //   GET  /patchnotes          postet neue Patchnotes aus GitHub als Embed in den Patchnotes-Kanal (idempotent)
 //   GET  /download           leitet direkt auf die neueste Setup-Datei weiter
@@ -189,7 +189,7 @@ async function handleInteraction(i, env, ctx) {
     if (id === 'rules_accept') {
       if (!env.MEMBER_ROLE_ID) return bad(env, 'Noch nicht eingerichtet', 'Das Team muss zuerst `/setup` ausführen.');
       const r = await addRole(env, uid, env.MEMBER_ROLE_ID);
-      if (r.ok && env.GENERAL_CHANNEL_ID) ctx.waitUntil(dapi(env, 'POST', `/channels/${env.GENERAL_CHANNEL_ID}/messages`, { embeds: [emb(env, { title: '👋 Neues Mitglied', color: COL.ok, desc: `Willkommen auf dem Server, <@${uid}>! Schau in <#${env.PANEL_CHANNEL_ID || env.GENERAL_CHANNEL_ID}> vorbei, wenn du Cocos Tool holen möchtest.` })], allowed_mentions: { users: [uid] } }));
+      if (r.ok && env.GENERAL_CHANNEL_ID) ctx.waitUntil(dapi(env, 'POST', `/channels/${env.GENERAL_CHANNEL_ID}/messages`, { embeds: [emb(env, { title: '👋 Neues Mitglied', color: COL.ok, desc: `Willkommen auf dem Server, <@${uid}>! Schau in <#${env.PANEL_CHANNEL_ID || env.GENERAL_CHANNEL_ID}> vorbei, wenn du Ninjago Tools holen möchtest.` })], allowed_mentions: { users: [uid] } }));
       return r.ok ? eph(env, { title: 'Willkommen', color: COL.ok, desc: 'Du hast die Regeln akzeptiert und die Rolle **Member** erhalten.' }) : bad(env, 'Rolle nicht vergeben', 'Bitte melde dich beim Team.');
     }
     return bad(env, 'Unbekannte Aktion', '');

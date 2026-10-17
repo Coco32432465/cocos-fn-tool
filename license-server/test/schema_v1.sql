@@ -1,4 +1,4 @@
--- Datenbank-Schema fuer Coco's Fn Tool Lizenz-Server (Cloudflare D1)
+-- Datenbank-Schema fuer Ninjago Tools Lizenz-Server (Cloudflare D1)
 CREATE TABLE IF NOT EXISTS keys (
   key         TEXT PRIMARY KEY,
   discord_id  TEXT NOT NULL,
