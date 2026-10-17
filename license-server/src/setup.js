@@ -6,6 +6,7 @@ import { PRIVACY_FIELDS } from './privacy.js';
 import { dapi, setCfg, getCfg } from './discord.js';
 import { boardEmbed } from './rank.js';
 import { downloadComponents } from './panels.js';
+import { renamePatchnotes } from './patchnotes.js';
 
 const VIEW = 1024, HIST = 65536, SEND = 2048;
 const ROLES = [
@@ -172,6 +173,7 @@ export async function runSetup(env, renew) {
       const p = await dapi(env, 'POST', `/channels/${cid}/messages`, payload);
       if (p.ok) { await setCfg(env, 'posted:' + flag, p.data.id); L(`Nachricht ${flag}: gepostet`); } else L(`Nachricht ${flag}: Fehler (${p.status})`);
     }
+    if (renew) { const n = await renamePatchnotes(env); if (n) L(`Patchnotes: ${n} alte Posts auf den neuen Namen umgestellt`); }
   } catch (e) {
     if (String(e.message) === 'BUDGET') partial = true; else L('Fehler: ' + e.message);
   }
