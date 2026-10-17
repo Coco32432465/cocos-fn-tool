@@ -174,7 +174,7 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
   async function season(action, body) {
     const s = load();
     if (!enabled() || !s.session) return { ok: false, error: 'Bitte zuerst mit Discord verbinden.' };
-    if (!['me', 'claim'].includes(action)) return { ok: false, error: 'Unbekannte Aktion.' };
+    if (!['me', 'claim', 'spin'].includes(action)) return { ok: false, error: 'Unbekannte Aktion.' };
     const b = { session: s.session };
     if (action === 'claim') { b.season = String((body && body.season) || '').slice(0, 7); b.level = Number(body && body.level); b.xp = Number(body && body.xp); }
     try { const j = await post('/season/' + action, b); if (j && j.error === 'session') return { ok: false, error: 'Sitzung abgelaufen. Bitte neu mit Discord verbinden.' }; return j || { ok: false, error: 'Keine Antwort.' }; }

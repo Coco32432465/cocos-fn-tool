@@ -56,4 +56,14 @@ console.log('notify ok');
 // Server-Titel (Clip des Monats)
 assert.deepStrictEqual(S.entTitles(['tw', 'title:clip', 'pass:2026-10']), ['🎬 Clip des Monats']);
 assert.deepStrictEqual(S.entTitles(null), []);
+// seltene Daily-Spin-Gewinne
+assert.deepStrictEqual(S.entTitles(['title:spin']), ['🍀 Glückspilz']);
+assert.deepStrictEqual(S.entThemes(['theme:spin', 'tw']), ['glueck']);
+assert.strictEqual(S.SPIN_RARE.reduce((a, p) => a + p.w, 0), 9);
+{
+  const T0 = Date.UTC(2026, 9, 17, 12), day = S.dayKey(T0), raw = { last: day, streak: 1, prize: { id: 'xp20' }, rare: { prize: { id: 'theme', label: 'x' } } };
+  assert.strictEqual(S.spinState(raw, T0).rare.prize.id, 'theme');
+  assert.strictEqual(S.spinState(raw, T0 + 864e5).rare, null); // am nächsten Tag weg
+  assert.ok(S.spinRareInfo('title').includes('Season-Pass'));
+}
 console.log('ent titles ok');

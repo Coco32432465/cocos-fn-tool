@@ -352,7 +352,7 @@
   }
   function saveUnlocks(sn) { // Kosmetik bleibt dauerhaft freigeschaltet, auch nach Season-Ende
     var c = ST.passCosmetics(sn.level, sn.premium), u = store.get('cft_unl') || { themes: [], titles: [] };
-    c.themes.forEach(function (x) { if (u.themes.indexOf(x) < 0) u.themes.push(x); }); c.titles.concat(ST.entTitles(SN.ents)).forEach(function (x) { if (u.titles.indexOf(x) < 0) u.titles.push(x); });
+    c.themes.concat(ST.entThemes(SN.ents)).forEach(function (x) { if (u.themes.indexOf(x) < 0) u.themes.push(x); }); c.titles.concat(ST.entTitles(SN.ents)).forEach(function (x) { if (u.titles.indexOf(x) < 0) u.titles.push(x); });
     store.set('cft_unl', u); return u;
   }
   window.cftSeasonRefresh = function () {
@@ -537,6 +537,8 @@
       + '#cm .spi .tip{margin-top:14px}#cm .spst{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}#cm .spst div{background:#0c0c11;border:1px solid #ffffff14;border-radius:12px;padding:12px 14px}#cm .spst b{display:block;font:800 26px Orbitron,sans-serif;color:#fff}#cm .spst span{color:var(--mute);font-size:12px;letter-spacing:.12em;text-transform:uppercase}'
       + '#cm .spgo{width:100%;font:800 22px Rajdhani,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#fff;background:linear-gradient(180deg,var(--acc),rgba(var(--rgb),.55));border:0;border-radius:14px;padding:18px;cursor:pointer;box-shadow:0 0 30px rgba(var(--rgb),.45)}#cm .spgo:hover{filter:brightness(1.15)}#cm .spgo[disabled]{background:#1a1f30;color:var(--mute);box-shadow:none;cursor:default;filter:none}'
       + '#cm .spod{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}#cm .spod i{font-style:normal;font:700 13px Rajdhani,sans-serif;letter-spacing:.06em;padding:4px 10px;border-radius:99px;border:1px solid #ffffff22;color:var(--mute)}'
+      + '#cm .sprr{margin-top:14px;padding:12px 14px;border-radius:12px;border:1px solid #ffffff1c;background:#0c0c11;font-size:16px;color:var(--mute)}#cm .sprr.win{border-color:#ffd04a;background:linear-gradient(135deg,#ffd04a22,#22c55e18);color:var(--txt);box-shadow:0 0 24px #ffd04a33}#cm .sprr.win b{display:block;font:800 22px Orbitron,sans-serif;color:#ffd04a;margin:2px 0 4px}'
+      + '#cm .spod i.rr{border-color:#ffd04a66;color:#ffd04a}'
       + '#cm .cf{position:absolute;top:-10px;width:8px;height:14px;opacity:0;animation:cmcf 1.8s ease-out forwards}@keyframes cmcf{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(340px) rotate(540deg)}}';
     document.head.appendChild(e);
   }
@@ -563,6 +565,31 @@
     var cols = ['#ffd04a', '#4aa8ff', '#ff5a8a', '#6dff9c', '#c68bff'];
     for (var i = 0; i < 46; i++) { var d = document.createElement('div'); d.className = 'cf'; d.style.left = (Math.random() * 100) + '%'; d.style.background = cols[i % cols.length]; d.style.animationDelay = (Math.random() * .5) + 's'; box.appendChild(d); }
   }
+  // Seltene Gewinne würfelt der Server einmal am Tag (nur mit Discord-Verbindung)
+  function rareHtml(sp) {
+    if (!hasSeason()) return '';
+    var r = sp.rare;
+    if (!sp.prize) return '<div class="sprr">✨ Mit jedem Dreh hast du zusätzlich die Chance auf einen seltenen Gewinn: Farbschema, Titel oder Bonustag.</div>';
+    if (!r) return SPN.rolling ? '<div class="sprr">✨ Prüfe seltenen Gewinn …</div>' : '';
+    if (r.prize) return '<div class="sprr win">✨ Seltener Gewinn!<b>' + esc(r.prize.label) + '</b>' + esc(ST.spinRareInfo(r.prize.id)) + '</div>';
+    if (r.err) return '<div class="sprr">✨ ' + esc(r.err) + '</div>';
+    return '<div class="sprr">✨ Heute kein seltener Gewinn. Morgen neues Glück!</div>';
+  }
+  function spinRare(w) {
+    var st = store.get('cft_spin'); if (!hasSeason() || !st || st.rare || SPN.rolling) return;
+    SPN.rolling = true;
+    var done = function (rare) {
+      SPN.rolling = false; var cur = store.get('cft_spin') || {}; if (cur.last !== st.last) return;
+      cur.rare = rare; store.set('cft_spin', cur);
+      var p = rare.prize && ST.SPIN_RARE.filter(function (x) { return x.id === rare.prize.id; })[0];
+      if (p && p.ent && SN.ents.indexOf(p.ent) < 0) { SN.ents.push(p.ent); if (window.cftSeasonRefresh) window.cftSeasonRefresh(); if (window.fn.licRefresh) window.fn.licRefresh().catch(function () {}); }
+      if (w.isConnected && $('spgo')) renderSpin(w, !!rare.prize);
+    };
+    window.fn.season('spin').then(function (r) {
+      if (r && r.ok) return done({ prize: r.prize || null });
+      done({ err: /Discord|Sitzung/.test((r && r.error) || '') ? 'Verbinde die App mit Discord, dann hast du bei jedem Dreh die Chance auf seltene Gewinne.' : 'Seltener Gewinn gerade nicht prüfbar.', retry: 1 });
+    }, function () { done({ err: 'Seltener Gewinn gerade nicht prüfbar.', retry: 1 }); });
+  }
   function renderSpin(w, fresh) {
     spinStyle();
     var P = ST.SPIN_PRIZES, n = P.length, seg = 360 / n, sp = ST.spinState(store.get('cft_spin')), pr = sp.prize;
@@ -573,7 +600,9 @@
         : '<div class="big">1× pro Tag</div><p>Dreh das Rad für Bonus-XP im Season-Pass und eine Tagesmission. Je mehr Tage in Folge, desto mehr Streak-Bonus (bis +35 XP).</p>')
       + '<div class="spst"><div><b>' + sp.streak + '</b><span>Tage Streak</span></div><div><b>' + sp.bonus + '</b><span>Bonus-XP Season</span></div><div><b>' + sp.spins + '</b><span>Drehs gesamt</span></div></div>'
       + '<button class="spgo" id="spgo"' + (sp.can && !SPN.busy ? '' : ' disabled') + '>' + (sp.can ? 'Jetzt drehen' : 'Morgen wieder · 0:00 Uhr') + '</button>'
-      + '<div class="spod">' + P.map(function (p) { return '<i>' + esc(p.label.replace('JACKPOT ', '')) + ' · ' + Math.round(100 * p.w / sum) + ' %</i>'; }).join('') + '</div></div>';
+      + rareHtml(sp)
+      + '<div class="spod">' + P.map(function (p) { return '<i>' + esc(p.label.replace('JACKPOT ', '')) + ' · ' + Math.round(100 * p.w / sum) + ' %</i>'; }).join('')
+      + (hasSeason() ? ST.SPIN_RARE.map(function (p) { return '<i class="rr" title="Seltener Gewinn, würfelt der Server">✨ ' + esc(p.label) + ' · ' + p.w + ' %</i>'; }).join('') : '') + '</div></div>';
     w.innerHTML = '<div class="spw"><div class="spr">' + wheelSvg(P, rest) + '</div>' + right + '</div>';
     if (fresh) confetti($('spi'));
     var go = $('spgo'); if (!go) return;
@@ -588,12 +617,18 @@
         wh.style.transform = 'rotate(' + (end * e) + 'deg)';
         if (k < 1) { SPN.raf = requestAnimationFrame(step); return; }
         store.set('cft_spin', r.state); SPN.busy = false; if (window.cftSeasonRefresh) window.cftSeasonRefresh();
+        spinRare(w);
         if (window.cftRankSync) { try { window.cftRankSync(); } catch (x) { /* egal */ } }
         if ($('spgo')) renderSpin(w, true);
       })(t0);
     };
   }
-  MODES.spin = { title: 'Daily Spin', tabs: [], render: function (t, w) { cancelAnimationFrame(SPN.raf); SPN.busy = false; renderSpin(w); } };
+  MODES.spin = { title: 'Daily Spin', tabs: [], render: function (t, w) {
+    cancelAnimationFrame(SPN.raf); SPN.busy = false;
+    var sp = ST.spinState(store.get('cft_spin'));
+    if (sp.prize && sp.rare && sp.rare.retry && !SPN.rolling) { var st = store.get('cft_spin'); delete st.rare; store.set('cft_spin', st); }
+    renderSpin(w); if (sp.prize) spinRare(w);
+  } };
   bind('mtSpin', 'spin');
   bind('mtDrop', 'drop');
   /* ---------- Patchnotes ---------- */

@@ -24,9 +24,11 @@
     bl:mk('Blau · Lila',2,'#3B82F6','#A855F7'),
     gb:mk('Grün · Blau',2,'#10E5A0','#2F7BFF'),
     neon:mk('Neon · Pink',1,'#FF2BD6'),cyan:mk('Season · Cyan',1,'#00E5FF'),toxic:mk('Toxic · Lime',1,'#B6FF00'),
-    sunset:mk('Sunset',2,'#FF7A18','#FF2BD6'),ice:mk('Ice',2,'#7DD3FC','#E0F2FE'),prism:mk('Prism',2,'#A855F7','#00E5FF')
+    sunset:mk('Sunset',2,'#FF7A18','#FF2BD6'),ice:mk('Ice',2,'#7DD3FC','#E0F2FE'),prism:mk('Prism',2,'#A855F7','#00E5FF'),
+    glueck:mk('Glückspilz',2,'#22C55E','#FFD04A')
   };
-  ['neon','cyan','toxic','sunset','ice','prism'].forEach(function(k){T[k].lock=1}); // Season-Pass-Belohnungen
+  ['neon','cyan','toxic','sunset','ice','prism','glueck'].forEach(function(k){T[k].lock=1}); // Season-Pass-Belohnungen, glueck = seltener Daily-Spin-Gewinn
+  T.glueck.how='Seltener Daily-Spin-Gewinn';
   window.cftUnlocked=function(k){if(!T[k]||!T[k].lock)return true;try{return((JSON.parse(localStorage.getItem('cft_unl'))||{}).themes||[]).indexOf(k)>=0}catch(e){return false}};
   function apply(n,save){
     if(!T[n])n='rot';var t=T[n],s=document.documentElement.style;
@@ -2009,7 +2011,7 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
       h+='<h4 class="thg">'+G[g]+'</h4>';
       Object.keys(T).filter(function(k){return(T[k].grp||1)===g}).forEach(function(k){var t=T[k];
         var lk=!window.cftUnlocked(k);
-        h+='<button data-t="'+k+'"'+(lk?' disabled title="Season-Pass-Belohnung"':'')+' class="'+(k===cur?'on':'')+'"'+(lk?' style="opacity:.38;cursor:not-allowed"':'')+'><span class="sw" style="background:linear-gradient(135deg,#0A0A0C 40%,rgb('+t.deep+'))"><b style="background:linear-gradient(135deg,'+t.acc+','+t.acc2+');box-shadow:0 0 14px '+t.acc+'"></b><i style="background:linear-gradient(90deg,'+(g===2?t.acc+','+t.acc2:t.dark+','+t.acc+','+t.light)+')"></i></span>'+(lk?'🔒 ':'')+t.name+'</button>'})});
+        h+='<button data-t="'+k+'"'+(lk?' disabled title="'+(t.how||'Season-Pass-Belohnung')+'"':'')+' class="'+(k===cur?'on':'')+'"'+(lk?' style="opacity:.38;cursor:not-allowed"':'')+'><span class="sw" style="background:linear-gradient(135deg,#0A0A0C 40%,rgb('+t.deep+'))"><b style="background:linear-gradient(135deg,'+t.acc+','+t.acc2+');box-shadow:0 0 14px '+t.acc+'"></b><i style="background:linear-gradient(90deg,'+(g===2?t.acc+','+t.acc2:t.dark+','+t.acc+','+t.light)+')"></i></span>'+(lk?'🔒 ':'')+t.name+'</button>'})});
     $('stgt').innerHTML=h;
     [].forEach.call($('stgt').querySelectorAll('button'),function(b){b.onclick=function(){window.applyTheme(b.dataset.t);cards()}});
   }

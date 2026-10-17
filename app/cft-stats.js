@@ -313,7 +313,7 @@
     var bonus = st.season === sid ? (+st.bonus || 0) : 0, last = +st.last || 0;
     var y = new Date(now == null ? Date.now() : now); y.setUTCDate(y.getUTCDate() - 1);
     var streak = last === today ? (+st.streak || 1) : last === S.dayKey(y.getTime()) ? (+st.streak || 0) : 0;
-    return { last: last, streak: streak, bonus: bonus, season: sid, can: last !== today, today: today, total: +st.total || 0, spins: +st.spins || 0, prize: last === today ? st.prize || null : null, mission: last === today ? st.mission || null : null };
+    return { last: last, streak: streak, bonus: bonus, season: sid, can: last !== today, today: today, total: +st.total || 0, spins: +st.spins || 0, prize: last === today ? st.prize || null : null, mission: last === today ? st.mission || null : null, rare: last === today ? st.rare || null : null };
   };
   /* ---------- Erinnerung: heute noch nicht gedreht ---------- */
   S.NOTIFY_DEFAULT = { spin: true, upd: true, hour: 18 };
@@ -359,8 +359,14 @@
       into: level >= S.MAX_LEVEL ? S.LEVEL_XP : xp - level * S.LEVEL_XP, pct: Math.min(100, Math.round(100 * xp / cap)), max: level >= S.MAX_LEVEL };
   };
   /** Titel, die der Server vergibt (Entitlements), z. B. Clip des Monats */
-  S.ENT_TITLES = { 'title:clip': '🎬 Clip des Monats' };
+  S.ENT_TITLES = { 'title:clip': '🎬 Clip des Monats', 'title:spin': '🍀 Glückspilz' };
   S.entTitles = function (ents) { return (ents || []).map(function (e) { return S.ENT_TITLES[e]; }).filter(Boolean); };
+  /** Farbschemas, die der Server vergibt (seltener Daily-Spin-Gewinn) */
+  S.ENT_THEMES = { 'theme:spin': 'glueck' };
+  S.entThemes = function (ents) { return (ents || []).map(function (e) { return S.ENT_THEMES[e]; }).filter(Boolean); };
+  /** seltene Daily-Spin-Gewinne (würfelt der Server, Gewichte je 100 Drehs wie in license-server/src/season.js) */
+  S.SPIN_RARE = [{ id: 'day', w: 2, label: '+1 Bonustag', ent: '' }, { id: 'theme', w: 3, label: 'Farbschema Glückspilz', ent: 'theme:spin' }, { id: 'title', w: 4, label: 'Titel 🍀 Glückspilz', ent: 'title:spin' }];
+  S.spinRareInfo = function (id) { return { day: 'Deine Lizenz läuft einen Tag länger.', theme: 'Einstellungen → Farbschema → Glückspilz', title: 'Season-Pass → Dein Titel → 🍀 Glückspilz' }[id] || ''; };
   /** Kosmetik, die zu Level/Premium freigeschaltet ist: { themes: [...], titles: [...] } */
   S.passCosmetics = function (level, premium) {
     var out = { themes: [], titles: [] };
