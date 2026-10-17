@@ -37,7 +37,7 @@ export const price = (env, planId) => ({ week: env.PRICE_WEEK, month: env.PRICE_
 /* ---------- Embeds ---------- */
 export const COL = { brand: 0x1e6bff, ok: 0x2ecc71, bad: 0xe5484d, neutral: 0x4f545c };
 export const DEFAULT_ICON = 'https://raw.githubusercontent.com/Coco32432465/cocos-fn-tool/main/app/icon.png';
-export const BANNER = 'https://raw.githubusercontent.com/Coco32432465/cocos-fn-tool/main/app/banner.gif';
+export const BANNER = 'https://raw.githubusercontent.com/Coco32432465/cocos-fn-tool/main/app/banner.gif?v=ninjago';
 export function emb(env, o) {
   const e = { title: o.title, color: o.color == null ? COL.brand : o.color, footer: { text: "Ninjago Tools" }, timestamp: new Date().toISOString() };
   if (o.desc) e.description = o.desc;

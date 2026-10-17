@@ -100,8 +100,9 @@ export async function runSetup(env, renew) {
         const ex = chans.find(c => c.type === typ && baseCh(c.name) === name) || (RENAMED[name] && chans.find(c => c.type === typ && baseCh(c.name) === RENAMED[name]));
         if (ex) {
           ids[name] = ex.id;
-          if (ex.name !== want || ex.parent_id !== cat.id || normOv(ex.permission_overwrites) !== normOv(ov)) {
-            const c = await dapi(env, 'PATCH', `/channels/${ex.id}`, { name: want, parent_id: cat.id, permission_overwrites: ov });
+          const topicOld = kind !== 'voice' && topic != null && (ex.topic || '') !== topic;
+          if (ex.name !== want || ex.parent_id !== cat.id || normOv(ex.permission_overwrites) !== normOv(ov) || topicOld) {
+            const c = await dapi(env, 'PATCH', `/channels/${ex.id}`, { name: want, parent_id: cat.id, permission_overwrites: ov, ...(kind !== 'voice' ? { topic } : {}) });
             L(`#${name}: ${c.ok ? 'aktualisiert' : 'Fehler (' + c.status + ')'}`);
           } else L(`#${name}: ok`);
           continue;

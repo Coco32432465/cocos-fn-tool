@@ -505,7 +505,7 @@ await T('Wachstum: Probe-Key, Treue-Bonus, Bewertung, Belohnung', async () => {
   const form = (id, v, member) => inter({ type: 5, channel_id: 'X', token: 'tok', data: { custom_id: id, components: Object.entries(v).map(([k, x]) => ({ type: 1, components: [{ type: 4, custom_id: k, value: x }] })) }, member });
   // Probe
   const r1 = J(await btn('trial_start', 'U50')); assert.match(r1, /Probe-Key/); assert.match(r1, /[A-Z0-9]{4}(-[A-Z0-9]{4}){2}/);
-  assert.equal(db.prepare("SELECT days FROM keys WHERE created_by='trial'").get().days, 1);
+  assert.equal(db.prepare("SELECT days FROM keys WHERE created_by='trial'").get().days, 3);
   assert.match(J(await btn('trial_start', 'U50')), /schon genutzt/);
   db.prepare("INSERT INTO keys (key,plan,days,status,discord_id,created_at,expires_at) VALUES ('OWN1-OWN2-OWN3-OWN4','week',7,'expired','U51',1,2)").run();
   assert.match(J(await btn('trial_start', 'U51')), /schon eine Lizenz/);
