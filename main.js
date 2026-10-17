@@ -95,7 +95,64 @@ ipcMain.handle('list-replays', () => {
       out.push({ path: p, name: f, mtime: st.mtimeMs, size: st.size, cached });
     } catch (_) { /* Datei verschwunden */ }
   }
+  // Replay-Tresor: gesicherte Kopien auch dann zeigen, wenn Fortnite das Original schon gelöscht hat
+  const V = vaultMeta(), have = new Set(out.map(r => r.name));
+  for (const r of out) if (V[r.name]) { r.vault = true; r.note = V[r.name].note || ''; }
+  for (const name of Object.keys(V)) {
+    if (have.has(name)) continue;
+    const p = path.join(vaultDir(), name);
+    try {
+      const st = fs.statSync(p);
+      let cached = false; try { cached = fs.existsSync(cacheName(name, st.size, st.mtimeMs)); } catch (_) {}
+      out.push({ path: p, name, mtime: st.mtimeMs, size: st.size, cached, vault: true, kept: true, note: V[name].note || '' });
+    } catch (_) { /* Kopie fehlt */ }
+  }
   return out.sort((a, b) => b.mtime - a.mtime);
+});
+
+// ---------- Replay-Tresor ----------
+// Kopien liegen in userData/vault, die Notizen in vault.json. Die Änderungszeit bleibt gleich, damit der Analyse-Cache weiter greift.
+const VAULT_MAX = 50;
+const vaultDir = () => { const d = path.join(app.getPath('userData'), 'vault'); fs.mkdirSync(d, { recursive: true }); return d; };
+const vaultFile = () => path.join(vaultDir(), 'vault.json');
+function vaultMeta() { try { const v = JSON.parse(fs.readFileSync(vaultFile(), 'utf8')); return v && typeof v === 'object' ? v : {}; } catch (_) { return {}; } }
+const vaultWrite = v => fs.writeFileSync(vaultFile(), JSON.stringify(v));
+const vaultName = n => { n = path.basename(String(n || '')); return /\.replay$/i.test(n) && !/[\\/]/.test(n) ? n : null; };
+const vaultNote = n => String(n || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 140);
+function vaultList() {
+  const V = vaultMeta();
+  return Object.keys(V).map(name => ({ name, note: V[name].note || '', added: V[name].added || 0 })).sort((a, b) => b.added - a.added);
+}
+ipcMain.handle('vault-list', () => vaultList());
+ipcMain.handle('vault-add', (_e, file, note) => {
+  const name = vaultName(file);
+  if (!name || !fs.existsSync(String(file))) return { ok: false, error: 'Replay-Datei nicht gefunden.' };
+  const V = vaultMeta();
+  if (!V[name] && Object.keys(V).length >= VAULT_MAX) return { ok: false, error: `Der Tresor ist voll (${VAULT_MAX} Replays). Entferne zuerst ein altes.` };
+  const dst = path.join(vaultDir(), name);
+  try {
+    if (path.resolve(String(file)) !== path.resolve(dst)) {
+      const st = fs.statSync(String(file));
+      fs.copyFileSync(String(file), dst);
+      fs.utimesSync(dst, st.atime, st.mtime);
+    }
+    V[name] = { note: vaultNote(note), added: (V[name] && V[name].added) || Date.now() };
+    vaultWrite(V);
+  } catch (e) { return { ok: false, error: 'Kopieren fehlgeschlagen: ' + String(e && e.message || e).slice(0, 120) }; }
+  return { ok: true, list: vaultList() };
+});
+ipcMain.handle('vault-note', (_e, n, note) => {
+  const name = vaultName(n), V = vaultMeta();
+  if (!name || !V[name]) return { ok: false, error: 'Nicht im Tresor.' };
+  V[name].note = vaultNote(note); vaultWrite(V);
+  return { ok: true, list: vaultList() };
+});
+ipcMain.handle('vault-del', (_e, n) => {
+  const name = vaultName(n), V = vaultMeta();
+  if (!name || !V[name]) return { ok: false, error: 'Nicht im Tresor.' };
+  delete V[name]; vaultWrite(V);
+  try { fs.unlinkSync(path.join(vaultDir(), name)); } catch (_) {}
+  return { ok: true, list: vaultList() };
 });
 
 // Cache: geparste Replays werden einmal umgewandelt und danach aus dem Cache geladen
