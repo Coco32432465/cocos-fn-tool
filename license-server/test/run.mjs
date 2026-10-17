@@ -275,6 +275,12 @@ await T('FAQ: /hilfe Übersicht, Thema direkt, Auswahl privat oder ersetzt', asy
   assert.equal(own.type, 7); assert.match(J(own), /ein Gerät/);
   const cmds = (await import('../src/index.js')).COMMANDS; assert.ok(cmds.find(c => c.name === 'hilfe').options[0].choices.length === 10);
 });
+await T('Landing-Page: Browser bekommen HTML mit Preisen und Download, Checks weiter Text', async () => {
+  const h = await worker.fetch(new Request('https://w.dev/', { headers: { accept: 'text/html,application/xhtml+xml' } }), env, ctx);
+  assert.equal(h.status, 200); assert.match(h.headers.get('content-type'), /text\/html/);
+  const html = await h.text(); assert.match(html, /Werde besser in/); assert.match(html, /href="\/download"/); assert.match(html, /5 €/); assert.match(html, /15 €/); assert.match(html, /docs\/landing\/viewer\.jpg/);
+  assert.equal(await (await worker.fetch(new Request('https://w.dev/'), env, ctx)).text(), 'cft-license ok');
+});
 await T('Clip des Monats: einreichen, abstimmen, Limit, Auswertung mit Titel', async () => {
   const { withCfg } = await import('../src/discord.js'); const e2 = await withCfg(env); const CL = await import('../src/clip.js');
   assert.ok(e2.CLIP_CHANNEL_ID, 'Clip-Kanal aus /setup');

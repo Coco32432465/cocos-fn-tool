@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.26.0', date: '2026-10-17', tag: 'NEU', vod: 0, text: 'Ninjago Tools hat jetzt eine eigene Webseite mit Banner, Download-Button, allen Funktionen, Screenshots aus der App, Preisen und einer 3-Schritte-Anleitung: cft-license.cocotool.workers.dev' },
   { v: '0.25.0', date: '2026-10-17', tag: 'NEU', text: 'Clip des Monats: Im Discord reichst du mit /clip einreichen deinen besten Clip ein (YouTube, TikTok, Twitch, Medal …), die Community stimmt per 👍 ab und /clip top zeigt den Stand. Am 1. des Monats gewinnt der Clip mit den meisten Stimmen den Titel „🎬 Clip des Monats“, den du in der App unter Season-Pass → Dein Titel auswählen kannst' },
   { v: '0.24.0', date: '2026-10-17', tag: 'NEU', vod: 0, text: 'Discord: Neuer Befehl /hilfe beantwortet die 10 häufigsten Fragen (Installation, Discord verbinden, Key kaufen und einlösen, neuer PC, Replays, Fehler, Rangliste und Cup, Season-Pass, Updates). Im Fragen-Kanal gibt es dazu ein Auswahlmenü, die Antwort sieht nur, wer fragt' },
   { v: '0.23.0', date: '2026-10-17', tag: 'NEU', text: 'Benachrichtigungen: Läuft die App und du hast heute noch nicht am Daily Spin gedreht, erinnert dich Windows einmal am Tag daran (ab 18 Uhr, einstellbar). Ein Klick öffnet direkt das Glücksrad. Ist ein Update fertig geladen, während die App im Hintergrund ist, meldet Windows das auch. Beides lässt sich unter Einstellungen → Benachrichtigungen ein- und ausschalten' },

@@ -15,6 +15,7 @@ import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statu
 import { openEventModal, submitEvent, eventButton, eventSweep, weeklySweep, newsletterSweep } from './community.js';
 import { handleHilfe, faqPick, FAQ_CHOICES } from './faq.js';
 import { handleClip, voteClip, clipSweep } from './clip.js';
+import { landingHtml } from './landing.js';
 import { startTrial, welcomeDM, rate, openRewardModal, submitReward } from './growth.js';
 import { openTicket, selectPlan, closeTicket, confirmTicket, codeButton, submitCode } from './tickets.js';
 import { ensureSchema } from './schema.js';
@@ -348,7 +349,10 @@ export default {
         for (const [k, v] of Object.entries(cors)) res.headers.set(k, v);
         return res;
       }
-      if (url.pathname === '/') return new Response('cft-license ok');
+      if (url.pathname === '/') { // Browser bekommen die Landing-Page, Status-Checks weiter den Text
+        if (/text\/html/.test(request.headers.get('accept') || '')) return new Response(landingHtml(await withCfg(env0)), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' } });
+        return new Response('cft-license ok');
+      }
       return new Response('not found', { status: 404 });
     } catch (e) {
       return json({ ok: false, error: 'server', message: 'Serverfehler. Bitte später erneut versuchen.' }, 500, cors);
