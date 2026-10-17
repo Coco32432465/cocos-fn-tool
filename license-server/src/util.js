@@ -39,7 +39,7 @@ export const COL = { brand: 0x1e6bff, ok: 0x2ecc71, bad: 0xe5484d, neutral: 0x4f
 export const DEFAULT_ICON = 'https://raw.githubusercontent.com/Coco32432465/cocos-fn-tool/main/app/icon.png';
 export const BANNER = 'https://raw.githubusercontent.com/Coco32432465/cocos-fn-tool/main/app/banner.gif';
 export function emb(env, o) {
-  const e = { title: o.title, color: o.color == null ? COL.brand : o.color, footer: { text: "Cocos Tool" }, timestamp: new Date().toISOString() };
+  const e = { title: o.title, color: o.color == null ? COL.brand : o.color, footer: { text: "Ninjago Tools" }, timestamp: new Date().toISOString() };
   if (o.desc) e.description = o.desc;
   if (o.fields) e.fields = o.fields;
   if (o.banner) e.image = { url: BANNER };

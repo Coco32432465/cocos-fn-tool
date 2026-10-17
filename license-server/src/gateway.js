@@ -44,7 +44,7 @@ export class Gateway {
     if (m.op === 10) {
       this.stopHb(); this.beat(Math.floor(m.d.heartbeat_interval * Math.random())); // erster Beat mit Jitter
       if (this.sid) this.send({ op: 6, d: { token: this.env.BOT_TOKEN, session_id: this.sid, seq: this.seq } });
-      else this.send({ op: 2, d: { token: this.env.BOT_TOKEN, intents: 0, properties: { os: 'linux', browser: 'cocos-tool', device: 'cocos-tool' }, presence: { status: 'online', afk: false, activities: [{ name: 'Cocos Tool', type: 3 }] } } });
+      else this.send({ op: 2, d: { token: this.env.BOT_TOKEN, intents: 0, properties: { os: 'linux', browser: 'cocos-tool', device: 'cocos-tool' }, presence: { status: 'online', afk: false, activities: [{ name: 'Ninjago Tools', type: 3 }] } } });
       this.hbMs = m.d.heartbeat_interval;
     } else if (m.op === 11) { this.acked = true; this.status = 'online'; }
     else if (m.op === 1) this.send({ op: 1, d: this.seq });

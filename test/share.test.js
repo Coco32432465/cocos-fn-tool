@@ -12,6 +12,6 @@ assert.deepStrictEqual(d.phases.map(p => p[1]), [90, 70, 74]);
 assert.strictEqual(d.focus, 'Zu spät rotiert'); assert.strictEqual(d.clean, false); assert.strictEqual(d.date, '16.10.2026');
 const e = SH.cardData({ tot: 30, m: { n: 'X', pl: 0, k: 0 }, mis: [] });
 assert.strictEqual(e.grade, 'D'); assert.deepStrictEqual(e.stats, [['Elims', '0']]); assert.strictEqual(e.clean, true); assert.deepStrictEqual(e.phases, []);
-assert.strictEqual(SH.fileName(d), 'cocos-tool-reload-duo-game-4.png');
+assert.strictEqual(SH.fileName(d), 'ninjago-tools-reload-duo-game-4.png');
 assert.ok(SH.FORMATS.story[1] > SH.FORMATS.post[1]);
 console.log('share ok');

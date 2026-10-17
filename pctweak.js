@@ -200,7 +200,7 @@ function create(sys, { userDataDir }) {
     // Sicherung der alten Werte + Windows-Wiederherstellungspunkt (best effort, braucht Admin und aktivierten Schutz)
     const bk = loadBackup() || { applied: {} };
     let restore = 'no';
-    const rp = await sys.run('powershell', ['-NoProfile', '-Command', 'Checkpoint-Computer -Description "Cocos Tool Tweaks" -RestorePointType MODIFY_SETTINGS -ErrorAction Stop'], 60000);
+    const rp = await sys.run('powershell', ['-NoProfile', '-Command', 'Checkpoint-Computer -Description "Ninjago Tools Tweaks" -RestorePointType MODIFY_SETTINGS -ErrorAction Stop'], 60000);
     restore = rp.ok ? 'yes' : 'no';
     const applied = [], failed = [];
     for (const f of want) {

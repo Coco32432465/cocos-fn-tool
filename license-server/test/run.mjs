@@ -137,7 +137,7 @@ await T('/setup: baut Struktur, überspringt Vorhandenes, 2. Lauf ändert nichts
   for (let g = 0; g < 6 && /Limit erreicht/.test(JSON.stringify(S.patched.at(-1))); g++) { await inter({ type: 2, channel_id: 'X', token: 'tok', data: { name: 'setup' }, member: mem('ADMIN') }); await flush(); }
   const names = S.channels.map(c => c.name.replace(/^[^a-z0-9]+/i, '').toLowerCase());
   for (const n of ['start', 'community', 'tool', 'welcome', 'rules', 'announcements', 'patchnotes', 'download', 'free-tips', 'general', 'placements', 'lfg', 'questions', 'how-to-use', 'feedback', 'bug-reports', 'support', 'impressum', 'ticket-logs', 'status', 'rangliste', 'giveaways', 'umfragen', 'datenschutz', 'live-stats', 'arbeit', 'vorschläge', 'team-chat']) assert.ok(names.includes(n), n);
-    const hid = S.channels.find(c => /how-to-use$/.test(c.name)).id; assert.match(JSON.stringify(S.msgs[hid]), /So nutzt du Cocos Tool/);
+    const hid = S.channels.find(c => /how-to-use$/.test(c.name)).id; assert.match(JSON.stringify(S.msgs[hid]), /So nutzt du Ninjago Tools/);
     const pid = S.channels.find(c => /umfragen$/.test(c.name)).id; assert.equal(S.msgs[pid][0].components[0].components[0].custom_id, 'poll_new');
     assert.match(JSON.stringify(S.msgs[S.channels.find(c => /welcome$/.test(c.name)).id]), /banner\.gif/);
   assert.equal(names.filter(n => n === 'shop').length, 1); assert.equal(names.filter(n => n === 'key-kaufen').length, 0); // alter Kanal wird umbenannt, nicht doppelt

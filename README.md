@@ -1,1 +1,1 @@
-Coco's Fn Tool
+Ninjago Tools

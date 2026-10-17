@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.19.1', date: '2026-10-17', tag: 'UPDATE', text: 'Die App heißt jetzt „Ninjago Tools“: neuer Name im Fenster, Startbildschirm, Hauptmenü, auf geteilten Bildern, im Startmenü und beim Discord-Bot. Lizenz, Einstellungen und Replays bleiben wie sie sind.' },
   { v: '0.19.0', date: '2026-10-17', tag: 'NEU', text: 'Neue Replay-Bibliothek: Klick auf „Alle →“ bei „Zuletzt analysiert“ zeigt alle Runden mit Suche (Name, Modus, Landeort), Filtern nach Modus, Ergebnis und Zeitraum, Sortierung und Favoriten (★). Jede Runde lässt sich als Bild speichern (Post 4:5 oder Story 9:16) und direkt in Discord oder TikTok teilen. Die Einträge unter „Zuletzt analysiert“ öffnen jetzt per Klick das Replay' },
   { v: '0.19.0', date: '2026-10-17', tag: 'UPDATE', vod: 0, text: 'Discord: Der Probe-Key gilt jetzt 3 Tage statt 1 Tag (einmal pro Person, startet erst beim Einlösen)' },
   { v: '0.18.0', date: '2026-10-17', tag: 'UPDATE', text: 'Daily Spin komplett neu: richtiges Glücksrad mit Animation, Konfetti und Gewinnchancen. Menü: VOD Review groß in der Mitte, links Landung/Rotation/Fortschritt, rechts Season-Pass' },

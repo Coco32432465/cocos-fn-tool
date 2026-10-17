@@ -58,7 +58,7 @@ export async function newsletterSweep(env, t = now()) {
     { name: '🥇 Top 3 der Rangliste', value: top.length ? top.map((r, k) => `${M[k]} **${String(r.name).replace(/[*_`~|]/g, '')}** · Ø ${Math.round(r.avg_score)}`).join('\n') : 'Noch leer. Sei der Erste!' },
     { name: '📅 Nächste Events', value: ev.length ? ev.map(e => `<t:${e.starts_at}:f> · **${e.title}**`).join('\n') : 'Gerade nichts geplant.' },
     { name: `💡 Tipp der Woche · ${tip[0]}`, value: tip[1] }];
-  await dapi(env, 'POST', `/channels/${ch}/messages`, { embeds: [emb(env, { title: '📰 Cocos Tool · Wochenrückblick', color: COL.brand, desc: `Diese Woche waren **${act}** Spieler mit der App aktiv. Hier dein Überblick:`, fields })] });
+  await dapi(env, 'POST', `/channels/${ch}/messages`, { embeds: [emb(env, { title: '📰 Ninjago Tools · Wochenrückblick', color: COL.brand, desc: `Diese Woche waren **${act}** Spieler mit der App aktiv. Hier dein Überblick:`, fields })] });
 }
 
 /* ---------- Events ---------- */

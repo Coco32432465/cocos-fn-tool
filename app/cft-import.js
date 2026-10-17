@@ -1,4 +1,4 @@
-/* Coco's Fn Tool – Import & Analyse für das ReplayDump-Format "cft-1"
+/* Ninjago Tools – Import & Analyse für das ReplayDump-Format "cft-1"
  *
  * Wandelt die JSON-Ausgabe von ReplayDump.exe in das interne Modell um, das Viewer und
  * Cup-Report nutzen. Alles hier arbeitet in Weltkoordinaten (cm); erst CFT.proj() rechnet auf die

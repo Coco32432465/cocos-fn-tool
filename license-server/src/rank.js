@@ -40,7 +40,7 @@ const line = (r, i) => `${MEDAL[i] || `**${i + 1}.**`} **${String(r.name).replac
 
 export function boardEmbed(env, rows, total) {
   return emb(env, {
-    title: '🏆 Cocos Tool Rangliste', color: 0xf1c40f,
+    title: '🏆 Ninjago Tools Rangliste', color: 0xf1c40f,
     desc: rows.length ? rows.map(line).join('\n\n') : 'Noch niemand in der Rangliste. Aktiviere sie in der App unter **Einstellungen → Rangliste** und sei der Erste!',
     fields: [
       { name: 'Wertung', value: `Ø Note über alle deine Runden (mind. ${MIN_GAMES}), dann Siege`, inline: true },
