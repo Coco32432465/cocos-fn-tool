@@ -170,6 +170,10 @@ await T('/setup erneuern: bearbeitet bestehende Nachrichten statt neu zu posten,
 await T('/setup: Rollen-Beitritt per Regel-Button + Limit-Fortsetzung', async () => {
   assert.match(J(await inter({ type: 3, data: { custom_id: 'rules_accept' }, member: mem('U1') })), /Member/);
   const memberId = S.roles.find(r => r.name === 'Member').id; assert.ok(S.members.U1.roles.includes(memberId));
+  await flush(); const wdm = S.dms.filter(d => d.to === 'U1' && /Willkommen bei Ninjago Tools/.test(JSON.stringify(d.body)));
+  assert.equal(wdm.length, 1, 'Willkommens-DM'); assert.match(JSON.stringify(wdm[0].body), /trial_start/); assert.match(JSON.stringify(wdm[0].body), /Trotzdem ausführen/);
+  await inter({ type: 3, data: { custom_id: 'rules_accept' }, member: mem('U1', { roles: [memberId] }) }); await flush();
+  assert.equal(S.dms.filter(d => d.to === 'U1' && /Willkommen bei Ninjago Tools/.test(JSON.stringify(d.body))).length, 1, 'DM nur beim ersten Mal');
   // Limit: mit 12 Aufrufen nur teilweise, mit Wiederholung vollständig
   const S2 = makeDiscord(); const { D1: D2 } = makeDb(['schema.sql']); const { env: e2 } = makeEnv(D2);
   const r1 = await runSetup({ ...e2, _budget: { n: 0, max: 12 } }, false); assert.equal(r1.partial, true);

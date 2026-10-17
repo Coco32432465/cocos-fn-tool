@@ -5,6 +5,21 @@ import { createKeys } from './keys.js';
 import { grantDays } from './codes.js';
 import { hit } from './auth.js';
 
+/* ---------- Willkommens-DM nach dem Regel-Button (nur beim ersten Mal) ---------- */
+export function welcomeDM(env) {
+  const ch = id => id ? `<#${id}>` : null, dl = env.DOWNLOAD_URL || 'https://github.com/Coco32432465/cocos-fn-tool/releases/latest';
+  return {
+    embeds: [emb(env, { title: '👋 Willkommen bei Ninjago Tools', color: COL.ok,
+      desc: 'Schön, dass du da bist! In 3 Schritten zu deiner ersten VOD-Review:',
+      fields: [
+        { name: '1 · App laden', value: 'Über den Knopf unten (Windows 10/11). Zeigt Windows „Der Computer wurde durch Windows geschützt“, klick auf **Weitere Informationen** → **Trotzdem ausführen**. Die App ist nur noch nicht signiert.' },
+        { name: '2 · Mit Discord verbinden', value: 'App starten, **Mit Discord verbinden** klicken und im Browser bestätigen.' },
+        { name: '3 · Lizenz aktivieren', value: 'Hol dir unten deinen **Probe-Key für 3 Tage** (einmal pro Person) oder kauf einen Key' + (ch(env.PANEL_CHANNEL_ID) ? ' im ' + ch(env.PANEL_CHANNEL_ID) : ' im Shop') + '. Die Laufzeit startet erst beim Einlösen.' },
+        { name: 'Fragen?', value: 'Öffne ein Ticket' + (ch(env.SUPPORT_CHANNEL_ID) ? ' in ' + ch(env.SUPPORT_CHANNEL_ID) : '') + ', das Team hilft dir.' }] })],
+    components: [{ type: 1, components: [{ type: 2, style: 5, label: 'Download', url: dl, emoji: { name: '📥' } }, { type: 2, style: 1, label: '3 Tage gratis testen', custom_id: 'trial_start', emoji: { name: '🎁' } }] }]
+  };
+}
+
 /* ---------- Probe-Key: 3 Tage gratis, einmal pro Person ---------- */
 export async function startTrial(i, env, uid) {
   if (!(await hit(env, 'trial:' + uid, 3, 3600))) return bad(env, 'Zu viele Versuche', 'Bitte warte kurz.');
