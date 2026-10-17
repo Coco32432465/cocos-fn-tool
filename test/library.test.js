@@ -39,4 +39,12 @@ sg = S.vaultSuggest(G.concat([mk(3, 90, 4, 9, 'Reload', null, 'Top'), mk(3, 75, 
 assert.deepStrictEqual(sg.map(g => g.m.n), ['Game A', 'Top']); // Siege zuerst, dann beste Note
 assert.strictEqual(S.vaultSuggest(G, { 'Game A.replay': '' }, 3).length, 0);
 assert.strictEqual(S.vaultSuggest([{ tot: 99, m: { pl: 1 } }], {}, 3).length, 0); // ohne Datei nichts zu sichern
+// Coach-Notizen
+assert.deepStrictEqual(S.marksNorm([30, { t: 12.4, txt: 'Zu früh' }, null, { t: 'x' }]), [{ t: 12, txt: 'Zu früh' }, { t: 30, txt: '' }]);
+let ML = S.marksSet([30], 31, '  Rotation   verpasst ');
+assert.deepStrictEqual(ML, [{ t: 30, txt: 'Rotation verpasst' }]); // nah am Marker: Text ergänzt
+ML = S.marksSet(ML, 95, 'Box gut gebaut');
+assert.strictEqual(ML.length, 2); assert.strictEqual(S.marksSet(ML, 0, 'x'.repeat(400))[0].txt.length, S.NOTE_MAX);
+assert.strictEqual(S.marksText(ML, 'Reload Game 4'), 'Reload Game 4\n00:30  Rotation verpasst\n01:35  Box gut gebaut');
+assert.strictEqual(S.marksText([5]), '00:05  (Marker)'); assert.strictEqual(S.marksText([]), '');
 console.log('library ok');

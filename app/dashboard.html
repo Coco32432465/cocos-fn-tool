@@ -604,6 +604,14 @@ main .center>.slider{flex:1 1 200px;min-height:170px;max-height:min(34vh,320px);
 .tl input{position:absolute;left:0;right:0;bottom:0;width:100%;margin:0}
 .mkb{font-size:16px;color:#f1c40f;width:auto;padding:0 12px}.mkd.usr{background:#f1c40f;border-radius:3px;width:9px;height:14px;top:-1px;margin-left:-4px;--c:#f1c40f}.mkd{position:absolute;top:2px;width:11px;height:11px;margin-left:-5px;border-radius:50%;border:1px solid #0A0A0C;background:var(--c);box-shadow:0 0 8px var(--c);transition:transform .15s;padding:0}
 .mkd:hover{transform:scale(1.6);z-index:2}
+.mkd.usr.nt{background:#4ade80;--c:#4ade80}
+.nts h2 small{font:600 12px Rajdhani,sans-serif;letter-spacing:.08em;color:var(--mute);margin-left:6px}
+.ntf{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.ntf label{font-size:13px;color:var(--mute)}.ntf label b{color:var(--acc-light,var(--acc));font-family:'Orbitron',sans-serif}
+.nts textarea{width:100%;min-height:64px;resize:vertical;background:#0c0c11;border:1px solid #ffffff1c;border-radius:10px;color:#fff;font:500 15px Rajdhani,sans-serif;padding:8px 10px}.nts textarea:focus{outline:none;border-color:var(--acc)}
+.ntr{display:flex;gap:8px}.ntb{font:700 12px Rajdhani,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:rgba(var(--rgb),.22);border:1px solid var(--acc);border-radius:8px;padding:7px 12px;cursor:pointer}.ntb:hover{box-shadow:0 0 12px rgba(var(--rgb),.4)}.ntb.ghost{background:none;border-color:#ffffff2a;color:var(--mute)}
+.ntl{list-style:none;display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow:auto}.ntl li{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:8px;background:#ffffff05;border-left:3px solid #4ade80;font-size:14px}.ntl li.nt0{border-left-color:#ffffff22;color:var(--mute);line-height:1.4}
+.ntt{font:700 12px 'Orbitron',sans-serif;color:var(--acc-light,var(--acc));background:none;border:0;cursor:pointer;padding:1px 0;flex:none}.ntx{flex:1;line-height:1.35;word-break:break-word}.ntx i{color:var(--mute)}
+.ntk{background:none;border:0;color:var(--mute);cursor:pointer;font-size:15px;padding:0 3px;flex:none}.ntk:hover{color:#fff}.nte{flex:1;display:flex;flex-direction:column;gap:6px}.nte textarea{min-height:48px}
 .feed{max-height:24vh;min-height:96px}
 .evl{max-height:none;flex:1;position:relative}
 .evl li{border-left:3px solid var(--c,#ffffff22);align-items:baseline}
@@ -1028,7 +1036,7 @@ header .mbtn{margin-right:14px}
 
     </section>
     <aside class="vr">
-      <div class="rtabs" id="rtabs" role="tablist"><button class="on" data-p="an" role="tab">Analyse</button><button data-p="fd" role="tab">Feed</button><button data-p="fi" role="tab">Fights</button><button data-p="gm" role="tab">Games</button></div>
+      <div class="rtabs" id="rtabs" role="tablist"><button class="on" data-p="an" role="tab">Analyse</button><button data-p="fd" role="tab">Feed</button><button data-p="fi" role="tab">Fights</button><button data-p="gm" role="tab">Games</button><button data-p="nt" role="tab">Notizen</button></div>
       <div class="rpane" data-p="an">
         <section class="panel la"><h2 class="disp">Live Analysis</h2><div id="la"></div></section>
         <section class="panel"><h2 class="disp">Phasen-Bewertung</h2><div class="phs" id="phs"></div></section>
@@ -1038,6 +1046,11 @@ header .mbtn{margin-right:14px}
       </div>
       <div class="rpane" data-p="fi" hidden>
         <section class="panel"><h2 class="disp">Fight-Analyse</h2><div class="fsum" id="fsum"></div><ul class="fl" id="fl"></ul></section>
+      </div>
+      <div class="rpane" data-p="nt" hidden>
+        <section class="panel nts"><h2 class="disp">Coach-Notizen <small id="ntn"></small></h2>
+          <div class="ntf"><label for="ntin">Notiz bei <b id="ntat">00:00</b></label><textarea id="ntin" maxlength="280" placeholder="Was fällt dir hier auf? z. B. Zu spät rotiert, Höhe verschenkt …"></textarea><div class="ntr"><button class="ntb" id="ntadd">Notiz speichern</button><button class="ntb ghost" id="ntcp" title="Alle Notizen als Text kopieren, z. B. für deinen Coach oder Discord">Kopieren</button></div></div>
+          <ul class="ntl" id="ntl"></ul></section>
       </div>
       <div class="rpane" data-p="gm" hidden>
         <section class="panel"><h2 class="disp">Games</h2><ul class="vgl" id="vg"></ul></section>
@@ -1446,7 +1459,7 @@ function draw(){
  V.F.forEach(function(f){if(f.e&&f.e.k<TN&&f.t<=t)ke++});
  if(R){al=R.nPlayers;R.deadTimes.forEach(function(d){if(d<=t)al--});al=Math.max(1,al);
   R.drops.forEach(function(d){if(t<d.t)return;var a=CF.proj(d.x,d.y),x=X(a[0]),y=Y(a[1]),lo=d.lt!=null&&t>=d.lt;ctx.strokeStyle=lo?'#ffffff55':'#FFD166';ctx.lineWidth=1.5;ctx.strokeRect(x-4,y-4,8,8);if(!lo){ctx.beginPath();ctx.moveTo(x-4,y-4);ctx.lineTo(x+4,y+4);ctx.stroke()}})}
- $('al').textContent=al;$('ke').textContent=ke;updHUD(t);updCards(t);updLA();$('tm').textContent=fmt(t)+' / '+fmt(DUR);$('sc').value=t;
+ $('al').textContent=al;$('ke').textContent=ke;updHUD(t);updCards(t);updLA();$('tm').textContent=fmt(t)+' / '+fmt(DUR);$('ntat').textContent=fmt(t);$('sc').value=t;
  var c2=-1;V.F.forEach(function(f,i){if(f.t<=t)c2=i});
  if(c2!==cur){cur=c2;var L=$('evl').children;[].forEach.call(L,function(li,i){li.classList.toggle('cur',i===c2)});if(V.play&&L[c2])$('evl').scrollTop=L[c2].offsetTop-$('evl').clientHeight/2}}
 function loop(ts){if(!document.body.classList.contains('vw'))return;var dt=Math.min((ts-last)/1000,.1);last=ts;
@@ -1481,10 +1494,21 @@ function feed(){
 /* Clip-Marker: eigene Markierungen je Replay (lokal gespeichert) */
 var curM=null;function mkKey(){var m=curM||{};return String(m.fname||(m.real&&m.real.fname)||m.n||'g')+'|'+Math.round(DUR)}
 function mkAll(){try{return JSON.parse(localStorage.getItem('cft_marks'))||{}}catch(e){return {}}}
-function mkList(){return mkAll()[mkKey()]||[]}
+function mkList(){return CFT.stats.marksNorm(mkAll()[mkKey()])}
 function mkSave(l){try{var a=mkAll();if(l.length)a[mkKey()]=l;else delete a[mkKey()];localStorage.setItem('cft_marks',JSON.stringify(a))}catch(e){}}
-function renderMarks(){var box=$('mks');[].forEach.call(box.querySelectorAll('.usr'),function(n){n.remove()});mkList().forEach(function(t,i){var b=document.createElement('button');b.className='mkd usr';b.setAttribute('aria-label','Marker '+(i+1)+' bei '+fmt(t));b.title='Marker '+(i+1)+' · '+fmt(t)+' (Rechtsklick löscht)';b.style.left='calc(9px + (100% - 18px)*'+(t/DUR)+')';b.onclick=function(){seek(Math.max(0,t-3))};b.oncontextmenu=function(e){e.preventDefault();var l=mkList();l.splice(i,1);mkSave(l);renderMarks();window.toast('Marker gelöscht')};box.appendChild(b)})}
-function addMark(){var l=mkList(),t=Math.round(V.t);if(l.some(function(x){return Math.abs(x-t)<2}))return window.toast('Hier ist schon ein Marker');l.push(t);l.sort(function(a,b){return a-b});mkSave(l);renderMarks();window.toast('Marker '+(l.indexOf(t)+1)+' bei '+fmt(t)+' gesetzt')}
+function renderMarks(){var box=$('mks');[].forEach.call(box.querySelectorAll('.usr'),function(n){n.remove()});mkList().forEach(function(m,i){var t=m.t,b=document.createElement('button');b.className='mkd usr'+(m.txt?' nt':'');b.setAttribute('aria-label','Marker '+(i+1)+' bei '+fmt(t)+(m.txt?': '+m.txt:''));b.title=(m.txt?fmt(t)+' · '+m.txt:'Marker '+(i+1)+' · '+fmt(t))+' (Rechtsklick löscht)';b.style.left='calc(9px + (100% - 18px)*'+(t/DUR)+')';b.onclick=function(){seek(Math.max(0,t-3))};b.oncontextmenu=function(e){e.preventDefault();var l=mkList();l.splice(i,1);mkSave(l);renderMarks();window.toast('Marker gelöscht')};box.appendChild(b)});renderNotes()}
+function addMark(){var l=mkList(),t=Math.round(V.t);if(l.some(function(x){return Math.abs(x.t-t)<2}))return window.toast('Hier ist schon ein Marker');l=CFT.stats.marksSet(l,t,'');mkSave(l);renderMarks();window.toast('Marker '+(l.map(function(x){return x.t}).indexOf(t)+1)+' bei '+fmt(t)+' gesetzt')}
+/* Coach-Notizen: Marker mit Kommentar, Tab „Notizen“ rechts im Viewer */
+var NTE=-1;
+function renderNotes(){var box=$('ntl');if(!box)return;var L=mkList();$('ntat').textContent=fmt(Math.round(V.t||0));$('ntn').textContent=L.length?L.length+(L.length===1?' Notiz':' Notizen'):'';
+ box.innerHTML=L.length?L.map(function(m,i){return '<li data-i="'+i+'"><button class="ntt" data-j="'+i+'" title="Hinspringen">'+fmt(m.t)+'</button>'+(NTE===i?'<div class="nte"><textarea maxlength="280" aria-label="Notiz bearbeiten">'+esc(m.txt)+'</textarea><button class="ntb" data-s="'+i+'">Speichern</button></div>':'<span class="ntx">'+(m.txt?esc(m.txt):'<i>Nur Marker, noch ohne Text</i>')+'</span><button class="ntk" data-e="'+i+'" title="Bearbeiten" aria-label="Notiz bearbeiten">✎</button><button class="ntk" data-d="'+i+'" title="Löschen" aria-label="Notiz löschen">×</button>')+'</li>'}).join(''):'<li class="nt0">Noch keine Notizen zu diesem Replay. Spul zu einer Stelle und schreib auf, was dir auffällt, z. B. „Zu spät rotiert“ oder „Gute Box“. Mit M setzt du schnell einen Marker ohne Text.</li>';
+ [].forEach.call(box.querySelectorAll('[data-j]'),function(b){b.onclick=function(){seek(Math.max(0,mkList()[+b.dataset.j].t-3))}});
+ [].forEach.call(box.querySelectorAll('[data-e]'),function(b){b.onclick=function(){NTE=+b.dataset.e;renderNotes();var ta=box.querySelector('.nte textarea');if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}}});
+ [].forEach.call(box.querySelectorAll('[data-d]'),function(b){b.onclick=function(){var l=mkList();l.splice(+b.dataset.d,1);mkSave(l);NTE=-1;renderMarks()}});
+ [].forEach.call(box.querySelectorAll('[data-s]'),function(b){var ta=b.previousElementSibling,save=function(){var l=mkList(),m=l[+b.dataset.s];if(m){m.txt=CFT.stats.marksSet([],0,ta.value)[0].txt;mkSave(l)}NTE=-1;renderMarks()};b.onclick=save;ta.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();save()}if(e.key==='Escape'){e.stopPropagation();NTE=-1;renderNotes()}}})}
+function addNote(){var ta=$('ntin'),txt=ta.value.trim();if(!txt){ta.focus();return}var l=CFT.stats.marksSet(mkList(),V.t,txt);mkSave(l);ta.value='';NTE=-1;renderMarks();window.toast('Notiz bei '+fmt(Math.round(V.t))+' gespeichert')}
+$('ntadd').onclick=addNote;$('ntin').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addNote()}};$('ntin').onfocus=function(){setPlay(false);renderNotes()};
+$('ntcp').onclick=function(){var t=CFT.stats.marksText(mkList(),(curM&&curM.n)||'Replay');if(!t)return window.toast('Noch keine Notizen');var done=function(){window.toast('Notizen kopiert')};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,function(){window.toast('Kopieren ging nicht')});else window.toast('Kopieren ging nicht')};
 $('mkAdd').onclick=addMark;
 window.openViewer=function(i){
  var m=(typeof i==='object'?i:M[i])||M[0],v=$('veil');v.classList.add('on');
@@ -1623,7 +1647,7 @@ $('c_auto').onclick=function(){CF.cal.saved=false;CF.cal.H=153000;CF.cal.ox=0.01
 
 if(window.ResizeObserver)new ResizeObserver(function(){if(document.body.classList.contains('vw')){size();draw()}}).observe($('stage'));
 window.addEventListener('resize',function(){if(document.body.classList.contains('vw')){size();draw()}});
-document.addEventListener('keydown',function(e){if(!document.body.classList.contains('vw'))return;if(e.code==='Space'){e.preventDefault();$('pp').click()}if(e.code==='KeyM'&&!/INPUT|TEXTAREA/.test((e.target||{}).tagName||'')){e.preventDefault();addMark()}if(e.code==='Escape')$('vb').click()});
+document.addEventListener('keydown',function(e){if(!document.body.classList.contains('vw'))return;if(/INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||'')){if(e.code==='Escape')e.target.blur();return}if(e.code==='Space'){e.preventDefault();$('pp').click()}if(e.code==='KeyM'&&!/INPUT|TEXTAREA/.test((e.target||{}).tagName||'')){e.preventDefault();addMark()}if(e.code==='Escape')$('vb').click()});
 })();
 </script>
 <script>
