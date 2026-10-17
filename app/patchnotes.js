@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.20.0', date: '2026-10-17', tag: 'NEU', text: 'Wochenziele und Erfolge: Unter Fortschritt gibt es die neuen Tabs „Wochenziele“ (Runden, Top 10, Elims und Ø Note pro Woche, Ziele mit + und − anpassbar) und „Erfolge“ mit 12 Abzeichen. Deine Woche lässt sich als Bild speichern, und im Replay Viewer speichert „Bild teilen“ die aktuelle Runde als Bild. Discord-Einladung aktualisiert' },
   { v: '0.19.1', date: '2026-10-17', tag: 'UPDATE', text: 'Die App heißt jetzt „Ninjago Tools“: neuer Name im Fenster, Startbildschirm, Hauptmenü, auf geteilten Bildern, im Startmenü und beim Discord-Bot. Lizenz, Einstellungen und Replays bleiben wie sie sind.' },
   { v: '0.19.0', date: '2026-10-17', tag: 'NEU', text: 'Neue Replay-Bibliothek: Klick auf „Alle →“ bei „Zuletzt analysiert“ zeigt alle Runden mit Suche (Name, Modus, Landeort), Filtern nach Modus, Ergebnis und Zeitraum, Sortierung und Favoriten (★). Jede Runde lässt sich als Bild speichern (Post 4:5 oder Story 9:16) und direkt in Discord oder TikTok teilen. Die Einträge unter „Zuletzt analysiert“ öffnen jetzt per Klick das Replay' },
   { v: '0.19.0', date: '2026-10-17', tag: 'UPDATE', vod: 0, text: 'Discord: Der Probe-Key gilt jetzt 3 Tage statt 1 Tag (einmal pro Person, startet erst beim Einlösen)' },

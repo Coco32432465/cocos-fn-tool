@@ -478,7 +478,41 @@
     w.innerHTML = h;
   }
   function kpiS(l, v, sub) { return '<div class="k"><small>' + l + '</small><b>' + v + '</b><i>' + esc(sub) + '</i></div>'; }
-  MODES.drop = { title: 'Landung, Rotation & Fortschritt', tabs: [['land', 'Landeorte'], ['rot', 'Rotation'], ['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan']], render: function (t, w) { if (t === 'rot') renderRot(w); else if (t === 'trend') renderTrend(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else if (t === 'train') renderTrain(w); else renderDrops(w); } };
+  /* ---------- Wochenziele & Erfolge ---------- */
+  (function () {
+    var st = document.createElement('style');
+    st.textContent = '#cm .wg{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}#cm .wg .pi{display:flex;flex-direction:column;gap:6px}#cm .wg .pi.ok{border-color:#4ade80;box-shadow:0 0 18px rgba(74,222,128,.15)}'
+      + '#cm .wg .gv{font:800 26px Orbitron,sans-serif;color:#fff}#cm .wg .gv span{font-size:15px;color:var(--mute);font-weight:600}#cm .wg .pi.ok .pb2 i{background:linear-gradient(90deg,#22c55e,#4ade80);box-shadow:0 0 12px #4ade80}'
+      + '#cm .wg .gs{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:14px}#cm .wg .gs button{width:28px;height:28px;border-radius:8px;border:1px solid rgba(var(--rgb),.4);background:transparent;color:#fff;font:700 16px Rajdhani,sans-serif;cursor:pointer}#cm .wg .gs button:hover{border-color:var(--acc)}'
+      + '#cm .bd{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}#cm .bd .b{border:1px solid #ffffff14;border-radius:14px;padding:16px;background:#0c0c11;text-align:center;opacity:.55;filter:grayscale(1)}'
+      + '#cm .bd .b.ok{opacity:1;filter:none;border-color:var(--acc);box-shadow:0 0 20px rgba(var(--rgb),.22)}#cm .bd .b i{display:block;font-style:normal;font-size:38px;line-height:1.1}#cm .bd .b h4{font:800 14px Orbitron,sans-serif;color:#fff;letter-spacing:.05em;margin:8px 0 4px}#cm .bd .b p{color:var(--dim,#9a9aa6);font-size:15px;line-height:1.3}#cm .bd .b small{display:block;color:var(--mute);font-size:13px;margin-top:6px}';
+    document.head.appendChild(st);
+  })();
+  function weekDone(W) { var m = store.get('cft_wdone') || {}; if (W.done === W.items.length && W.games.length && !m[W.week]) { m[W.week] = 1; store.set('cft_wdone', m); } return Object.keys(m).length; }
+  function renderGoals(w) {
+    var G = games(), saved = store.get('cft_wgoals'), goals = saved || ST.suggestGoals(G), W = ST.weekGoals(G, goals), wk = weekDone(W);
+    var h = '<div class="pn"><h3>Diese Woche</h3><p class="s">' + W.done + ' von ' + W.items.length + ' Zielen geschafft · noch ' + W.daysLeft + ' Tag' + (W.daysLeft === 1 ? '' : 'e') + ' · ' + W.games.length + ' Runde' + (W.games.length === 1 ? '' : 'n') + ' seit Montag' + (wk ? ' · ' + wk + ' Woche' + (wk === 1 ? '' : 'n') + ' komplett geschafft' : '') + '</p>'
+      + '<div class="wg">' + W.items.map(function (it) {
+        var k = ST.GOAL_KINDS.filter(function (x) { return x.id === it.id; })[0], v = k.step < 1 ? fmt1(it.value) : it.value, g = k.step < 1 ? fmt1(it.goal) : it.goal;
+        return '<div class="pi' + (it.done ? ' ok' : '') + '"><h4>' + (it.done ? '✓ ' : '') + esc(it.title) + '</h4><div class="gv">' + v + ' <span>von ' + g + ' ' + esc(k.unit === '/ 10' ? '' : k.unit) + '</span></div><div class="pb2"><i style="width:' + it.pct + '%"></i></div>' + (k.avg && W.games.length < 3 ? '<small style="color:var(--mute);font-size:13px">zählt ab 3 Runden in der Woche</small>' : '')
+          + '<div class="gs">Ziel <button data-g="' + it.id + '" data-d="-1" aria-label="Ziel senken">−</button><b style="color:#fff">' + g + '</b><button data-g="' + it.id + '" data-d="1" aria-label="Ziel erhöhen">+</button></div></div>';
+      }).join('') + '</div><div class="btns">' + (saved ? '<button class="pbtn gh" id="wgReset">Ziele neu vorschlagen</button>' : '') + (CFT.share && CFT.share.saveWeek ? '<button class="pbtn" id="wgImg">Woche als Bild</button>' : '') + '</div></div>';
+    w.innerHTML = h;
+    [].forEach.call(w.querySelectorAll('[data-g]'), function (b) { b.onclick = function () {
+      var k = ST.GOAL_KINDS.filter(function (x) { return x.id === b.dataset.g; })[0], n = Object.assign({}, goals);
+      n[k.id] = Math.max(k.step < 1 ? 1 : 1, Math.round(((+n[k.id] || k.min) + k.step * +b.dataset.d) * 10) / 10); if (k.avg) n[k.id] = Math.min(10, n[k.id]);
+      store.set('cft_wgoals', n); renderGoals(w);
+    }; });
+    var r = w.querySelector('#wgReset'); if (r) r.onclick = function () { store.set('cft_wgoals', null); renderGoals(w); };
+    var im = w.querySelector('#wgImg'); if (im) im.onclick = function () { im.textContent = '…'; CFT.share.saveWeek(G, goals, (store.get('cft_lib') || {}).fmt || 'post').then(function () { im.textContent = '✓ Gespeichert'; setTimeout(function () { im.textContent = 'Woche als Bild'; }, 2200); }, function () { im.textContent = 'Fehler'; }); };
+  }
+  function renderBadges(w) {
+    var W = ST.weekGoals(games(), store.get('cft_wgoals') || ST.suggestGoals(games())), B = ST.badges(games(), { weeks: weekDone(W) });
+    w.innerHTML = '<div class="pn"><h3>Erfolge · ' + B.done + ' von ' + B.total + '</h3><div class="pb2"><i style="width:' + Math.round(100 * B.done / B.total) + '%"></i></div></div><div class="bd">' + B.list.map(function (b) {
+      return '<div class="b' + (b.done ? ' ok' : '') + '"><i>' + b.icon + '</i><h4>' + esc(b.title) + '</h4><p>' + esc(b.desc) + '</p><small>' + (b.done ? 'Freigeschaltet' : b.value + ' / ' + b.need) + '</small></div>';
+    }).join('') + '</div>';
+  }
+  MODES.drop = { title: 'Landung, Rotation & Fortschritt', tabs: [['land', 'Landeorte'], ['rot', 'Rotation'], ['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan'], ['goals', 'Wochenziele'], ['badges', 'Erfolge']], render: function (t, w) { if (t === 'goals') renderGoals(w); else if (t === 'badges') renderBadges(w); else if (t === 'rot') renderRot(w); else if (t === 'trend') renderTrend(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else if (t === 'train') renderTrain(w); else renderDrops(w); } };
   MODES.team = { title: 'Coach & Team', tabs: [], render: function (t, w) { renderTeam(w); } };
   bind('mtTeam', 'team');
   /* ---------- Daily Spin ---------- */
@@ -633,6 +667,14 @@
   }
   MODES.lib = { title: 'Replay-Bibliothek', tabs: [], render: function (t, w) { renderLib(w); } };
   bind('lastAll', 'lib');
+  (function () { // Bild-Button im Replay-Viewer
+    var b = $('vshare'); if (!b || !CFT.share) { if (b) b.hidden = true; return; }
+    b.onclick = function () {
+      var m = window.__lastM, g = (CFT.games || []).filter(function (x) { return x && x.m === m; })[0], t = 'Bild teilen';
+      if (!g) { b.textContent = 'Nur bei echten Replays'; setTimeout(function () { b.textContent = t; }, 2200); return; }
+      b.textContent = '…'; CFT.share.save(g, LIB.fmt || 'post').then(function () { b.textContent = '✓ Gespeichert'; setTimeout(function () { b.textContent = t; }, 2200); }, function () { b.textContent = t; });
+    };
+  })();
 
 
   /* ---------- PC-Check & Tweak-Paket ---------- */

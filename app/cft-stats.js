@@ -403,5 +403,69 @@
       kills: L.reduce(function (s, g) { return s + kills(g); }, 0) };
   };
 
+  /* ---------- Wochenziele ---------- */
+  /** Montag 00:00 (lokale Zeit) der Woche von `now` */
+  S.weekStart = function (now) { var d = new Date(now == null ? Date.now() : now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); };
+  S.GOAL_KINDS = [
+    { id: 'games', title: 'Runden analysieren', unit: 'Runden', min: 3, step: 1 },
+    { id: 'top10', title: 'Top-10-Platzierungen', unit: 'mal', min: 1, step: 1 },
+    { id: 'elims', title: 'Elims', unit: 'Elims', min: 5, step: 1 },
+    { id: 'score', title: 'Ø Note', unit: '/ 10', min: 5, step: 0.5, avg: true }
+  ];
+  var weekVals = function (G) {
+    return { games: G.length, top10: G.filter(function (g) { return pl(g) > 0 && pl(g) <= 10; }).length,
+      elims: G.reduce(function (s, g) { return s + ((g.m && g.m.k) || 0); }, 0), score: G.length ? r1(avg(G.map(function (g) { return g.tot || 0; })) / 10) : 0 };
+  };
+  /** Vorschlag: Schnitt der letzten 4 Wochen (+10 %), mindestens der Startwert */
+  S.suggestGoals = function (games, now) {
+    var ws = S.weekStart(now), G = S.sorted(games), out = {};
+    var past = [1, 2, 3, 4].map(function (i) { var a = ws - i * 7 * DAY; return weekVals(G.filter(function (g) { return ts(g) >= a && ts(g) < a + 7 * DAY; })); }).filter(function (v) { return v.games > 0; });
+    S.GOAL_KINDS.forEach(function (k) {
+      var base = past.length ? avg(past.map(function (v) { return v[k.id]; })) * 1.1 : k.min;
+      var v = Math.max(k.min, base); out[k.id] = k.step < 1 ? Math.min(10, Math.ceil(v / k.step) * k.step) : Math.ceil(v);
+    });
+    return out;
+  };
+  /** Stand der Woche gegen die Ziele */
+  S.weekGoals = function (games, goals, now) {
+    var ws = S.weekStart(now), G = S.sorted(games).filter(function (g) { return ts(g) >= ws && ts(g) < ws + 7 * DAY; }), v = weekVals(G);
+    goals = goals || S.suggestGoals(games, now);
+    var items = S.GOAL_KINDS.map(function (k) {
+      var goal = +goals[k.id] || k.min, val = v[k.id], pct = Math.min(100, Math.round(100 * val / goal));
+      if (k.avg && v.games < 3) pct = Math.min(pct, 99); // Ø zählt erst ab 3 Runden
+      return { id: k.id, title: k.title, unit: k.unit, goal: goal, value: val, pct: pct, done: pct >= 100 };
+    });
+    var dayLeft = Math.max(0, Math.ceil((ws + 7 * DAY - (now == null ? Date.now() : now)) / DAY));
+    return { week: S.weekKey(ws + 3 * DAY), start: ws, games: G, values: v, items: items, done: items.filter(function (i) { return i.done; }).length, daysLeft: dayLeft };
+  };
+
+  /* ---------- Erfolge / Abzeichen ---------- */
+  S.BADGES = [
+    { id: 'first', icon: '🎬', title: 'Erster Review', desc: 'Dein erstes Replay analysiert', need: 1, of: 'games' },
+    { id: 'ten', icon: '📼', title: 'Videothek', desc: '10 Replays analysiert', need: 10, of: 'games' },
+    { id: 'fifty', icon: '🗄️', title: 'Archivar', desc: '50 Replays analysiert', need: 50, of: 'games' },
+    { id: 'top10', icon: '🏅', title: 'Top 10', desc: 'Erstes Mal unter den letzten 10', need: 1, of: 'top10' },
+    { id: 'win', icon: '👑', title: 'Victory Royale', desc: 'Eine Runde gewonnen', need: 1, of: 'wins' },
+    { id: 'wins5', icon: '🏆', title: 'Serien-Sieger', desc: '5 Runden gewonnen', need: 5, of: 'wins' },
+    { id: 'grade', icon: '⭐', title: 'Note A', desc: 'Eine Runde mit Note A', need: 1, of: 'gradeA' },
+    { id: 'clean', icon: '✨', title: 'Fehlerfrei', desc: 'Eine Runde ohne erkannte Fehler', need: 1, of: 'clean' },
+    { id: 'elims10', icon: '🎯', title: 'Zehner', desc: '10 Elims in einer Runde', need: 10, of: 'maxElims' },
+    { id: 'streak3', icon: '🔥', title: 'Dranbleiben', desc: '3 Tage in Folge gespielt', need: 3, of: 'streak' },
+    { id: 'streak7', icon: '⚡', title: 'Eine Woche Grind', desc: '7 Tage in Folge gespielt', need: 7, of: 'streak' },
+    { id: 'week', icon: '📅', title: 'Wochenziel', desc: 'Alle Wochenziele einer Woche geschafft', need: 1, of: 'weeks' }
+  ];
+  /** Abzeichen mit Fortschritt. extra: { weeks: geschaffte Wochen } */
+  S.badges = function (games, extra) {
+    var G = S.sorted(games), days = {};
+    G.forEach(function (g) { var b = berlinParts(ts(g)); days[Date.UTC(b.y, b.m - 1, b.d)] = 1; });
+    var keys = Object.keys(days).map(Number).sort(function (a, b) { return a - b; }), best = 0, run = 0;
+    keys.forEach(function (d, i) { run = i && d - keys[i - 1] === DAY ? run + 1 : 1; if (run > best) best = run; });
+    var V = { games: G.length, top10: G.filter(function (g) { return pl(g) > 0 && pl(g) <= 10; }).length, wins: G.filter(function (g) { return pl(g) === 1; }).length,
+      gradeA: G.filter(function (g) { return (g.tot || 0) >= 75; }).length, clean: G.filter(function (g) { var m = g.mis || (g.m && g.m.mis); return Array.isArray(m) && m.length === 0; }).length,
+      maxElims: G.reduce(function (s, g) { return Math.max(s, (g.m && g.m.k) || 0); }, 0), streak: best, weeks: (extra && extra.weeks) || 0 };
+    var L = S.BADGES.map(function (b) { var v = Math.min(b.need, V[b.of] || 0); return { id: b.id, icon: b.icon, title: b.title, desc: b.desc, value: v, need: b.need, done: v >= b.need, pct: Math.round(100 * v / b.need) }; });
+    return { list: L, done: L.filter(function (b) { return b.done; }).length, total: L.length };
+  };
+
   if (typeof module !== 'undefined' && module.exports) module.exports = CFT;
 })(typeof window !== 'undefined' ? window : globalThis);

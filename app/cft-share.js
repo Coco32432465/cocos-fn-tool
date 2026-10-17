@@ -28,6 +28,19 @@
       date: g && g.mtime ? new Date(g.mtime).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''
     };
   };
+  /** Wochenreport: Runden der laufenden Woche gegen die Wochenziele */
+  SH.weekCardData = function (games, goals, now) {
+    var ST = CFT.stats, W = ST.weekGoals(games, goals, now), v = W.values, LBL = ST.LABEL || {}, cnt = {};
+    W.games.forEach(function (g) { ((g.mis || (g.m && g.m.mis)) || []).forEach(function (m) { cnt[m.kind] = (cnt[m.kind] || 0) + 1; }); });
+    var top = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0], sc = Math.round(v.score * 10), wins = W.games.filter(function (g) { return g.m && g.m.pl === 1; }).length;
+    var f = function (t) { return new Date(t).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }); };
+    var fmt = function (it) { var k = ST.GOAL_KINDS.filter(function (x) { return x.id === it.id; })[0]; return k.step < 1 ? (it.value.toFixed(1) + ' / ' + it.goal.toFixed(1)).replace(/\./g, ',') : it.value + ' / ' + it.goal; };
+    return { title: 'Woche ' + W.week.split('-W')[1], kicker: 'WOCHENREPORT', mode: W.done + ' von ' + W.items.length + ' Zielen', land: f(W.start) + ' bis ' + f(W.start + 6 * 864e5),
+      win: false, grade: W.games.length ? (sc >= 75 ? 'A' : sc >= 55 ? 'B' : sc >= 40 ? 'C' : 'D') : '–', score: sc,
+      stats: [['Runden', String(v.games)], ['Top 10', String(v.top10)], [wins ? 'Siege' : 'Elims', String(wins || v.elims)]],
+      phases: W.items.map(function (it) { return [it.title, it.pct, fmt(it)]; }), focus: top ? (LBL[top] || top) : null, clean: !!W.games.length && !top,
+      date: '', landLabel: 'Zeitraum', cleanText: 'Keine auffälligen Fehler in dieser Woche' };
+  };
   SH.fileName = function (d) { return 'ninjago-tools-' + String(d.title || 'game').toLowerCase().replace(/[^a-z0-9äöüß]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) + '.png'; };
 
   function css(name, fb) { try { var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fb; } catch (e) { return fb; } }
@@ -52,9 +65,9 @@
     var cw = c.measureText('NINJAGO ').width; c.fillStyle = acc; c.shadowColor = acc; c.shadowBlur = 24; c.fillText('TOOLS', P + cw, cy); c.shadowBlur = 0;
     c.textAlign = 'right'; c.fillStyle = '#9a9aa6'; c.font = '600 30px Rajdhani, sans-serif'; c.fillText(d.date, W - P, cy); c.textAlign = 'left';
     cy += V(90);
-    c.fillStyle = acc2; c.font = '700 30px Rajdhani, sans-serif'; c.fillText([d.win ? 'VICTORY ROYALE' : 'ROUND REPORT', d.mode].filter(Boolean).join('  ·  ').toUpperCase(), P, cy);
+    c.fillStyle = acc2; c.font = '700 30px Rajdhani, sans-serif'; c.fillText([d.kicker || (d.win ? 'VICTORY ROYALE' : 'ROUND REPORT'), d.mode].filter(Boolean).join('  ·  ').toUpperCase(), P, cy);
     cy += V(70); c.fillStyle = '#fff'; c.font = '800 58px Orbitron, sans-serif'; c.fillText(fit(c, d.title, W - 2 * P), P, cy);
-    if (d.land) { cy += V(52); c.fillStyle = '#c9c9d4'; c.font = '600 34px Rajdhani, sans-serif'; c.fillText(fit(c, 'Gelandet: ' + d.land, W - 2 * P), P, cy); }
+    if (d.land) { cy += V(52); c.fillStyle = '#c9c9d4'; c.font = '600 34px Rajdhani, sans-serif'; c.fillText(fit(c, (d.landLabel || 'Gelandet') + ': ' + d.land, W - 2 * P), P, cy); }
     /* große Note */
     cy += V(56); var bh = V(300), bm = bh / 2;
     rr(c, P, cy, W - 2 * P, bh, 28); c.fillStyle = 'rgba(18,18,24,.9)'; c.fill(); c.strokeStyle = 'rgba(' + rgb + ',.45)'; c.lineWidth = 2; c.stroke();
@@ -74,16 +87,16 @@
     /* Phasen */
     d.phases.forEach(function (p) {
       c.fillStyle = '#e8e8ee'; c.font = '700 32px Rajdhani, sans-serif'; c.fillText(p[0], P, cy);
-      c.textAlign = 'right'; c.font = '800 32px Orbitron, sans-serif'; c.fillText(String(p[1]), W - P, cy); c.textAlign = 'left';
+      c.textAlign = 'right'; c.font = '800 32px Orbitron, sans-serif'; c.fillText(p[2] != null ? String(p[2]) : String(p[1]), W - P, cy); c.textAlign = 'left';
       rr(c, P, cy + 16, W - 2 * P, 18, 9); c.fillStyle = 'rgba(255,255,255,.08)'; c.fill();
       if (p[1] > 0) { var lg = c.createLinearGradient(P, 0, W - P, 0); lg.addColorStop(0, acc2); lg.addColorStop(1, acc); rr(c, P, cy + 16, Math.max(18, (W - 2 * P) * p[1] / 100), 18, 9); c.fillStyle = lg; c.shadowColor = acc; c.shadowBlur = 14; c.fill(); c.shadowBlur = 0; }
-      cy += V(92);
+      cy += V(d.phases.length > 3 ? 74 : 92);
     });
     /* Fokus */
     if (d.focus || d.clean) {
       cy += 6; rr(c, P, cy, W - 2 * P, 110, 18); c.fillStyle = 'rgba(' + rgb + ',.10)'; c.fill(); c.fillStyle = acc; c.fillRect(P, cy, 6, 110);
       c.fillStyle = '#9a9aa6'; c.font = '700 26px Rajdhani, sans-serif'; c.fillText(d.clean ? 'FEHLERFREI' : 'WORAN ICH ARBEITE', P + 34, cy + 44);
-      c.fillStyle = '#fff'; c.font = '700 38px Rajdhani, sans-serif'; c.fillText(fit(c, d.clean ? 'Keine auffälligen Fehler in dieser Runde' : d.focus, W - 2 * P - 60), P + 34, cy + 88);
+      c.fillStyle = '#fff'; c.font = '700 38px Rajdhani, sans-serif'; c.fillText(fit(c, d.clean ? (d.cleanText || 'Keine auffälligen Fehler in dieser Runde') : d.focus, W - 2 * P - 60), P + 34, cy + 88);
     }
     /* Fuß */
     c.textAlign = 'center'; c.fillStyle = '#9a9aa6'; c.font = '600 30px Rajdhani, sans-serif';
@@ -93,8 +106,10 @@
   };
 
   /** Bild erzeugen und speichern; liefert den Dateinamen */
-  SH.save = function (g, fmt) {
-    var d = SH.cardData(g), cv = document.createElement('canvas');
+  SH.save = function (g, fmt) { return SH.saveData(SH.cardData(g), fmt); };
+  SH.saveWeek = function (games, goals, fmt) { return SH.saveData(SH.weekCardData(games, goals), fmt); };
+  SH.saveData = function (d, fmt) {
+    var cv = document.createElement('canvas');
     var go = function () {
       SH.draw(cv, d, fmt);
       var a = document.createElement('a'); a.href = cv.toDataURL('image/png'); a.download = SH.fileName(d);
