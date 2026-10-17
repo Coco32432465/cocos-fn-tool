@@ -7,6 +7,7 @@ import { dapi, setCfg, getCfg } from './discord.js';
 import { boardEmbed } from './rank.js';
 import { cupBoard } from './cup.js';
 import { faqOverview } from './faq.js';
+import { clipPanel } from './clip.js';
 import { downloadComponents } from './panels.js';
 import { renamePatchnotes } from './patchnotes.js';
 
@@ -33,7 +34,7 @@ const RENAMED = { shop: 'key-kaufen' }; // frueherer Kanalname, wird beim Setup 
 const FORUM_TAGS = ['💡 Idee', '🐛 Problem', '⏳ In Arbeit', '✅ Umgesetzt', '❌ Abgelehnt'].map(name => ({ name }));
 const STRUCT = [
   { cat: 'START', emoji: '🚀', ch: [['welcome', '👋', 'Willkommen und erste Schritte', 1], ['rules', '📜', 'Server-Regeln', 1], ['announcements', '📢', 'Ankündigungen', 1], ['patchnotes', '🧩', "Patchnotes zu Ninjago Tools", 1], ['status', '📊', 'Live-Status: aktuelle Version und Download', 1], ['download', '📥', 'Download der App', 1], ['free-tips', '💡', 'Kostenlose Fortnite-Tipps', 0]] },
-  { cat: 'COMMUNITY', emoji: '💬', ch: [['general', '💬', 'Allgemeiner Austausch', 0], ['placements', '🏆', 'Eure Platzierungen und Ergebnisse', 0], ['rangliste', '🥇', 'Community-Rangliste (per App freiwillig)', 1], ['giveaways', '🎉', 'Giveaways: mitmachen und gewinnen', 1], ['umfragen', '📊', 'Umfragen: starte eigene Abstimmungen per Button', 1], ['lfg', '🎮', 'Mitspieler suchen: Duo, Trio oder Squad per Button', 1], ['events', '📅', 'Events und Scrims: per Button zu- oder absagen', 1], ['questions', '❓', 'Fragen zu Fortnite und zum Tool', 0]] },
+  { cat: 'COMMUNITY', emoji: '💬', ch: [['general', '💬', 'Allgemeiner Austausch', 0], ['placements', '🏆', 'Eure Platzierungen und Ergebnisse', 0], ['rangliste', '🥇', 'Community-Rangliste (per App freiwillig)', 1], ['giveaways', '🎉', 'Giveaways: mitmachen und gewinnen', 1], ['umfragen', '📊', 'Umfragen: starte eigene Abstimmungen per Button', 1], ['lfg', '🎮', 'Mitspieler suchen: Duo, Trio oder Squad per Button', 1], ['events', '📅', 'Events und Scrims: per Button zu- oder absagen', 1], ['clip-des-monats', '🎬', 'Clip des Monats: einreichen mit /clip einreichen, abstimmen per 👍', 1], ['questions', '❓', 'Fragen zu Fortnite und zum Tool', 0]] },
   { cat: 'TOOL', emoji: '🛠️', ch: [['how-to-use', '📖', 'So nutzt du das Tool', 1], ['feedback', '💌', 'Dein Feedback zum Tool (Button unten)', 1], ['bug-reports', '🐛', 'Fehler melden (Button unten)', 1], ['support', '🎫', 'Hilfe per Ticket', 1], ['shop', '🛒', 'Shop: Lizenz, Team, Tweak-Paket und Season-Pass', 1], ['impressum', '⚖️', 'Impressum', 1], ['datenschutz', '🔒', 'Datenschutz: was gespeichert wird und deine Rechte', 1]] },
   { cat: 'WORKSPACE', emoji: '🧰', ch: [['arbeit', '🎧', 'Team-Call – nur für das Team', 0, 'voice'], ['live-stats', '📈', 'Live-Stats: Keys, Nutzer, Umsatz (nur Team)', 1, '', 'admin'], ['meine-sachen', '📝', 'Deine privaten Notizen, Links und Dateien (nur Admin)', 1, '', 'admin'], ['vorschläge', '💡', 'Dein Vorschlag fürs Tool: ein Beitrag pro Idee, mit Tag und Beschreibung. Mit 👍 abstimmen.', 0, 'forum']] },
   { cat: 'INTERN', emoji: '🔒', priv: 'staff', ch: [['team-chat', '💼', 'Interner Team-Chat', 1, '', 'staff'], ['ticket-logs', '🗂️', 'Ticket-Transkripte (nur Team)', 1, '', 'admin']] }
@@ -118,7 +119,7 @@ export async function runSetup(env, renew) {
         ids[name] = c.data.id; L(`#${name}: erstellt`);
       }
     }
-    for (const [name, key] of [['ticket-logs', 'log_channel'], ['shop', 'key_channel'], ['support', 'support_channel'], ['feedback', 'feedback_channel'], ['bug-reports', 'bug_channel'], ['status', 'status_channel'], ['rangliste', 'rank_channel'], ['giveaways', 'giveaway_channel'], ['umfragen', 'poll_channel'], ['lfg', 'lfg_channel'], ['events', 'event_channel'], ['live-stats', 'stats_channel'], ['general', 'general_channel'], ['download', 'download_channel'], ['questions', 'questions_channel'], ['patchnotes', 'patchnotes_channel']]) {
+    for (const [name, key] of [['ticket-logs', 'log_channel'], ['shop', 'key_channel'], ['support', 'support_channel'], ['feedback', 'feedback_channel'], ['bug-reports', 'bug_channel'], ['status', 'status_channel'], ['rangliste', 'rank_channel'], ['giveaways', 'giveaway_channel'], ['umfragen', 'poll_channel'], ['lfg', 'lfg_channel'], ['events', 'event_channel'], ['live-stats', 'stats_channel'], ['general', 'general_channel'], ['download', 'download_channel'], ['questions', 'questions_channel'], ['clip-des-monats', 'clip_channel'], ['patchnotes', 'patchnotes_channel']]) {
       if (ids[name]) await setCfg(env, key, ids[name]);
     }
 
@@ -151,6 +152,7 @@ export async function runSetup(env, renew) {
       ['status', 'status', { embeds: [emb(env, { title: '📊 Ninjago Tools · Status', desc: 'Der Status wird in wenigen Minuten automatisch aktualisiert.' })] }],
       ['rangliste', 'rankboard', { embeds: [boardEmbed(env, [], 0)] }],
       ['rangliste', 'cupboard', { embeds: [await cupBoard(env)] }],
+      ['clip-des-monats', 'clip-panel', clipPanel(env)],
       ['questions', 'faq-panel', faqOverview({ ...env, QUESTIONS_CHANNEL_ID: ids.questions, SUPPORT_CHANNEL_ID: ids.support || env.SUPPORT_CHANNEL_ID, PANEL_CHANNEL_ID: ids.shop || env.PANEL_CHANNEL_ID, DOWNLOAD_CHANNEL_ID: ids.download, BUG_CHANNEL_ID: ids['bug-reports'] })],
       ['feedback', 'feedback-panel', { embeds: [emb(env, { title: '💌 Feedback senden', desc: 'Dir gefällt etwas, du vermisst etwas oder hast eine Idee? Klicke auf den Button und schreib uns – dein Feedback landet direkt beim Team.', fields: [{ name: 'Größere Ideen', value: `Poste sie im Forum ${M('vorschläge')}, dort kann die Community abstimmen.` }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Feedback senden', custom_id: 'form_feedback', emoji: { name: '💌' } }] }] }],
       ['bug-reports', 'bug-panel', { embeds: [emb(env, { title: '🐛 Fehler melden', desc: 'Etwas funktioniert nicht? Klicke auf den Button, beschreibe den Fehler und nenne die App-Version. Das Team setzt den Status (Offen → In Arbeit → Erledigt).', fields: [{ name: 'Tipp', value: 'Schreib, was du vorher gemacht hast und welche Replay-Datei betroffen ist.' }] })], components: [{ type: 1, components: [{ type: 2, style: 4, label: 'Fehler melden', custom_id: 'form_bug', emoji: { name: '🐛' } }] }] }],

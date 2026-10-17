@@ -52,3 +52,8 @@ assert.strictEqual(S.spinRemind(spun, null, at(20)), null); // heute schon gedre
 const tmr = new Date(2026, 9, 16, 18, 30).getTime(), r2 = S.spinRemind(spun, null, tmr);
 assert.ok(r2 && r2.streak === 1, 'Streak von gestern wird genannt');
 console.log('notify ok');
+
+// Server-Titel (Clip des Monats)
+assert.deepStrictEqual(S.entTitles(['tw', 'title:clip', 'pass:2026-10']), ['🎬 Clip des Monats']);
+assert.deepStrictEqual(S.entTitles(null), []);
+console.log('ent titles ok');

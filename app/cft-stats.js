@@ -358,6 +358,9 @@
     return { id: id, daysLeft: S.seasonDaysLeft(now), games: G.length, tasks: tasks, base: base, xp: xp, level: level, premium: !!opts.premium,
       into: level >= S.MAX_LEVEL ? S.LEVEL_XP : xp - level * S.LEVEL_XP, pct: Math.min(100, Math.round(100 * xp / cap)), max: level >= S.MAX_LEVEL };
   };
+  /** Titel, die der Server vergibt (Entitlements), z. B. Clip des Monats */
+  S.ENT_TITLES = { 'title:clip': '🎬 Clip des Monats' };
+  S.entTitles = function (ents) { return (ents || []).map(function (e) { return S.ENT_TITLES[e]; }).filter(Boolean); };
   /** Kosmetik, die zu Level/Premium freigeschaltet ist: { themes: [...], titles: [...] } */
   S.passCosmetics = function (level, premium) {
     var out = { themes: [], titles: [] };
