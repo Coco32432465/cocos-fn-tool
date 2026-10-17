@@ -315,6 +315,15 @@
     var streak = last === today ? (+st.streak || 1) : last === S.dayKey(y.getTime()) ? (+st.streak || 0) : 0;
     return { last: last, streak: streak, bonus: bonus, season: sid, can: last !== today, today: today, total: +st.total || 0, spins: +st.spins || 0, prize: last === today ? st.prize || null : null, mission: last === today ? st.mission || null : null };
   };
+  /* ---------- Erinnerung: heute noch nicht gedreht ---------- */
+  S.NOTIFY_DEFAULT = { spin: true, upd: true, hour: 18 };
+  S.notifyPrefs = function (raw) { var p = raw && typeof raw === 'object' ? raw : {}, h = Math.round(+p.hour); return { spin: p.spin !== false, upd: p.upd !== false, hour: h >= 0 && h <= 23 ? h : S.NOTIFY_DEFAULT.hour }; };
+  /** null = keine Erinnerung, sonst { day, streak } (day als cft_spinrem speichern, damit es nur einmal am Tag kommt) */
+  S.spinRemind = function (rawSpin, rawPrefs, now, lastDay) {
+    var t = now == null ? Date.now() : now, p = S.notifyPrefs(rawPrefs), sp = S.spinState(rawSpin, t);
+    if (!p.spin || !sp.can || new Date(t).getHours() < p.hour || +lastDay === sp.today) return null;
+    return { day: sp.today, streak: sp.streak };
+  };
   S.spinPick = function (rnd) { // rnd in [0,1)
     var sum = S.SPIN_PRIZES.reduce(function (a, p) { return a + p.w; }, 0), x = rnd * sum;
     for (var i = 0; i < S.SPIN_PRIZES.length; i++) { x -= S.SPIN_PRIZES[i].w; if (x < 0) return S.SPIN_PRIZES[i]; }

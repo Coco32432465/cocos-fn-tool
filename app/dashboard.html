@@ -1860,6 +1860,33 @@ epic();
 loadReal().then(function(){if(!st.name)open(1);else view()});
 })();
 </script>
+<script>
+/* ===== Benachrichtigungen: Daily-Spin-Erinnerung + Update-Hinweis (Windows) ===== */
+(function(go){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go()})(function(){
+  var F=window.fn||{},ST=window.CFT&&CFT.stats,$=function(i){return document.getElementById(i)};
+  if(!ST||!ST.spinRemind)return;
+  var get=function(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},put=function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+  function prefs(){return ST.notifyPrefs(get('cft_notify'))}
+  function ui(){var p=prefs();if(!$('ntsst'))return;$('ntsst').textContent=p.spin?'· an':'· aus';$('ntust').textContent=p.upd?'· an':'· aus';$('nthst').textContent=p.hour+' Uhr';if(!F.notify)$('ntm').textContent='Nur in der installierten App verfügbar.'}
+  function save(p){put('cft_notify',p);if(F.notifyPrefs)F.notifyPrefs(p);ui()}
+  if($('ntsb')){
+    $('ntsb').onclick=function(){var p=prefs();p.spin=!p.spin;save(p)};
+    $('ntub').onclick=function(){var p=prefs();p.upd=!p.upd;save(p)};
+    $('nthm').onclick=function(){var p=prefs();p.hour=Math.max(8,p.hour-1);save(p)};
+    $('nthp').onclick=function(){var p=prefs();p.hour=Math.min(23,p.hour+1);save(p)};
+  }
+  ui();if(F.notifyPrefs)F.notifyPrefs(prefs());
+  function tick(){
+    var r=ST.spinRemind(get('cft_spin'),get('cft_notify'),Date.now(),get('cft_spinrem'));
+    if(!r||!F.notify)return;
+    put('cft_spinrem',r.day);
+    F.notify({title:'🎡 Daily Spin wartet',body:r.streak>0?'Du hast heute noch nicht gedreht. Halte deinen Streak von '+r.streak+' Tag'+(r.streak===1?'':'en')+'!':'Du hast heute noch nicht gedreht. Hol dir deine Bonus-XP für den Season-Pass.',action:'spin'});
+  }
+  setTimeout(tick,30000);setInterval(tick,60000);
+  if(F.onNotifyClick)F.onNotifyClick(function(a){if(a==='spin'&&window.cftModes)cftModes.open('spin')});
+  window.cftNotifyUI=ui;
+});
+</script>
 <div id="upd" role="status"><span id="updt"></span><span class="pg" id="updp" hidden><i id="updi"></i></span><button id="updb" hidden>Jetzt neu starten</button></div>
 
 <script>
@@ -1954,6 +1981,11 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
     <h3>App</h3>
     <div class="row"><span>Version <b id="stgv">–</b></span><button id="stgu">Nach Updates suchen</button></div>
     <div class="um" id="stgm"></div>
+    <h3>Benachrichtigungen</h3>
+    <div class="row"><span>Erinnerung an den Daily Spin <b id="ntsst">–</b></span><button id="ntsb">Umschalten</button></div>
+    <div class="row"><span>Erinnern ab <b id="nthst">18 Uhr</b></span><span><button id="nthm" aria-label="Früher erinnern">−</button> <button id="nthp" aria-label="Später erinnern">+</button></span></div>
+    <div class="row"><span>Windows-Hinweis bei neuem Update <b id="ntust">–</b></span><button id="ntub">Umschalten</button></div>
+    <div class="um" id="ntm">Läuft die App, meldet sie sich einmal am Tag, wenn du noch nicht gedreht hast, damit dein Streak hält. Ein fertig geladenes Update meldet Windows, wenn die App im Hintergrund ist.</div>
     <h3>Karte</h3>
     <div class="row"><span>Karte in allen Modi zeigen <b id="mapst">–</b></span><button id="mapb">Umschalten</button></div>
     <div class="um" id="mapm">Normal wird die Karte nur bei Reload-Replays gezeigt, bei anderen Modi bleibt sie aus. Die Änderung gilt nach einem Neustart der App.</div>

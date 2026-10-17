@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, shell, Notification } = require('electron');
 const { execFile } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -12,8 +12,28 @@ const parserExe = () =>
     : path.join(__dirname, 'bin', 'ReplayDump.exe');
 
 
-// ---------- Auto-Update (GitHub Releases) ----------
+// ---------- Windows-Benachrichtigungen ----------
 let mainWin = null;
+let notifyPrefs = { upd: true };
+const liveToasts = new Set(); // Referenz halten, sonst räumt der GC den Hinweis samt Klick ab
+if (process.platform === 'win32') app.setAppUserModelId('de.coco.fntool'); // gleiche ID wie im Installer, sonst zeigt Windows keine Hinweise
+function toast(title, body, action) {
+  if (!Notification.isSupported()) return false;
+  const n = new Notification({ title, body, icon: path.join(__dirname, 'app', 'icon.ico') });
+  n.on('click', () => {
+    if (!mainWin || mainWin.isDestroyed()) return;
+    if (mainWin.isMinimized()) mainWin.restore();
+    mainWin.show(); mainWin.focus();
+    if (action) mainWin.webContents.send('notify-click', action);
+  });
+  liveToasts.add(n); n.on('close', () => liveToasts.delete(n));
+  n.show();
+  return true;
+}
+ipcMain.handle('notify', (_e, o) => { o = o || {}; return toast(String(o.title || 'Ninjago Tools').slice(0, 80), String(o.body || '').slice(0, 200), /^[a-z]{1,20}$/.test(o.action || '') ? o.action : null); });
+ipcMain.handle('notify-prefs', (_e, p) => { notifyPrefs = { upd: !(p && p.upd === false) }; return true; });
+
+// ---------- Auto-Update (GitHub Releases) ----------
 let updateStatus = { state: 'idle' };
 function setUpdate(s) {
   updateStatus = s;
@@ -27,7 +47,11 @@ function initUpdater() {
   autoUpdater.on('update-not-available', () => setUpdate({ state: 'none' }));
   autoUpdater.on('update-available', i => setUpdate({ state: 'downloading', version: i.version, percent: 0 }));
   autoUpdater.on('download-progress', p => setUpdate({ state: 'downloading', version: updateStatus.version, percent: Math.round(p.percent) }));
-  autoUpdater.on('update-downloaded', i => setUpdate({ state: 'ready', version: i.version }));
+  autoUpdater.on('update-downloaded', i => {
+    setUpdate({ state: 'ready', version: i.version });
+    // Hinweis nur, wenn die App gerade im Hintergrund ist; im Vordergrund zeigt sie das Update selbst an
+    if (notifyPrefs.upd && !(mainWin && !mainWin.isDestroyed() && mainWin.isFocused())) toast(`Update ${i.version} ist bereit`, 'Klick hier und starte Ninjago Tools neu, um das Update zu installieren.', 'update');
+  });
   autoUpdater.on('error', e => setUpdate({ state: 'error', message: String(e && e.message || e) }));
   const check = () => autoUpdater.checkForUpdates().catch(() => {});
   check();
