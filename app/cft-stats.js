@@ -432,6 +432,28 @@
       .sort(function (a, b) { return (pl(b) === 1) - (pl(a) === 1) || (b.tot || 0) - (a.tot || 0) || ts(b) - ts(a); }).slice(0, n || 3);
   };
 
+  /* ---------- Coach-Notizen: Marker mit Kommentar je Replay ---------- */
+  S.NOTE_MAX = 280;
+  var mmss = function (t) { var m = Math.floor(t / 60), x = Math.floor(t % 60); return (m < 10 ? '0' : '') + m + ':' + (x < 10 ? '0' : '') + x; };
+  S.mmss = mmss;
+  /** alte Marker (nur Sekunden) und neue ({t, txt}) einheitlich, nach Zeit sortiert */
+  S.marksNorm = function (list) {
+    return (Array.isArray(list) ? list : []).map(function (x) { return typeof x === 'number' ? { t: x, txt: '' } : x && typeof x === 'object' && isFinite(+x.t) ? { t: Math.max(0, Math.round(+x.t)), txt: String(x.txt || '').slice(0, S.NOTE_MAX) } : null; })
+      .filter(Boolean).sort(function (a, b) { return a.t - b.t; });
+  };
+  /** Notiz setzen: in 2 s Nähe eines bestehenden Markers wird dessen Text ersetzt */
+  S.marksSet = function (list, t, txt) {
+    var L = S.marksNorm(list), tt = Math.max(0, Math.round(+t || 0)), x = String(txt || '').replace(/\s+/g, ' ').trim().slice(0, S.NOTE_MAX);
+    var hit = L.filter(function (m) { return Math.abs(m.t - tt) < 2; })[0];
+    if (hit) hit.txt = x; else L.push({ t: tt, txt: x });
+    return S.marksNorm(L);
+  };
+  /** Notizen als Text (zum Teilen mit Coach oder Team) */
+  S.marksText = function (list, title) {
+    var L = S.marksNorm(list); if (!L.length) return '';
+    return (title ? title + '\n' : '') + L.map(function (m) { return mmss(m.t) + '  ' + (m.txt || '(Marker)'); }).join('\n');
+  };
+
   /* ---------- Wochenziele ---------- */
   /** Montag 00:00 (lokale Zeit) der Woche von `now` */
   S.weekStart = function (now) { var d = new Date(now == null ? Date.now() : now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); };

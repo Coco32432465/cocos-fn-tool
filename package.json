@@ -1,7 +1,7 @@
 {
   "name": "cocos-fn-tool",
   "productName": "Coco's Fn Tool",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "description": "Fortnite Replay Analyse",
   "main": "main.js",
   "scripts": {
