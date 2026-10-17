@@ -439,6 +439,16 @@
     return { week: S.weekKey(ws + 3 * DAY), start: ws, games: G, values: v, items: items, done: items.filter(function (i) { return i.done; }).length, daysLeft: dayLeft };
   };
 
+  /* ---------- Wöchentlicher Cup ---------- */
+  S.CUP_MIN = 3; S.CUP_BEST = 5;
+  /** Cup-Werte der Woche: score = Ø der besten 5 Noten (0–100), gewertet ab 3 Runden */
+  S.cupWeek = function (games, now) {
+    var ws = S.weekStart(now), G = S.sorted(games).filter(function (g) { return ts(g) >= ws && ts(g) < ws + 7 * DAY; });
+    var top = G.map(function (g) { return g.tot || 0; }).sort(function (a, b) { return b - a; }).slice(0, S.CUP_BEST);
+    return { games: G.length, score: top.length ? r1(avg(top)) : 0, best: top.length ? Math.round(top[0]) : 0, wins: G.filter(function (g) { return pl(g) === 1; }).length,
+      kills: G.reduce(function (s, g) { return s + ((g.m && g.m.k) || 0); }, 0), counted: top.length, ranked: G.length >= S.CUP_MIN };
+  };
+
   /* ---------- Erfolge / Abzeichen ---------- */
   S.BADGES = [
     { id: 'first', icon: '🎬', title: 'Erster Review', desc: 'Dein erstes Replay analysiert', need: 1, of: 'games' },

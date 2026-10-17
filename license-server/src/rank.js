@@ -3,6 +3,8 @@
 import { now, json, emb, eph, bad, COL, sha256hex } from './util.js';
 import { dapi, getCfg, setCfg, addRole, delRole, editMsg } from './discord.js';
 import { hit } from './auth.js';
+import { cupStore, cupBoard, syncCup, cupTop } from './cup.js';
+import { weekKey } from './community.js';
 
 const MIN_GAMES = 3;
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -23,6 +25,7 @@ export async function rankSubmit(body, env) {
   await env.DB.prepare(`INSERT INTO ranks (discord_id,name,games,avg_score,wins,kills,avg_place,best_place,updated_at) VALUES (?,?,?,?,?,?,?,?,?)
     ON CONFLICT(discord_id) DO UPDATE SET name=excluded.name,games=excluded.games,avg_score=excluded.avg_score,wins=excluded.wins,kills=excluded.kills,avg_place=excluded.avg_place,best_place=excluded.best_place,updated_at=excluded.updated_at`)
     .bind(s.discord_id, String(s.username || 'Spieler').slice(0, 32), Math.round(games), Math.round(avg * 10) / 10, Math.round(wins), Math.round(kills), place, best == null ? null : Math.round(best), now()).run();
+  await cupStore(env, s.discord_id, s.username, st.cup).catch(() => { /* Cup optional */ });
   return json({ ok: true });
 }
 
@@ -30,6 +33,7 @@ export async function rankLeave(body, env) {
   const s = await session(env, body.session);
   if (!s) return json({ ok: false, error: 'session' }, 401);
   await env.DB.prepare('DELETE FROM ranks WHERE discord_id=?').bind(s.discord_id).run();
+  await env.DB.prepare('DELETE FROM cup WHERE discord_id=?').bind(s.discord_id).run();
   return json({ ok: true });
 }
 
@@ -52,6 +56,7 @@ export function boardEmbed(env, rows, total) {
 
 // Rangliste im Kanal aktualisieren + "Top 10"-Rolle vergeben
 export async function syncRank(env) {
+  await syncCup(env).catch(() => { /* Cup-Tabelle optional */ });
   const rows = await topRanks(env, 10);
   const total = (await env.DB.prepare('SELECT COUNT(*) AS n FROM ranks WHERE games>=?').bind(MIN_GAMES).first()).n;
   const msg = await getCfg(env, 'posted:rankboard');
@@ -73,6 +78,11 @@ export async function handleRank(i, env, uid) {
     const rows = await topRanks(env, 10), total = (await env.DB.prepare('SELECT COUNT(*) AS n FROM ranks WHERE games>=?').bind(MIN_GAMES).first()).n;
     return { type: 4, data: { embeds: [boardEmbed(env, rows, total)] } };
   }
+  if (sub === 'cup') {
+    const e = await cupBoard(env), me = (await cupTop(env, weekKey(now()), 1000)).findIndex(r => r.discord_id === uid);
+    if (me >= 0) e.fields.push({ name: 'Du', value: `Platz **${me + 1}**` });
+    return { type: 4, data: { embeds: [e] } };
+  }
   if (sub === 'ich') {
     const me = await env.DB.prepare('SELECT * FROM ranks WHERE discord_id=?').bind(uid).first();
     if (!me) return eph(env, { title: 'Nicht in der Rangliste', color: COL.neutral, desc: 'Aktiviere die Rangliste in der App unter **Einstellungen → Rangliste**.' });
@@ -84,6 +94,7 @@ export async function handleRank(i, env, uid) {
   }
   if (sub === 'austragen') {
     await env.DB.prepare('DELETE FROM ranks WHERE discord_id=?').bind(uid).run();
+    await env.DB.prepare('DELETE FROM cup WHERE discord_id=?').bind(uid).run();
     return eph(env, { title: 'Aus der Rangliste entfernt', color: COL.ok, desc: 'Deine Daten wurden gelöscht. Du kannst dich in der App jederzeit wieder eintragen.' });
   }
   return bad(env, 'Unbekannter Befehl', '');

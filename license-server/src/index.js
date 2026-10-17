@@ -71,6 +71,7 @@ const COMMANDS = [
   { name: 'rank', description: 'Community-Rangliste', options: [
     { type: 1, name: 'top', description: 'Top 10 anzeigen' },
     { type: 1, name: 'ich', description: 'Deinen Rang anzeigen' },
+    { type: 1, name: 'cup', description: 'Wöchentlicher Cup: aktuelle Tabelle' },
     { type: 1, name: 'austragen', description: 'Dich aus der Rangliste entfernen' }] },
   { name: 'admin', description: 'Admin-Übersicht', options: [{ type: 1, name: 'stats', description: 'Lizenzen, Umsatz, Nutzer, Support' }, { type: 1, name: 'nutzer', description: 'Wer die App hat (mit Discord verbunden)' }, { type: 1, name: 'keys', description: 'Welche Keys wer eingelöst hat' }] },
   { name: 'team', description: 'Team-Rollen verwalten (Admin)', options: [

@@ -28,3 +28,12 @@ assert.ok(!b('ten').done && b('ten').pct === 30 && !b('streak7').done && !b('wee
 assert.strictEqual(B.total, S.BADGES.length); assert.strictEqual(B.done, 7);
 assert.strictEqual(S.badges([], {}).done, 0);
 console.log('badges ok');
+
+// Wöchentlicher Cup: Ø der besten 5 Noten der Woche, gewertet ab 3 Runden
+const CG = [70, 90, 40, 85, 60, 95, 30].map((tot, i) => mk(ws + i * 3600e3, tot, i === 1 ? 1 : 12, 2)).concat([mk(ws - DAY, 100, 1, 9)]);
+const CW = S.cupWeek(CG, NOW);
+assert.strictEqual(CW.games, 7); assert.strictEqual(CW.counted, 5); assert.strictEqual(CW.score, 80); assert.strictEqual(CW.best, 95);
+assert.strictEqual(CW.wins, 1); assert.strictEqual(CW.kills, 14); assert.strictEqual(CW.ranked, true);
+const C2 = S.cupWeek(CG.slice(0, 2), NOW); assert.strictEqual(C2.ranked, false); assert.strictEqual(C2.score, 80);
+assert.deepStrictEqual(S.cupWeek([], NOW), { games: 0, score: 0, best: 0, wins: 0, kills: 0, counted: 0, ranked: false });
+console.log('cup ok');

@@ -1982,7 +1982,7 @@ loadReal().then(function(){if(!st.name)open(1);else view()});
     var G=(window.CFT&&CFT.games||[]).filter(function(g){return g&&g.real&&g.m});if(!G.length)return null;
     var pl=G.map(function(g){return g.m.pl}).filter(function(x){return x>0});
     return{games:G.length,avgScore:Math.round(G.reduce(function(a,g){return a+(g.tot||0)},0)/G.length*10)/10,wins:G.filter(function(g){return g.m.pl===1}).length,
-      kills:G.reduce(function(a,g){return a+(g.m.k||0)},0),avgPlace:pl.length?Math.round(pl.reduce(function(a,b){return a+b},0)/pl.length*10)/10:0,bestPlace:pl.length?Math.min.apply(null,pl):0}}
+      kills:G.reduce(function(a,g){return a+(g.m.k||0)},0),avgPlace:pl.length?Math.round(pl.reduce(function(a,b){return a+b},0)/pl.length*10)/10:0,bestPlace:pl.length?Math.min.apply(null,pl):0,cup:CFT.stats&&CFT.stats.cupWeek?CFT.stats.cupWeek(G):undefined}}
   function rankUI(st){
     var on=st&&st.rank,b=$('rkb');$('rkst').textContent=!st||!st.connected?'(nicht verbunden)':on?'· aktiv':'· aus';
     b.textContent=on?'Austragen':'Teilnehmen';b.disabled=!st||!st.connected;if(st&&st.error)$('rkm').textContent=st.error}

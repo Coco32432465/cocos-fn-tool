@@ -489,6 +489,11 @@
     document.head.appendChild(st);
   })();
   function weekDone(W) { var m = store.get('cft_wdone') || {}; if (W.done === W.items.length && W.games.length && !m[W.week]) { m[W.week] = 1; store.set('cft_wdone', m); } return Object.keys(m).length; }
+  function cupHtml(G) {
+    var C = ST.cupWeek(G.filter(function (g) { return g.real; })), miss = ST.CUP_MIN - C.games;
+    return '<div class="wg" style="margin-top:14px"><div class="pi' + (C.ranked ? ' ok' : '') + '"><h4>🏆 Wöchentlicher Cup</h4><div class="gv">' + (C.counted ? Math.round(C.score) : '–') + ' <span>Cup-Note · Ø deiner besten ' + ST.CUP_BEST + ' Noten</span></div>'
+      + '<p class="s">' + (C.ranked ? 'Du wirst gewertet (' + C.games + ' Runden diese Woche).' : 'Noch ' + miss + ' Runde' + (miss === 1 ? '' : 'n') + ', dann wirst du gewertet.') + ' Platz 1 bekommt am Montag <b style="color:#fff">7 Bonustage</b>. Zählt automatisch, wenn die Rangliste in den Einstellungen aktiv ist. Tabelle im Discord mit <b style="color:#fff">/rank cup</b>.</p></div></div>';
+  }
   function renderGoals(w) {
     var G = games(), saved = store.get('cft_wgoals'), goals = saved || ST.suggestGoals(G), W = ST.weekGoals(G, goals), wk = weekDone(W);
     var h = '<div class="pn"><h3>Diese Woche</h3><p class="s">' + W.done + ' von ' + W.items.length + ' Zielen geschafft · noch ' + W.daysLeft + ' Tag' + (W.daysLeft === 1 ? '' : 'e') + ' · ' + W.games.length + ' Runde' + (W.games.length === 1 ? '' : 'n') + ' seit Montag' + (wk ? ' · ' + wk + ' Woche' + (wk === 1 ? '' : 'n') + ' komplett geschafft' : '') + '</p>'
@@ -496,7 +501,7 @@
         var k = ST.GOAL_KINDS.filter(function (x) { return x.id === it.id; })[0], v = k.step < 1 ? fmt1(it.value) : it.value, g = k.step < 1 ? fmt1(it.goal) : it.goal;
         return '<div class="pi' + (it.done ? ' ok' : '') + '"><h4>' + (it.done ? '✓ ' : '') + esc(it.title) + '</h4><div class="gv">' + v + ' <span>von ' + g + ' ' + esc(k.unit === '/ 10' ? '' : k.unit) + '</span></div><div class="pb2"><i style="width:' + it.pct + '%"></i></div>' + (k.avg && W.games.length < 3 ? '<small style="color:var(--mute);font-size:13px">zählt ab 3 Runden in der Woche</small>' : '')
           + '<div class="gs">Ziel <button data-g="' + it.id + '" data-d="-1" aria-label="Ziel senken">−</button><b style="color:#fff">' + g + '</b><button data-g="' + it.id + '" data-d="1" aria-label="Ziel erhöhen">+</button></div></div>';
-      }).join('') + '</div><div class="btns">' + (saved ? '<button class="pbtn gh" id="wgReset">Ziele neu vorschlagen</button>' : '') + (CFT.share && CFT.share.saveWeek ? '<button class="pbtn" id="wgImg">Woche als Bild</button>' : '') + '</div></div>';
+      }).join('') + '</div>' + cupHtml(G) + '<div class="btns">' + (saved ? '<button class="pbtn gh" id="wgReset">Ziele neu vorschlagen</button>' : '') + (CFT.share && CFT.share.saveWeek ? '<button class="pbtn" id="wgImg">Woche als Bild</button>' : '') + '</div></div>';
     w.innerHTML = h;
     [].forEach.call(w.querySelectorAll('[data-g]'), function (b) { b.onclick = function () {
       var k = ST.GOAL_KINDS.filter(function (x) { return x.id === b.dataset.g; })[0], n = Object.assign({}, goals);

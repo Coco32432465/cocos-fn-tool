@@ -1,7 +1,7 @@
 // Selbst-Migration: neue Tabellen/Spalten werden beim ersten Aufruf automatisch angelegt (kein manueller Schritt noetig).
 import { getCfg, setCfg } from './discord.js';
 
-const SCHEMA_V = '13';
+const SCHEMA_V = '14';
 const STEPS = [
   'ALTER TABLE tickets ADD COLUMN code TEXT',
   `CREATE TABLE IF NOT EXISTS codes (code TEXT PRIMARY KEY, owner TEXT NOT NULL, created_at INTEGER NOT NULL, uses INTEGER NOT NULL DEFAULT 0, earned_days REAL NOT NULL DEFAULT 0)`,
@@ -47,7 +47,9 @@ const STEPS = [
   `CREATE TABLE IF NOT EXISTS season_claims (user_id TEXT NOT NULL, season TEXT NOT NULL, level INTEGER NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY (user_id, season, level))`,
   'ALTER TABLE codes ADD COLUMN buyer_days REAL',
   'ALTER TABLE codes ADD COLUMN owner_week REAL',
-  'ALTER TABLE codes ADD COLUMN owner_month REAL'
+  'ALTER TABLE codes ADD COLUMN owner_month REAL',
+  `CREATE TABLE IF NOT EXISTS cup (discord_id TEXT NOT NULL, week TEXT NOT NULL, name TEXT, games INTEGER NOT NULL DEFAULT 0, score REAL NOT NULL DEFAULT 0, best INTEGER, wins INTEGER NOT NULL DEFAULT 0, kills INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL, PRIMARY KEY (discord_id, week))`,
+  'CREATE INDEX IF NOT EXISTS cup_week ON cup(week, score DESC)'
 ];
 
 let done = false;
