@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import worker from '../src/index.js';
 import { runSetup } from '../src/setup.js';
-import { postPatchnotes, parsePatchnotes } from '../src/patchnotes.js';
+import { postPatchnotes, parsePatchnotes, renamePatchnotes } from '../src/patchnotes.js';
 import { makeDb, makeEnv, makeDiscord, signer } from './mock.mjs';
 
 // 1) Migration v1 -> v2 mit Altdaten
@@ -430,6 +430,14 @@ await T('Patchnotes: Embed im Kanal, nur einmal pro Version', async () => {
   const e = S.msgs[pc.id].at(-1).embeds[0]; assert.match(e.title, /Version 0\.9\.9/); assert.match(e.description, /Erster Punkt\.\n\n.*Zweiter Punkt/); assert.equal(e.fields.length, 3); assert.match(e.footer.text, /v0\.9\.9/);
   const n = S.msgs[pc.id].length; const r2 = await postPatchnotes(env, src); assert.deepEqual(r2.sent, []); assert.equal(S.msgs[pc.id].length, n);
   const r3 = await postPatchnotes(env, src.replace("[\n", "[\n  { v: '1.0.0', date: '2026-10-16', tag: 'NEU', text: 'Neu.' },\n")); assert.deepEqual(r3.sent, ['1.0.0']);
+  // alter Name in Kopf/Fußzeile wird umgeschrieben, Inhalt und fremde Posts bleiben
+  S.msgs[pc.id].push({ id: 'OLDP', author: { id: '111' }, embeds: [{ author: { name: 'COCOS TOOL · PATCHNOTES' }, title: 'Version 0.9.0', description: 'App heißt jetzt „Cocos Tool“', footer: { text: 'Cocos Tool · v0.9.0 · NEU' } }] });
+  S.msgs[pc.id].push({ id: 'USERP', author: { id: 'U1' }, embeds: [{ footer: { text: 'Cocos Tool' } }] });
+  assert.equal(await renamePatchnotes(env), 1);
+  const op = S.msgs[pc.id].find(m => m.id === 'OLDP').embeds[0];
+  assert.equal(op.author.name, 'NINJAGO TOOLS · PATCHNOTES'); assert.equal(op.footer.text, 'Ninjago Tools · v0.9.0 · NEU'); assert.match(op.description, /Cocos Tool/);
+  assert.equal(S.msgs[pc.id].find(m => m.id === 'USERP').embeds[0].footer.text, 'Cocos Tool');
+  assert.equal(await renamePatchnotes(env), 0);
 } finally { S.restore(); }
 });
 await T('Creator-Codes: Bonus-Tage für Käufer, Belohnung für Inhaber, nur einmal, Datenschutz', async () => {

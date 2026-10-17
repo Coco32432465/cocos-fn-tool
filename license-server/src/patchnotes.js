@@ -81,6 +81,27 @@ export async function postPatchnotes(env, src, max = 3) {
   return { ok: true, sent };
 }
 
+// Alte Patchnotes-Posts auf den aktuellen Namen umschreiben (Kopf- und Fußzeile), Inhalt bleibt
+const OLD_NAME = /Coco'?s(?: Fn)? Tool/gi;
+export async function renamePatchnotes(env) {
+  const chans = (await dapi(env, 'GET', `/guilds/${env.GUILD_ID}/channels`)).data || [];
+  const ch = chans.find(c => c.type === 0 && baseCh(c.name) === 'patchnotes');
+  if (!ch) return 0;
+  const hist = (await dapi(env, 'GET', `/channels/${ch.id}/messages?limit=100`)).data || [];
+  let n = 0;
+  for (const m of hist) {
+    if (!m.author || m.author.id !== env.DISCORD_APP_ID || !(m.embeds || []).length) continue;
+    const old = JSON.stringify(m.embeds);
+    const embeds = m.embeds.map(e => ({ ...e,
+      ...(e.author ? { author: { ...e.author, name: String(e.author.name || '').replace(OLD_NAME, 'NINJAGO TOOLS') } } : {}),
+      ...(e.footer ? { footer: { ...e.footer, text: String(e.footer.text || '').replace(OLD_NAME, 'Ninjago Tools') } } : {}) }));
+    if (JSON.stringify(embeds) === old) continue;
+    const r = await dapi(env, 'PATCH', `/channels/${ch.id}/messages/${m.id}`, { embeds });
+    if (r.ok) n++;
+  }
+  return n;
+}
+
 export async function syncPatchnotes(env) {
   const r = await fetch(env.PATCHNOTES_URL || SRC, { headers: { 'cache-control': 'no-cache' } });
   if (!r.ok) return { ok: false, reason: 'GitHub ' + r.status };
