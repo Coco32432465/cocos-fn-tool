@@ -13,7 +13,7 @@ import { sha256hex, json, now, emb, eph, bad, noPerm, COL, PLANS, PLAN_ALL, fmtD
 import { getCfg, setCfg, dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin, isTeam, isCodeManager } from './discord.js';
 import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statusOf, expireSweep } from './keys.js';
 import { openEventModal, submitEvent, eventButton, eventSweep, weeklySweep, newsletterSweep } from './community.js';
-import { startTrial, rate, openRewardModal, submitReward } from './growth.js';
+import { startTrial, welcomeDM, rate, openRewardModal, submitReward } from './growth.js';
 import { openTicket, selectPlan, closeTicket, confirmTicket, codeButton, submitCode } from './tickets.js';
 import { ensureSchema } from './schema.js';
 import { remindSweep, RENEW_BUTTON } from './remind.js';
@@ -188,8 +188,10 @@ async function handleInteraction(i, env, ctx) {
     if (id === 'rep_done') return setBugStatus(i, env, 'done');
     if (id === 'rules_accept') {
       if (!env.MEMBER_ROLE_ID) return bad(env, 'Noch nicht eingerichtet', 'Das Team muss zuerst `/setup` ausführen.');
+      const already = ((i.member && i.member.roles) || []).includes(env.MEMBER_ROLE_ID);
       const r = await addRole(env, uid, env.MEMBER_ROLE_ID);
-      if (r.ok && env.GENERAL_CHANNEL_ID) ctx.waitUntil(dapi(env, 'POST', `/channels/${env.GENERAL_CHANNEL_ID}/messages`, { embeds: [emb(env, { title: '👋 Neues Mitglied', color: COL.ok, desc: `Willkommen auf dem Server, <@${uid}>! Schau in <#${env.PANEL_CHANNEL_ID || env.GENERAL_CHANNEL_ID}> vorbei, wenn du Ninjago Tools holen möchtest.` })], allowed_mentions: { users: [uid] } }));
+      if (r.ok && !already) ctx.waitUntil(tryDM(env, uid, welcomeDM(env)));
+      if (r.ok && !already && env.GENERAL_CHANNEL_ID) ctx.waitUntil(dapi(env, 'POST', `/channels/${env.GENERAL_CHANNEL_ID}/messages`, { embeds: [emb(env, { title: '👋 Neues Mitglied', color: COL.ok, desc: `Willkommen auf dem Server, <@${uid}>! Schau in <#${env.PANEL_CHANNEL_ID || env.GENERAL_CHANNEL_ID}> vorbei, wenn du Ninjago Tools holen möchtest.` })], allowed_mentions: { users: [uid] } }));
       return r.ok ? eph(env, { title: 'Willkommen', color: COL.ok, desc: 'Du hast die Regeln akzeptiert und die Rolle **Member** erhalten.' }) : bad(env, 'Rolle nicht vergeben', 'Bitte melde dich beim Team.');
     }
     return bad(env, 'Unbekannte Aktion', '');
