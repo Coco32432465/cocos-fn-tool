@@ -454,6 +454,69 @@
     return (title ? title + '\n' : '') + L.map(function (m) { return mmss(m.t) + '  ' + (m.txt || '(Marker)'); }).join('\n');
   };
 
+  /* ---------- Duo-Synergie: du und deine Mates im Vergleich ---------- */
+  var dd = function (a, b) { return Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1])); };
+  var aliveAt = function (p, t) { return p.dead == null || t < p.dead; };
+  /** erste Zeit im Fenster [a, b], zu der p im Kreis N steht (3-s-Schritte), sonst null */
+  var enterAt = function (p, N, a, b) {
+    for (var t = a; t <= b; t += 3) { if (!aliveAt(p, t)) return null; var q = CFT.posAt(p, t); if (q && dd(q, [N.x, N.y]) <= N.r) return t; }
+    return null;
+  };
+  /** Eine Runde: je Mate wer zuerst stirbt, wer früher in die nächste Zone rotiert, Abstand */
+  S.duoGame = function (R) {
+    if (!R || !R.players || !(R.tn >= 2) || !CFT.posAt) return [];
+    var me = R.players[0], Z = R.zones || [], out = [];
+    for (var i = 1; i < R.tn; i++) {
+      var p = R.players[i]; if (!p || !p.pts || !p.pts.length) continue;
+      var first = me.dead == null && p.dead == null ? '' : p.dead == null ? 'me' : me.dead == null ? 'mate' : Math.abs(me.dead - p.dead) < 1 ? '' : me.dead < p.dead ? 'me' : 'mate';
+      var rot = { me: 0, mate: 0, tie: 0 };
+      Z.forEach(function (z) {
+        var a = Math.max(0, z.s - 90), b = z.f; if (!aliveAt(me, a) || !aliveAt(p, a)) return;
+        var em = enterAt(me, z.N, a, b), ep = enterAt(p, z.N, a, b);
+        if (em == null && ep == null) return;
+        if (ep == null || (em != null && ep - em > 3)) rot.me++; else if (em == null || em - ep > 3) rot.mate++; else rot.tie++;
+      });
+      var end = Math.min(R.dur || 0, me.dead == null ? 1e9 : me.dead, p.dead == null ? 1e9 : p.dead), n = 0, sum = 0, near = 0;
+      var t0 = Math.max(me.pts[0] ? me.pts[0][0] : 0, p.pts[0][0]) + 60;
+      for (var t = t0; t < end; t += 10) { var a1 = CFT.posAt(me, t), b1 = CFT.posAt(p, t); if (!a1 || !b1) continue; var d = dd(a1, b1); n++; sum += d; if (d <= 6000) near++; }
+      out.push({ name: String(p.name || 'Mate ' + i), bot: !!p.bot, first: first, rot: rot, dist: n ? sum / n / 100 : null, near: n ? near / n : null });
+    }
+    return out;
+  };
+  /** über alle Runden je Mate (Name) zusammengefasst, meiste gemeinsame Runden zuerst */
+  S.duo = function (games) {
+    var M = {};
+    S.sorted(games).forEach(function (g) {
+      if (!g.real) return;
+      S.duoGame(g.real).forEach(function (x) {
+        if (x.bot) return;
+        var k = x.name.toLowerCase(), m = M[k] || (M[k] = { name: x.name, games: 0, meFirst: 0, mateFirst: 0, rotMe: 0, rotMate: 0, rotTie: 0, dist: [], near: [], places: [], wins: 0, last: 0 });
+        m.games++; if (x.first === 'me') m.meFirst++; if (x.first === 'mate') m.mateFirst++;
+        m.rotMe += x.rot.me; m.rotMate += x.rot.mate; m.rotTie += x.rot.tie;
+        if (x.dist != null) { m.dist.push(x.dist); m.near.push(x.near); }
+        if (pl(g)) m.places.push(pl(g)); if (pl(g) === 1) m.wins++; m.last = Math.max(m.last, ts(g));
+      });
+    });
+    return Object.keys(M).map(function (k) {
+      var m = M[k];
+      return { name: m.name, games: m.games, meFirst: m.meFirst, mateFirst: m.mateFirst, rotMe: m.rotMe, rotMate: m.rotMate, rotTie: m.rotTie,
+        dist: m.dist.length ? Math.round(avg(m.dist)) : null, near: m.near.length ? Math.round(100 * avg(m.near)) : null,
+        place: m.places.length ? r1(avg(m.places)) : 0, wins: m.wins, last: m.last };
+    }).sort(function (a, b) { return b.games - a.games || b.last - a.last; });
+  };
+  /** kurze Tipps aus einem Duo-Eintrag */
+  S.duoTips = function (d) {
+    var T = [], dec = d.meFirst + d.mateFirst, rt = d.rotMe + d.rotMate;
+    if (d.games < 2) return ['Spiel noch ein paar Runden mit ' + d.name + ', dann werden die Werte aussagekräftig.'];
+    if (dec >= 2 && d.meFirst >= 2 * d.mateFirst && d.meFirst >= 2) T.push('Du stirbst in ' + d.meFirst + ' von ' + dec + ' Runden zuerst. Nimm Kämpfe erst, wenn ' + d.name + ' in Reichweite ist, und spiel die erste Zone vorsichtiger.');
+    else if (dec >= 2 && d.mateFirst >= 2 * d.meFirst && d.mateFirst >= 2) T.push(d.name + ' stirbt in ' + d.mateFirst + ' von ' + dec + ' Runden zuerst. Bleib näher dran und gib Deckung, bevor ' + d.name + ' pusht.');
+    if (rt >= 3 && d.rotMate >= 2 * d.rotMe && d.rotMate >= 2) T.push(d.name + ' ist bei ' + d.rotMate + ' von ' + rt + ' Zonen früher in der nächsten Zone. Starte deine Rotation zusammen mit ' + d.name + '.');
+    else if (rt >= 3 && d.rotMe >= 2 * d.rotMate && d.rotMe >= 2) T.push('Du bist bei ' + d.rotMe + ' von ' + rt + ' Zonen früher drin als ' + d.name + '. Sag die Rotation laut an, damit ihr gemeinsam lauft.');
+    if (d.near != null && d.near < 50) T.push('Ihr seid nur ' + d.near + ' % der Zeit nah beieinander (unter 60 m). Getrennte Duos verlieren die meisten 2-gegen-1.');
+    if (!T.length) T.push('Ihr spielt ausgeglichen zusammen. Weiter so!');
+    return T;
+  };
+
   /* ---------- Wochenziele ---------- */
   /** Montag 00:00 (lokale Zeit) der Woche von `now` */
   S.weekStart = function (now) { var d = new Date(now == null ? Date.now() : now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); };
