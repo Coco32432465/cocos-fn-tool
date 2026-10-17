@@ -23,5 +23,9 @@ contextBridge.exposeInMainWorld('fn', {
   pcScan: (o) => ipcRenderer.invoke('pc-scan', o),
   pcApply: (ids, o) => ipcRenderer.invoke('pc-apply', ids, o),
   pcRevert: () => ipcRenderer.invoke('pc-revert'),
-  onUpdate: (cb) => ipcRenderer.on('update-status', (_e, s) => cb(s))
+  onUpdate: (cb) => ipcRenderer.on('update-status', (_e, s) => cb(s)),
+  // Windows-Benachrichtigungen
+  notify: (o) => ipcRenderer.invoke('notify', o),
+  notifyPrefs: (p) => ipcRenderer.invoke('notify-prefs', p),
+  onNotifyClick: (cb) => ipcRenderer.on('notify-click', (_e, a) => cb(a))
 });

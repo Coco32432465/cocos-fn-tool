@@ -37,3 +37,18 @@ assert.strictEqual(CW.wins, 1); assert.strictEqual(CW.kills, 14); assert.strictE
 const C2 = S.cupWeek(CG.slice(0, 2), NOW); assert.strictEqual(C2.ranked, false); assert.strictEqual(C2.score, 80);
 assert.deepStrictEqual(S.cupWeek([], NOW), { games: 0, score: 0, best: 0, wins: 0, kills: 0, counted: 0, ranked: false });
 console.log('cup ok');
+
+// Benachrichtigungen: Daily-Spin-Erinnerung einmal am Tag ab der eingestellten Uhrzeit
+const at = h => new Date(2026, 9, 15, h, 5).getTime();
+assert.deepStrictEqual(S.notifyPrefs(null), { spin: true, upd: true, hour: 18 });
+assert.deepStrictEqual(S.notifyPrefs({ spin: false, upd: false, hour: 99 }), { spin: false, upd: false, hour: 18 });
+assert.strictEqual(S.spinRemind(null, null, at(17)), null); // vor 18 Uhr
+const r1 = S.spinRemind(null, null, at(18)); assert.ok(r1 && r1.day === S.dayKey(at(18)) && r1.streak === 0);
+assert.strictEqual(S.spinRemind(null, null, at(19), r1.day), null); // heute schon erinnert
+assert.strictEqual(S.spinRemind(null, { spin: false }, at(19)), null); // ausgeschaltet
+assert.ok(S.spinRemind(null, { hour: 9 }, at(9))); // eigene Uhrzeit
+const spun = S.spinDo(null, at(10), 0.1, 0.2).state;
+assert.strictEqual(S.spinRemind(spun, null, at(20)), null); // heute schon gedreht
+const tmr = new Date(2026, 9, 16, 18, 30).getTime(), r2 = S.spinRemind(spun, null, tmr);
+assert.ok(r2 && r2.streak === 1, 'Streak von gestern wird genannt');
+console.log('notify ok');
