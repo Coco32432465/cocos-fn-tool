@@ -374,6 +374,8 @@
   /* ---------- Replay-Bibliothek: Suche, Filter, Sortierung, Favoriten ---------- */
   /** stabiler Schlüssel je Replay (für Favoriten), auch nach Neustart gleich */
   S.libKey = function (g) { return String(g.path || g.fname || ((g.mtime || 0) + '|' + ((g.m && g.m.n) || ''))); };
+  /** Dateiname des Replays (Schlüssel für den Replay-Tresor) */
+  S.fileName = function (g) { return String((g && (g.path || g.fname)) || '').replace(/^.*[\\/]/, ''); };
   var gMode = function (g) { var md = g.real && g.real.meta && g.real.meta.mode; return md || ''; };
   /** alle vorkommenden Modi, häufigste zuerst */
   S.libModes = function (games) {
@@ -382,10 +384,10 @@
   };
   S.LIB_SORTS = [['new', 'Neueste'], ['old', 'Älteste'], ['score', 'Beste Note'], ['place', 'Beste Platzierung'], ['kills', 'Meiste Elims']];
   S.LIB_RES = [['all', 'Alle'], ['win', 'Siege'], ['top10', 'Top 10'], ['rest', 'Ohne Top 10']];
-  /** Filtern + sortieren. o: { q, mode ('' = alle), res, days, favs: {key:1}, favOnly, sort }. `now` nur für Tests. */
+  /** Filtern + sortieren. o: { q, mode ('' = alle), res, days, favs: {key:1}, favOnly, vault: {datei: notiz}, vaultOnly, sort }. `now` nur für Tests. */
   S.library = function (games, o, now) {
     o = o || {};
-    var q = String(o.q || '').trim().toLowerCase(), favs = o.favs || {}, from = o.days ? (now || Date.now()) - o.days * DAY : 0;
+    var q = String(o.q || '').trim().toLowerCase(), favs = o.favs || {}, vault = o.vault || {}, from = o.days ? (now || Date.now()) - o.days * DAY : 0;
     var L = S.sorted(games).filter(function (g) {
       if (from && ts(g) < from) return false;
       if (o.mode && gMode(g) !== o.mode) return false;
@@ -394,9 +396,11 @@
       if (o.res === 'top10' && !(p > 0 && p <= 10)) return false;
       if (o.res === 'rest' && p > 0 && p <= 10) return false;
       if (o.favOnly && !favs[S.libKey(g)]) return false;
+      var vn = vault[S.fileName(g)];
+      if (o.vaultOnly && vn == null) return false;
       if (q) {
         var me = (g.real && g.real.meta) || {};
-        var hay = [g.m.n, g.fname, gMode(g), me.landPoi, me.landName, g.m.g, p ? '#' + p : ''].join(' ').toLowerCase();
+        var hay = [g.m.n, g.fname, gMode(g), me.landPoi, me.landName, g.m.g, p ? '#' + p : '', typeof vn === 'string' ? vn : ''].join(' ').toLowerCase();
         if (q.split(/\s+/).some(function (w) { return hay.indexOf(w) < 0; })) return false;
       }
       return true;
@@ -413,6 +417,13 @@
     return { list: L, n: L.length, wins: L.filter(function (g) { return pl(g) === 1; }).length,
       avg: L.length ? r1(avg(L.map(function (g) { return g.tot || 0; }))) : 0, place: P.length ? r1(avg(P.map(pl))) : 0,
       kills: L.reduce(function (s, g) { return s + kills(g); }, 0) };
+  };
+
+  /** Replay-Tresor: die besten Runden (Note) und Siege, die noch nicht gesichert sind. vault: {datei: notiz} */
+  S.vaultSuggest = function (games, vault, n) {
+    vault = vault || {};
+    return S.sorted(games).filter(function (g) { return g.path && S.fileName(g) && vault[S.fileName(g)] == null && (pl(g) === 1 || (g.tot || 0) >= 70); })
+      .sort(function (a, b) { return (pl(b) === 1) - (pl(a) === 1) || (b.tot || 0) - (a.tot || 0) || ts(b) - ts(a); }).slice(0, n || 3);
   };
 
   /* ---------- Wochenziele ---------- */

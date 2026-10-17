@@ -1222,10 +1222,10 @@ function renderCups(){
  var h='';if(window.profUpd)window.profUpd();if(window.sbarUpd)window.sbarUpd();if(window.renderLeft&&document.body.classList.contains('vw'))window.renderLeft();
  cupUI();if(CFG.games.length){h+=CFG.games.map(function(g,i){return cftCup.filter([g]).length?gameCard(g,i):''}).join('')}
  if(window.fn){
-  var open={};CFG.games.forEach(function(g){if(g.path)open[g.path]=1});
-  var rest=RL.filter(function(r){return !open[rpath(r)]});
+  var open={},bn=function(p){return String(p).replace(/^.*[\\/]/,'')};CFG.games.forEach(function(g){if(g.path){open[g.path]=1;open['~'+bn(g.path)]=1}});
+  var rest=RL.filter(function(r){return !open[rpath(r)]&&!(r.kept&&open['~'+bn(rpath(r))])});
   h+=rest.slice(0,12).map(function(r,i){var p=rpath(r),sz=r.size?Math.max(1,Math.round(r.size/1048576))+' MB':'';
-   return '<li class="'+(busy[p]?'busy':'')+'"><div class="grade g-c">?</div><div class="info"><b>'+esc(rname(r))+'</b><small>'+(r.mtime?fdate(r.mtime)+' · ':'')+sz+' <span class="tag">NEU</span></small></div><div class="pts"><b>–</b>nicht analysiert</div><button class="go" data-p="'+encodeURIComponent(p)+'">'+(busy[p]?'Lese …':'Analysieren')+'</button></li>'}).join('');
+   return '<li class="'+(busy[p]?'busy':'')+'"><div class="grade g-c">?</div><div class="info"><b>'+esc(rname(r))+'</b><small>'+(r.mtime?fdate(r.mtime)+' · ':'')+sz+' <span class="tag">'+(r.kept?'🔒 TRESOR':'NEU')+'</span></small></div><div class="pts"><b>–</b>nicht analysiert</div><button class="go" data-p="'+encodeURIComponent(p)+'">'+(busy[p]?'Lese …':'Analysieren')+'</button></li>'}).join('');
   if(!h)h='<li><div class="info"><b>Keine Replays gefunden</b><small>Spiele ein Match, dann erscheint es hier automatisch – oder ziehe .replay-Dateien in den Upload-Tab.</small></div></li>'}
  else if(!CFG.games.length){
   h=M.map(function(m,i){return '<li><div class="grade '+gc[m.g]+'">'+m.g+'</div><div class="info"><b>'+m.n+'</b><small>'+m.w+' · '+m.k+' Elims · Demo</small></div><div class="pts"><b>#'+m.pl+'</b>'+m.pts+' Pkt</div><button class="go" data-i="'+i+'">Analyse starten</button></li>'}).join('')}
@@ -1243,6 +1243,7 @@ function profUpd(){
  var LG=G.slice(-4).reverse();$('lastg').innerHTML=n?LG.map(function(g,i){var m=g.m;return '<li data-lg="'+i+'" title="Replay öffnen"><div class="grade '+(gc[m.g]||'g-c')+'">'+m.g+'</div><div><b>'+esc(g.real.meta.landPoi?'Landung: '+g.real.meta.landPoi:m.n)+'</b><small>'+esc(m.n)+'</small></div><span class="pl">'+(m.pl>0?'#'+m.pl:'–')+'</span></li>'}).join(''):'<li><div><b>Noch nichts analysiert</b><small>Replay wählen oder ablegen</small></div></li>';[].forEach.call($('lastg').querySelectorAll('li[data-lg]'),function(l){l.onclick=function(e){e.stopPropagation();openViewer(LG[+l.dataset.lg].m)}});window.cftFocusRefresh&&window.cftFocusRefresh();}
 window.profUpd=profUpd;
 window.renderCups=renderCups;
+window.cftRefreshReplays=function(){return refreshList()};
 function refreshList(){if(!window.fn||!window.fn.listReplays){renderCups();return Promise.resolve()}
  return window.fn.listReplays().then(function(l){RL=l||[];window.REPLAYS=RL;renderCups();sbarUpd();autoRun()}).catch(function(){renderCups()})}
 /* Replays analysieren – immer nacheinander (eine Warteschlange), damit der Parser den Rechner nicht überlastet */
@@ -1267,7 +1268,9 @@ function analyze(paths,openFirst,quiet){
 /* neue Replays im Ordner automatisch im Hintergrund analysieren (Einstellung: config.js) */
 function autoRun(){var C=window.CFT_CONFIG||{};if(!window.fn||C.autoAnalyze===false||!$('sw').classList.contains('on'))return;
  /* Schon gespeicherte (zwischengespeicherte) Replays werden alle beim Start geladen, neue maximal autoAnalyzeMax auf einmal */
- var cand=RL.map(function(r){return{p:rpath(r),c:!!r.cached}}).filter(function(x){return !byPath[x.p]&&!failed[x.p]&&!busy[x.p]});
+ /* Tresor-Kopie eines schon geladenen Replays (Original von Fortnite gelöscht) nicht doppelt laden */
+ var have={};Object.keys(byPath).forEach(function(k){have[k.replace(/^.*[\\/]/,'')]=1});
+ var cand=RL.map(function(r){return{p:rpath(r),c:!!r.cached,k:!!r.kept}}).filter(function(x){return !byPath[x.p]&&!failed[x.p]&&!busy[x.p]&&!(x.k&&have[x.p.replace(/^.*[\\/]/,'')])});
  var saved=cand.filter(function(x){return x.c}).slice(0,C.autoLoadMax||60).map(function(x){return x.p}),fresh=cand.filter(function(x){return !x.c}).slice(0,C.autoAnalyzeMax||5).map(function(x){return x.p});
  var todo=saved.concat(fresh);
  if(todo.length)analyze(todo,false,true)}

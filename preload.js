@@ -3,6 +3,11 @@ contextBridge.exposeInMainWorld('fn', {
   listReplays: () => ipcRenderer.invoke('list-replays'),
   parseReplay: (file) => ipcRenderer.invoke('parse-replay', file),
   pathFor: (file) => webUtils.getPathForFile(file),
+  // Replay-Tresor
+  vaultList: () => ipcRenderer.invoke('vault-list'),
+  vaultAdd: (file, note) => ipcRenderer.invoke('vault-add', file, note),
+  vaultNote: (name, note) => ipcRenderer.invoke('vault-note', name, note),
+  vaultDel: (name) => ipcRenderer.invoke('vault-del', name),
   // Updates
   version: () => ipcRenderer.invoke('app-version'),
   updateStatus: () => ipcRenderer.invoke('get-update-status'),

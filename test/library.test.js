@@ -26,4 +26,17 @@ const favs = {}; favs[S.libKey(G[2])] = 1;
 assert.strictEqual(S.library(G, { favs, favOnly: true }, NOW).list[0].m.n, 'Cup 1');
 assert.strictEqual(S.libKey({ fname: 'x.json', m: {} }), 'x.json');
 assert.strictEqual(S.library([], {}, NOW).avg, 0);
+// Replay-Tresor
+assert.strictEqual(S.fileName(G[0]), 'Game A.replay');
+assert.strictEqual(S.fileName({ path: 'C:\\Demos\\x.replay' }), 'x.replay');
+const V = { 'Cup 1.replay': 'Turnier-Clutch', 'Game B.replay': '' };
+assert.strictEqual(S.library(G, { vault: V, vaultOnly: true }, NOW).n, 2);
+assert.strictEqual(S.library(G, { vault: V, q: 'clutch' }, NOW).list[0].m.n, 'Cup 1'); // Notiz ist durchsuchbar
+assert.strictEqual(S.library(G, { vaultOnly: true }, NOW).n, 0);
+let sg = S.vaultSuggest(G, {}, 3);
+assert.deepStrictEqual(sg.map(g => g.m.n), ['Game A']); // Sieg bzw. Note ab 70
+sg = S.vaultSuggest(G.concat([mk(3, 90, 4, 9, 'Reload', null, 'Top'), mk(3, 75, 2, 5, 'Reload', null, 'Gut')]), {}, 2);
+assert.deepStrictEqual(sg.map(g => g.m.n), ['Game A', 'Top']); // Siege zuerst, dann beste Note
+assert.strictEqual(S.vaultSuggest(G, { 'Game A.replay': '' }, 3).length, 0);
+assert.strictEqual(S.vaultSuggest([{ tot: 99, m: { pl: 1 } }], {}, 3).length, 0); // ohne Datei nichts zu sichern
 console.log('library ok');
