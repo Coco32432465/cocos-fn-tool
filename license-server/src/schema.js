@@ -1,7 +1,7 @@
 // Selbst-Migration: neue Tabellen/Spalten werden beim ersten Aufruf automatisch angelegt (kein manueller Schritt noetig).
 import { getCfg, setCfg } from './discord.js';
 
-const SCHEMA_V = '16';
+const SCHEMA_V = '17';
 const STEPS = [
   'ALTER TABLE tickets ADD COLUMN code TEXT',
   `CREATE TABLE IF NOT EXISTS codes (code TEXT PRIMARY KEY, owner TEXT NOT NULL, created_at INTEGER NOT NULL, uses INTEGER NOT NULL DEFAULT 0, earned_days REAL NOT NULL DEFAULT 0)`,
@@ -53,7 +53,8 @@ const STEPS = [
   `CREATE TABLE IF NOT EXISTS clips (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, url TEXT NOT NULL, title TEXT, month TEXT NOT NULL, channel_id TEXT, message_id TEXT, status TEXT NOT NULL DEFAULT 'open', created_at INTEGER NOT NULL)`,
   'CREATE INDEX IF NOT EXISTS clips_month ON clips(month)',
   `CREATE TABLE IF NOT EXISTS clip_votes (clip_id INTEGER NOT NULL, user_id TEXT NOT NULL, PRIMARY KEY (clip_id, user_id))`,
-  `CREATE TABLE IF NOT EXISTS tiers (user_id TEXT PRIMARY KEY, tier INTEGER NOT NULL DEFAULT 0, level INTEGER NOT NULL DEFAULT 0, streak INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL)`
+  `CREATE TABLE IF NOT EXISTS tiers (user_id TEXT PRIMARY KEY, tier INTEGER NOT NULL DEFAULT 0, level INTEGER NOT NULL DEFAULT 0, streak INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS spin_rolls (user_id TEXT NOT NULL, day INTEGER NOT NULL, season TEXT NOT NULL, prize TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, PRIMARY KEY (user_id, day))`
 ];
 
 let done = false;

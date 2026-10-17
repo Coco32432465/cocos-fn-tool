@@ -21,6 +21,7 @@ window.PROJEKT = {
     { status: 'offen', bereich: 'App', text: 'Duo-Synergie: zwei Spieler vergleichen (wer stirbt zuerst, wer rotiert früher)', aufwand: 'L' },
     { status: 'fertig', bereich: 'Discord', text: 'Rollen-Stufen Bronze bis Diamant nach Season-Level oder Streak (0.27.0)' },
     { status: 'fertig', bereich: 'App', text: 'Replay-Tresor: wichtige Replays mit Notiz sichern, auch wenn Fortnite sie löscht (0.28.0)' },
+    { status: 'fertig', bereich: 'App', text: 'Daily Spin mit seltenen Gewinnen: Farbschema, Titel oder Bonustag, vom Server ausgelost (0.29.0)' },
     { status: 'fertig', bereich: 'Werbung', text: 'Landing-Page mit Download, Screenshots und Preisen (0.26.0)' },
     { status: 'fertig', bereich: 'Discord', text: 'Clip des Monats mit Abstimmung und Titel in der App (0.25.0)' },
     { status: 'fertig', bereich: 'Discord', text: 'FAQ-Bot: /hilfe und Auswahlmenü im Fragen-Kanal (0.24.0)' },
@@ -39,7 +40,6 @@ window.PROJEKT = {
 
   ideen: [
     { bereich: 'App', titel: 'Gegner-Scouting', text: 'Spielweise der Gegner in Zone 4 aus einem Replay zusammenfassen', aufwand: 'L' },
-    { bereich: 'App', titel: 'Daily-Spin-Erweiterung', text: 'Seltene Gewinne wie Farbschema, Titel oder Bonustag (Server nötig)', aufwand: 'M' },
     { bereich: 'Discord', titel: 'Replay-Feedback-Abend', text: 'Einmal pro Woche Zuschauer-Replays live reviewen', aufwand: 'S' },
     { bereich: 'Werbung', titel: 'Vorher/Nachher-Clips', text: 'Clips aus echten Reviews für TikTok und Twitch', aufwand: 'S' },
     { bereich: 'Werbung', titel: 'Creator-Rolle', text: 'Streamer bekommen einen Gratis-Key gegen Erwähnung', aufwand: 'S' }

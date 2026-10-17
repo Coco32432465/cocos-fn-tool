@@ -782,5 +782,23 @@ await T('Season-Pass: Bonustage einmal je Level, nur mit Lizenz, Premium per Tic
   assert.equal(db.prepare("SELECT COUNT(*) n FROM entitlements WHERE user_id='US2' AND ent=?").get('pass:' + cur).n, 1);
   assert.equal(db.prepare("SELECT SUM(amount) s FROM sales WHERE user_id='US2'").get().s, 5);
 });
+await T('Daily Spin: seltene Gewinne einmal am Tag, nichts doppelt, Bonustag nur mit Lizenz', async () => {
+  const { sha256hex } = await import('../src/util.js'); const SP = await import('../src/season.js'); const { withCfg } = await import('../src/discord.js'); const e2 = await withCfg(env);
+  assert.equal(SP.spinPickRare(0.01).id, 'day'); assert.equal(SP.spinPickRare(0.03).id, 'theme'); assert.equal(SP.spinPickRare(0.08).id, 'title'); assert.equal(SP.spinPickRare(0.5), null);
+  const tok = 'tok-spin-1'; db.prepare('INSERT INTO sessions (token_hash,discord_id,username,created_at) VALUES (?,?,?,?)').run(await sha256hex(tok), 'USP', 'Spinner', 1);
+  const r1 = (await post('/season/spin', { session: tok })).body; assert.ok(r1.ok); assert.ok(!r1.already);
+  const r2 = (await post('/season/spin', { session: tok })).body; assert.ok(r2.already); assert.deepEqual(r2.prize, r1.prize);
+  const D = 86400, t0 = Date.UTC(2030, 4, 10, 12) / 1000;
+  const a = await SP.spinRoll(e2, 'USP2', 0.03, t0); assert.equal(a.prize.id, 'theme');
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM entitlements WHERE user_id='USP2' AND ent='theme:spin'").get().n, 1);
+  assert.ok((await SP.spinRoll(e2, 'USP2', 0.08, t0)).already, 'nur einmal am Tag');
+  assert.equal((await SP.spinRoll(e2, 'USP2', 0.03, t0 + D)).prize, null, 'Farbschema nicht doppelt');
+  assert.equal((await SP.spinRoll(e2, 'USP2', 0.01, t0 + 2 * D)).prize, null, 'Bonustag nur mit Lizenz');
+  const exp = t0 + 10 * D; db.prepare("INSERT INTO keys (key,plan,days,status,discord_id,created_at,redeemed_at,expires_at) VALUES ('SPIN-KEY0-0000-0001','month',30,'active','USP2',1,1,?)").run(exp);
+  assert.equal((await SP.spinRoll(e2, 'USP2', 0.01, t0 + 3 * D)).prize.id, 'day');
+  assert.equal(db.prepare("SELECT expires_at e FROM keys WHERE key='SPIN-KEY0-0000-0001'").get().e, exp + D);
+  assert.equal((await SP.spinRoll(e2, 'USP2', 0.01, t0 + 4 * D)).prize.id, 'day');
+  assert.equal((await SP.spinRoll(e2, 'USP2', 0.01, t0 + 5 * D)).prize, null, 'höchstens 2 Bonustage je Season');
+});
 console.log(`\n${ok} Tests bestanden`); S.restore();
 
