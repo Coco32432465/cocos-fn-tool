@@ -57,7 +57,7 @@ export async function verifyDiscord(request, env, raw) {
 /* ---------- Konfiguration: Werte aus /setup (Datenbank) ueberschreiben die Variablen ---------- */
 const MAP = { customer_role: 'CUSTOMER_ROLE_ID', member_role: 'MEMBER_ROLE_ID', admin_role: 'ADMIN_ROLE_ID', tester_role: 'TESTER_ROLE_ID', user_role: 'USER_ROLE_ID', log_channel: 'LOG_CHANNEL_ID', key_channel: 'PANEL_CHANNEL_ID', support_channel: 'SUPPORT_CHANNEL_ID',
   mod_role: 'MOD_ROLE_ID', support_role: 'SUPPORTER_ROLE_ID', dev_role: 'DEV_ROLE_ID', creator_role: 'CREATOR_ROLE_ID', content_role: 'CONTENT_ROLE_ID', rank_role: 'RANK_ROLE_ID',
-  feedback_channel: 'FEEDBACK_CHANNEL_ID', bug_channel: 'BUG_CHANNEL_ID', status_channel: 'STATUS_CHANNEL_ID', rank_channel: 'RANK_CHANNEL_ID', general_channel: 'GENERAL_CHANNEL_ID', download_channel: 'DOWNLOAD_CHANNEL_ID', giveaway_channel: 'GIVEAWAY_CHANNEL_ID', poll_channel: 'POLL_CHANNEL_ID', lfg_channel: 'LFG_CHANNEL_ID', stats_channel: 'STATS_CHANNEL_ID', event_channel: 'EVENT_CHANNEL_ID' };
+  feedback_channel: 'FEEDBACK_CHANNEL_ID', bug_channel: 'BUG_CHANNEL_ID', status_channel: 'STATUS_CHANNEL_ID', rank_channel: 'RANK_CHANNEL_ID', general_channel: 'GENERAL_CHANNEL_ID', download_channel: 'DOWNLOAD_CHANNEL_ID', giveaway_channel: 'GIVEAWAY_CHANNEL_ID', poll_channel: 'POLL_CHANNEL_ID', lfg_channel: 'LFG_CHANNEL_ID', stats_channel: 'STATS_CHANNEL_ID', event_channel: 'EVENT_CHANNEL_ID', questions_channel: 'QUESTIONS_CHANNEL_ID', patchnotes_channel: 'PATCHNOTES_CHANNEL_ID' };
 export async function withCfg(env) {
   let rows = [];
   try { rows = (await env.DB.prepare('SELECT k,v FROM config').all()).results || []; } catch (e) { /* Tabelle fehlt noch */ }

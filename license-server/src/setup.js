@@ -6,6 +6,7 @@ import { PRIVACY_FIELDS } from './privacy.js';
 import { dapi, setCfg, getCfg } from './discord.js';
 import { boardEmbed } from './rank.js';
 import { cupBoard } from './cup.js';
+import { faqOverview } from './faq.js';
 import { downloadComponents } from './panels.js';
 import { renamePatchnotes } from './patchnotes.js';
 
@@ -117,7 +118,7 @@ export async function runSetup(env, renew) {
         ids[name] = c.data.id; L(`#${name}: erstellt`);
       }
     }
-    for (const [name, key] of [['ticket-logs', 'log_channel'], ['shop', 'key_channel'], ['support', 'support_channel'], ['feedback', 'feedback_channel'], ['bug-reports', 'bug_channel'], ['status', 'status_channel'], ['rangliste', 'rank_channel'], ['giveaways', 'giveaway_channel'], ['umfragen', 'poll_channel'], ['lfg', 'lfg_channel'], ['events', 'event_channel'], ['live-stats', 'stats_channel'], ['general', 'general_channel'], ['download', 'download_channel']]) {
+    for (const [name, key] of [['ticket-logs', 'log_channel'], ['shop', 'key_channel'], ['support', 'support_channel'], ['feedback', 'feedback_channel'], ['bug-reports', 'bug_channel'], ['status', 'status_channel'], ['rangliste', 'rank_channel'], ['giveaways', 'giveaway_channel'], ['umfragen', 'poll_channel'], ['lfg', 'lfg_channel'], ['events', 'event_channel'], ['live-stats', 'stats_channel'], ['general', 'general_channel'], ['download', 'download_channel'], ['questions', 'questions_channel'], ['patchnotes', 'patchnotes_channel']]) {
       if (ids[name]) await setCfg(env, key, ids[name]);
     }
 
@@ -150,6 +151,7 @@ export async function runSetup(env, renew) {
       ['status', 'status', { embeds: [emb(env, { title: '📊 Ninjago Tools · Status', desc: 'Der Status wird in wenigen Minuten automatisch aktualisiert.' })] }],
       ['rangliste', 'rankboard', { embeds: [boardEmbed(env, [], 0)] }],
       ['rangliste', 'cupboard', { embeds: [await cupBoard(env)] }],
+      ['questions', 'faq-panel', faqOverview({ ...env, QUESTIONS_CHANNEL_ID: ids.questions, SUPPORT_CHANNEL_ID: ids.support || env.SUPPORT_CHANNEL_ID, PANEL_CHANNEL_ID: ids.shop || env.PANEL_CHANNEL_ID, DOWNLOAD_CHANNEL_ID: ids.download, BUG_CHANNEL_ID: ids['bug-reports'] })],
       ['feedback', 'feedback-panel', { embeds: [emb(env, { title: '💌 Feedback senden', desc: 'Dir gefällt etwas, du vermisst etwas oder hast eine Idee? Klicke auf den Button und schreib uns – dein Feedback landet direkt beim Team.', fields: [{ name: 'Größere Ideen', value: `Poste sie im Forum ${M('vorschläge')}, dort kann die Community abstimmen.` }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Feedback senden', custom_id: 'form_feedback', emoji: { name: '💌' } }] }] }],
       ['bug-reports', 'bug-panel', { embeds: [emb(env, { title: '🐛 Fehler melden', desc: 'Etwas funktioniert nicht? Klicke auf den Button, beschreibe den Fehler und nenne die App-Version. Das Team setzt den Status (Offen → In Arbeit → Erledigt).', fields: [{ name: 'Tipp', value: 'Schreib, was du vorher gemacht hast und welche Replay-Datei betroffen ist.' }] })], components: [{ type: 1, components: [{ type: 2, style: 4, label: 'Fehler melden', custom_id: 'form_bug', emoji: { name: '🐛' } }] }] }],
       ['support', 'support-panel', { embeds: [emb(env, { title: 'Support', desc: 'Du brauchst Hilfe mit dem Tool oder deinem Key? Eröffne ein privates Ticket, das Team meldet sich.', fields: [{ name: 'Tipp', value: `Häufige Fragen findest du in ${M('questions')} und ${M('how-to-use')}.` }] })], components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Hilfe-Ticket öffnen', custom_id: 'ticket_support' }] }] }]
