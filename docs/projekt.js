@@ -18,7 +18,7 @@ window.PROJEKT = {
     { status: 'braucht-dich', bereich: 'Discord', text: '/setup mit erneuern: True ausführen (neue Kanäle, Panels und Stufen-Rollen); Bot-Rolle über alle Team-Rollen schieben' },
     { status: 'braucht-dich', bereich: 'Server', text: 'Einmal pro Woche D1-Backup (Keys, Verkäufe) exportieren' },
     { status: 'fertig', bereich: 'App', text: 'Coach-Notizen: Markierungen und Kommentare im Replay speichern (0.30.0)' },
-    { status: 'offen', bereich: 'App', text: 'Duo-Synergie: zwei Spieler vergleichen (wer stirbt zuerst, wer rotiert früher)', aufwand: 'L' },
+    { status: 'fertig', bereich: 'App', text: 'Duo-Synergie: zwei Spieler vergleichen, wer stirbt zuerst und wer rotiert früher (0.31.0)' },
     { status: 'fertig', bereich: 'Discord', text: 'Rollen-Stufen Bronze bis Diamant nach Season-Level oder Streak (0.27.0)' },
     { status: 'fertig', bereich: 'App', text: 'Replay-Tresor: wichtige Replays mit Notiz sichern, auch wenn Fortnite sie löscht (0.28.0)' },
     { status: 'fertig', bereich: 'App', text: 'Daily Spin mit seltenen Gewinnen: Farbschema, Titel oder Bonustag, vom Server ausgelost (0.29.0)' },

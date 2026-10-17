@@ -249,6 +249,27 @@
   }
 
 
+  /* ---------- Duo-Synergie ---------- */
+  var DUO = store.get('cft_duo') || '';
+  function renderDuo(w) {
+    var all = games();
+    if (!all.length) return empty(w);
+    var L = ST.duo(all);
+    if (!L.length) { w.innerHTML = '<div class="emp"><b>Noch keine Team-Runden</b>Analysiere Replays aus Duo, Trio oder Squad. Dann siehst du hier, wer von euch zuerst stirbt, wer früher rotiert und wie nah ihr zusammen spielt.</div>'; return; }
+    var d = L.filter(function (x) { return x.name.toLowerCase() === DUO; })[0] || L[0], dec = d.meFirst + d.mateFirst, rt = d.rotMe + d.rotMate + d.rotTie;
+    var vs = function (title, sub, a, b, c, good) {
+      var mx = Math.max(a, b, c || 0, 1), row = function (lb, v, cls) { return '<div class="bar' + (cls ? ' ' + cls : '') + '"><span>' + lb + '</span><div><i style="width:' + Math.max(3, v / mx * 100) + '%"></i></div><b>' + v + '</b></div>'; };
+      return '<div class="pn"><h3>' + title + '</h3><p class="s">' + sub + '</p>' + row('Du', a, good === 'low' ? (a <= b ? 'good' : 'weak') : (a >= b ? 'good' : 'weak')) + row(esc(d.name), b, '') + (c != null ? row('Gleichzeitig', c, '') : '') + '</div>';
+    };
+    w.innerHTML = (L.length > 1 ? '<div class="cc"><span class="lbl">Mate</span>' + L.slice(0, 8).map(function (x) { return '<button data-duo="' + esc(x.name.toLowerCase()) + '" class="' + (x === d ? 'on' : '') + '">' + esc(x.name) + ' · ' + x.games + '</button>'; }).join('') + '</div>' : '')
+      + '<div class="kp">' + kpi('Gemeinsame Runden', d.games, '', null, null, 'mit ' + esc(d.name)) + kpi('Siege', d.wins, '', null, null, d.games ? Math.round(100 * d.wins / d.games) + ' % der Runden' : '') + kpi('Ø Platz', d.place ? fmt1(d.place) : '–', '', null, null, 'zusammen')
+      + kpi('Ø Abstand', d.dist != null ? d.dist : '–', d.dist != null ? 'm' : '', null, null, 'zwischen euch') + kpi('Nah beieinander', d.near != null ? d.near : '–', d.near != null ? '%' : '', null, null, 'der Zeit unter 60 m') + '</div>'
+      + '<div class="two">' + vs('Wer stirbt zuerst?', dec ? 'In ' + dec + ' von ' + d.games + ' Runden ist einer von euch vor dem anderen ausgeschieden.' : 'Bisher seid ihr immer gemeinsam ausgeschieden oder habt beide überlebt.', d.meFirst, d.mateFirst, null, 'low')
+      + vs('Wer rotiert früher?', rt ? 'Bei ' + rt + ' Zonen: wer zuerst in der nächsten Zone stand.' : 'Noch keine Zonen, in denen ihr beide gelebt habt.', d.rotMe, d.rotMate, d.rotTie, 'high') + '</div>'
+      + '<div class="pn"><h3>Tipps für euch</h3>' + ST.duoTips(d).map(function (t) { return '<p class="s" style="font-size:16px;color:var(--txt)">• ' + esc(t) + '</p>'; }).join('') + '</div>';
+    [].forEach.call(w.querySelectorAll('[data-duo]'), function (b) { b.onclick = function () { DUO = b.dataset.duo; store.set('cft_duo', DUO); renderDuo(w); }; });
+  }
+
   /* ---------- Team (Coach-Dashboard) ---------- */
   var TM = { d: null, msg: '', err: false, busy: false };
   var hasTeam = function () { return window.fn && window.fn.team; };
@@ -520,7 +541,7 @@
       return '<div class="b' + (b.done ? ' ok' : '') + '"><i>' + b.icon + '</i><h4>' + esc(b.title) + '</h4><p>' + esc(b.desc) + '</p><small>' + (b.done ? 'Freigeschaltet' : b.value + ' / ' + b.need) + '</small></div>';
     }).join('') + '</div>';
   }
-  MODES.drop = { title: 'Landung, Rotation & Fortschritt', tabs: [['land', 'Landeorte'], ['rot', 'Rotation'], ['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['train', 'Trainingsplan'], ['goals', 'Wochenziele'], ['badges', 'Erfolge']], render: function (t, w) { if (t === 'goals') renderGoals(w); else if (t === 'badges') renderBadges(w); else if (t === 'rot') renderRot(w); else if (t === 'trend') renderTrend(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else if (t === 'train') renderTrain(w); else renderDrops(w); } };
+  MODES.drop = { title: 'Landung, Rotation & Fortschritt', tabs: [['land', 'Landeorte'], ['rot', 'Rotation'], ['trend', 'Trend'], ['sess', 'Session'], ['cmp', 'Vergleich'], ['duo', 'Duo-Synergie'], ['train', 'Trainingsplan'], ['goals', 'Wochenziele'], ['badges', 'Erfolge']], render: function (t, w) { if (t === 'goals') renderGoals(w); else if (t === 'badges') renderBadges(w); else if (t === 'rot') renderRot(w); else if (t === 'trend') renderTrend(w); else if (t === 'sess') renderSession(w); else if (t === 'cmp') renderCompare(w); else if (t === 'duo') renderDuo(w); else if (t === 'train') renderTrain(w); else renderDrops(w); } };
   MODES.team = { title: 'Coach & Team', tabs: [], render: function (t, w) { renderTeam(w); } };
   bind('mtTeam', 'team');
   /* ---------- Daily Spin ---------- */
