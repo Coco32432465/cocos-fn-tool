@@ -517,6 +517,63 @@
     return T;
   };
 
+  /* ---------- Gegner-Scouting: wie spielen die Gegner in einer Zone? ---------- */
+  /** Zeitfenster der Zone n (wie im Viewer: Zone n läuft ab dem Zonenzug zu ihr) */
+  S.zoneWindow = function (R, n) {
+    var Z = (R && R.zones) || [];
+    if (n < 2 || !Z[n - 2]) return null;
+    return { s: Z[n - 2].s, e: Z[n - 1] ? Z[n - 1].s : R.dur };
+  };
+  S.scoutZones = function (R) { var Z = (R && R.zones) || [], o = []; for (var i = 0; i < Z.length; i++) o.push(i + 2); return o; };
+  S.scout = function (R, n) {
+    var W = S.zoneWindow(R, n); if (!W || !R.players || !CFT.zoneState) return null;
+    var tn = R.tn || 1, me = R.players[0], s0 = W.s, e0 = W.e;
+    var inW = function (p) { return p.pts.filter(function (a) { return a[0] >= s0 && a[0] <= e0 && (p.dead == null || a[0] <= p.dead); }); };
+    var mz = me && aliveAt(me, s0) ? avg(inW(me).map(function (a) { return +a[3] || 0; })) : null;
+    var opp = R.players.filter(function (p, i) { return i >= tn && p.pts && p.pts.length && p.pts[0][0] <= s0 && aliveAt(p, s0); });
+    var out = { zone: n, s: s0, e: e0, alive: opp.length, teams: 0, died: 0, mid: 0, edge: 0, storm: 0, mobile: 0, camp: 0, high: mz == null ? null : 0, kills: 0, onUs: 0, top: [] };
+    var teams = {};
+    opp.forEach(function (p) {
+      teams[p.team >= 0 ? 't' + p.team : 'p' + p.id] = 1;
+      if (p.dead != null && p.dead <= e0) out.died++;
+      var A = inW(p); if (A.length < 2) return;
+      var rel = A.map(function (a) { var c = CFT.zoneState(R, a[0]).c; return c[2] > 0 ? dd([a[1], a[2]], [c[0], c[1]]) / c[2] : 0; });
+      var med = rel.slice().sort(function (x, y) { return x - y; })[rel.length >> 1];
+      if (avg(rel.slice(0, Math.ceil(rel.length / 4))) > 1) out.storm++; // zu Beginn der Zone noch draußen
+      else if (med < 0.45) out.mid++; else out.edge++;
+      var path = 0; for (var i = 1; i < A.length; i++) path += dd([A[i][1], A[i][2]], [A[i - 1][1], A[i - 1][2]]);
+      var mpm = path / 100 / Math.max(1, A[A.length - 1][0] - A[0][0]) * 60; // Meter pro Minute
+      if (mpm > 150) out.mobile++; else if (mpm < 40) out.camp++;
+      if (mz != null && avg(A.map(function (a) { return +a[3] || 0; })) - mz >= 1000) out.high++;
+    });
+    out.teams = Object.keys(teams).length;
+    var K = {};
+    (R.ev || []).forEach(function (e) {
+      if (e.down || e.t < s0 || e.t > e0 || !(e.k >= tn)) return;
+      out.kills++; if (e.v < tn) out.onUs++; K[e.k] = (K[e.k] || 0) + 1;
+    });
+    out.top = Object.keys(K).map(function (k) { return { name: String((R.players[k] || {}).name || 'Gegner'), kills: K[k] }; }).sort(function (a, b) { return b.kills - a.kills || a.name.localeCompare(b.name); }).slice(0, 3);
+    return out;
+  };
+  /** Zusammenfassung und Tipps als Sätze */
+  S.scoutText = function (c) {
+    if (!c) return { lines: [], tips: [] };
+    if (c.alive < 2) return { lines: ['In Zone ' + c.zone + ' waren kaum noch Gegner unterwegs.'], tips: [] };
+    var L = [], T = [], cls = c.mid + c.edge + c.storm;
+    L.push('Zu Beginn von Zone ' + c.zone + ' lebten noch ' + c.alive + ' Gegner in ' + c.teams + ' Team' + (c.teams === 1 ? '' : 's') + ', ' + c.died + ' davon sind in dieser Zone ausgeschieden.');
+    if (cls) L.push('Position: ' + c.mid + ' hielten die Mitte, ' + c.edge + ' spielten am Zonenrand, ' + c.storm + ' kamen spät aus dem Sturm.');
+    if (cls) L.push('Bewegung: ' + c.mobile + ' rotierten viel, ' + c.camp + ' blieben fast an einer Stelle.');
+    if (c.high != null && cls) L.push('Höhe: ' + c.high + ' Gegner standen im Schnitt mindestens 10 m höher als du.');
+    if (c.kills) L.push('Kills durch Gegner: ' + c.kills + (c.onUs ? ', davon ' + c.onUs + ' gegen dein Team' : '') + '.' + (c.top.length ? ' Am gefährlichsten: ' + c.top.map(function (x) { return x.name + ' (' + x.kills + ')'; }).join(', ') + '.' : ''));
+    if (cls && c.mid >= cls / 2) T.push('Die meisten Gegner sitzen in der Mitte. Rotier früh hinein oder spiel den Rand mit Deckung im Rücken, statt quer durch die Mitte zu laufen.');
+    if (cls && c.storm >= Math.max(2, cls / 4)) T.push('Viele kommen spät aus dem Sturm. Halte die Kante zum Sturm und nimm die Nachzügler, bevor sie heilen können.');
+    if (cls && c.camp >= cls / 2) T.push('Viele Gegner bewegen sich kaum. Sichere dir Höhe und Mats, bevor du sie angreifst, und meide offene Wege an ihren Positionen.');
+    if (c.high != null && cls && c.high >= Math.max(2, cls / 3)) T.push('Gegner hatten oft Höhe über dir. Nimm in dieser Zone früher Höhe oder rotier über Gelände mit Deckung.');
+    if (c.onUs) T.push('Dein Team wurde in dieser Zone ' + c.onUs + '× eliminiert. Schau dir im Viewer an, aus welcher Richtung die Kills kamen.');
+    if (!T.length) T.push('Die Gegner waren gut verteilt. Spiel deine Position ruhig und nimm nur Kämpfe mit Vorteil.');
+    return { lines: L, tips: T };
+  };
+
   /* ---------- Wochenziele ---------- */
   /** Montag 00:00 (lokale Zeit) der Woche von `now` */
   S.weekStart = function (now) { var d = new Date(now == null ? Date.now() : now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); };

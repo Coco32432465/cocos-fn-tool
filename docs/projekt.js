@@ -19,6 +19,7 @@ window.PROJEKT = {
     { status: 'braucht-dich', bereich: 'Server', text: 'Einmal pro Woche D1-Backup (Keys, Verkäufe) exportieren' },
     { status: 'fertig', bereich: 'App', text: 'Coach-Notizen: Markierungen und Kommentare im Replay speichern (0.30.0)' },
     { status: 'fertig', bereich: 'App', text: 'Duo-Synergie: zwei Spieler vergleichen, wer stirbt zuerst und wer rotiert früher (0.31.0)' },
+    { status: 'fertig', bereich: 'App', text: 'Gegner-Scouting: Spielweise der Gegner in einer Zone aus dem Replay zusammenfassen (0.32.0)' },
     { status: 'fertig', bereich: 'Discord', text: 'Rollen-Stufen Bronze bis Diamant nach Season-Level oder Streak (0.27.0)' },
     { status: 'fertig', bereich: 'App', text: 'Replay-Tresor: wichtige Replays mit Notiz sichern, auch wenn Fortnite sie löscht (0.28.0)' },
     { status: 'fertig', bereich: 'App', text: 'Daily Spin mit seltenen Gewinnen: Farbschema, Titel oder Bonustag, vom Server ausgelost (0.29.0)' },
@@ -39,7 +40,6 @@ window.PROJEKT = {
   ],
 
   ideen: [
-    { bereich: 'App', titel: 'Gegner-Scouting', text: 'Spielweise der Gegner in Zone 4 aus einem Replay zusammenfassen', aufwand: 'L' },
     { bereich: 'Discord', titel: 'Replay-Feedback-Abend', text: 'Einmal pro Woche Zuschauer-Replays live reviewen', aufwand: 'S' },
     { bereich: 'Werbung', titel: 'Vorher/Nachher-Clips', text: 'Clips aus echten Reviews für TikTok und Twitch', aufwand: 'S' },
     { bereich: 'Werbung', titel: 'Creator-Rolle', text: 'Streamer bekommen einen Gratis-Key gegen Erwähnung', aufwand: 'S' }
