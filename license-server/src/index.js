@@ -16,6 +16,7 @@ import { openEventModal, submitEvent, eventButton, eventSweep, weeklySweep, news
 import { handleHilfe, faqPick, FAQ_CHOICES } from './faq.js';
 import { handleClip, voteClip, clipSweep } from './clip.js';
 import { landingHtml } from './landing.js';
+import { handleStufe } from './tiers.js';
 import { startTrial, welcomeDM, rate, openRewardModal, submitReward } from './growth.js';
 import { openTicket, selectPlan, closeTicket, confirmTicket, codeButton, submitCode } from './tickets.js';
 import { ensureSchema } from './schema.js';
@@ -66,6 +67,7 @@ const COMMANDS = [
   { name: 'clip', description: 'Clip des Monats', options: [
     { type: 1, name: 'einreichen', description: 'Deinen Clip einreichen', options: [{ type: 3, name: 'link', description: 'Link (YouTube, TikTok, Twitch, Medal …)', required: true }, { type: 3, name: 'titel', description: 'Kurzer Titel', required: false, max_length: 80 }] },
     { type: 1, name: 'top', description: 'Aktuelle Top 5 des Monats' }] },
+  { name: 'stufe', description: 'Deine Rollen-Stufe (Bronze bis Diamant) und was zur nächsten fehlt' },
   { name: 'hilfe', description: 'Antworten auf die häufigsten Fragen', options: [{ type: 3, name: 'thema', description: 'Direkt zu einem Thema', required: false, choices: FAQ_CHOICES }] },
   { name: 'datenschutz', description: 'Deine gespeicherten Daten ansehen und löschen' },
   { name: 'event', description: 'Team: Event oder Scrim im Kalender anlegen (Formular)', options: [] },
@@ -245,6 +247,7 @@ async function handleInteraction(i, env, ctx) {
     if (name === 'rank') return handleRank(i, env, uid);
     if (name === 'hilfe') return handleHilfe(i, env);
     if (name === 'clip') return handleClip(i, env, uid);
+    if (name === 'stufe') return handleStufe(i, env, uid);
     if (name === 'giveaway') return handleGiveaway(i, env, uid);
     if (name === 'team') return handleTeam(i, env);
     if (['umfrage', 'lfg', 'erinnerung', 'tipp'].includes(name)) return handleFun(i, env, uid);

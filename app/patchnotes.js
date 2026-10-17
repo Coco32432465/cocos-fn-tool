@@ -16,6 +16,7 @@
    ============================================================================ */
 window.PATCHNOTES_MAX = 4;
 window.PATCHNOTES = [
+  { v: '0.27.0', date: '2026-10-17', tag: 'NEU', text: 'Rollen-Stufen: Im Discord bekommst du automatisch eine Rolle von 🥉 Bronze über 🥈 Silber, 🥇 Gold und 💠 Platin bis 💎 Diamant. Zählt dein Season-Level oder deine Daily-Spin-Streak (z. B. Gold ab Level 5 oder 14 Tagen Streak). Beim Aufstieg schreibt dir der Bot, /stufe zeigt deinen Stand und was zur nächsten Stufe fehlt' },
   { v: '0.26.0', date: '2026-10-17', tag: 'NEU', vod: 0, text: 'Ninjago Tools hat jetzt eine eigene Webseite mit Banner, Download-Button, allen Funktionen, Screenshots aus der App, Preisen und einer 3-Schritte-Anleitung: cft-license.cocotool.workers.dev' },
   { v: '0.25.0', date: '2026-10-17', tag: 'NEU', text: 'Clip des Monats: Im Discord reichst du mit /clip einreichen deinen besten Clip ein (YouTube, TikTok, Twitch, Medal …), die Community stimmt per 👍 ab und /clip top zeigt den Stand. Am 1. des Monats gewinnt der Clip mit den meisten Stimmen den Titel „🎬 Clip des Monats“, den du in der App unter Season-Pass → Dein Titel auswählen kannst' },
   { v: '0.24.0', date: '2026-10-17', tag: 'NEU', vod: 0, text: 'Discord: Neuer Befehl /hilfe beantwortet die 10 häufigsten Fragen (Installation, Discord verbinden, Key kaufen und einlösen, neuer PC, Replays, Fehler, Rangliste und Cup, Season-Pass, Updates). Im Fragen-Kanal gibt es dazu ein Auswahlmenü, die Antwort sieht nur, wer fragt' },

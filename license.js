@@ -187,13 +187,20 @@ function create({ userDataDir, appDir, openExternal, fetchImpl, now = () => Math
   async function ping() {
     const s = load();
     if (!enabled() || !s.session) return;
-    try { await post('/license/ping', { session: s.session, appVersion: appVer() }); } catch (e) { /* offline */ }
+    try { await post('/license/ping', { session: s.session, appVersion: appVer(), ...(prog ? { prog } : {}) }); } catch (e) { /* offline */ }
+  }
+  // Season-Level und Daily-Spin-Streak für die Rollen-Stufe; bei Änderung kurz danach melden
+  let prog = null, progT = 0;
+  function setProg(p) {
+    const n = { level: Math.max(0, Math.round(Number(p && p.level) || 0)), streak: Math.max(0, Math.round(Number(p && p.streak) || 0)) };
+    if (prog && prog.level === n.level && prog.streak === n.streak) return false;
+    prog = n; clearTimeout(progT); progT = setTimeout(ping, 10000); return true;
   }
   let pingTimer;
   function start() { refresh(); ping(); timer = setInterval(refresh, REFRESH_EVERY); pingTimer = setInterval(ping, 5 * 60 * 1000); }
   function stop() { clearInterval(timer); clearInterval(pingTimer); }
 
-  return { season, team, hasEnt, rankSet, rankSync, rankAvg, state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
+  return { setProg, season, team, hasEnt, rankSet, rankSync, rankAvg, state, login, loginCancel, activate, refresh, logout, start, stop, _checkTicket: checkTicket, _dev: dev };
 }
 
 function register(ipcMain, opts) {
@@ -209,6 +216,7 @@ function register(ipcMain, opts) {
   ipcMain.handle('lic-season', (_e, a, b) => L.season(String(a), b));
   ipcMain.handle('lic-team', (_e, a, b) => L.team(String(a), b));
   ipcMain.handle('lic-rank-sync', (_e, stats) => L.rankSync(stats));
+  ipcMain.handle('lic-prog', (_e, p) => L.setProg(p));
   return L;
 }
 

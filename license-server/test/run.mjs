@@ -275,6 +275,24 @@ await T('FAQ: /hilfe Übersicht, Thema direkt, Auswahl privat oder ersetzt', asy
   assert.equal(own.type, 7); assert.match(J(own), /ein Gerät/);
   const cmds = (await import('../src/index.js')).COMMANDS; assert.ok(cmds.find(c => c.name === 'hilfe').options[0].choices.length === 10);
 });
+await T('Rollen-Stufen: Lebenszeichen setzt Stufe, tauscht Rolle, DM beim Aufstieg, /stufe', async () => {
+  const { withCfg } = await import('../src/discord.js'); const e2 = await withCfg(env); const TI = await import('../src/tiers.js');
+  assert.ok(e2.TIER1_ROLE_ID && e2.TIER5_ROLE_ID, 'Stufen-Rollen aus /setup');
+  assert.equal(TI.tierOf(0, 0), 0); assert.equal(TI.tierOf(1, 0), 1); assert.equal(TI.tierOf(0, 7), 2); assert.equal(TI.tierOf(5, 2), 3); assert.equal(TI.tierOf(10, 0), 5); assert.equal(TI.tierOf(2, 30), 5);
+  db.prepare('INSERT OR REPLACE INTO sessions (token_hash,discord_id,username,created_at) VALUES (?,?,?,?)').run(sha('tok-T1'), 'T1', 'Tiny', 1);
+  const ping = prog => post('/license/ping', { session: 'tok-T1', appVersion: '0.27.0', ...(prog ? { prog } : {}) });
+  let r = await ping(); assert.equal(r.status, 200); assert.equal(r.body.tier, undefined); // alte App ohne Werte
+  const d0 = S.dms.length;
+  r = await ping({ level: 2, streak: 4 }); assert.equal(r.body.tier, 1); assert.ok(S.members.T1.roles.includes(e2.TIER1_ROLE_ID));
+  r = await ping({ level: 5, streak: 4 }); assert.equal(r.body.tier, 3);
+  assert.ok(S.members.T1.roles.includes(e2.TIER3_ROLE_ID) && !S.members.T1.roles.includes(e2.TIER1_ROLE_ID), 'alte Stufe entfernt');
+  assert.equal(S.dms.slice(d0).filter(d => d.to === 'T1' && /Neue Stufe/.test(JSON.stringify(d.body))).length, 2);
+  r = await ping({ level: 5, streak: 5 }); assert.equal(r.body.tier, 3); assert.equal(S.dms.slice(d0).filter(d => d.to === 'T1').length, 2, 'keine DM ohne Änderung');
+  r = await ping({ level: 'x', streak: 1 }); assert.equal(r.body.tier, undefined);
+  const st = J(await inter({ type: 2, data: { name: 'stufe' }, member: mem('T1') })); assert.match(st, /Deine Stufe: Gold/); assert.match(st, /Platin/);
+  assert.match(J(await inter({ type: 2, data: { name: 'stufe' }, member: mem('T9') })), /Noch keine Stufe/);
+  assert.ok(!S.members.T1.roles.includes(e2.CUSTOMER_ROLE_ID), 'keine falsche Rolle');
+});
 await T('Landing-Page: Browser bekommen HTML mit Preisen und Download, Checks weiter Text', async () => {
   const h = await worker.fetch(new Request('https://w.dev/', { headers: { accept: 'text/html,application/xhtml+xml' } }), env, ctx);
   assert.equal(h.status, 200); assert.match(h.headers.get('content-type'), /text\/html/);
