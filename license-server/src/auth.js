@@ -3,6 +3,7 @@ import { isCoach, createOrExtendTeam } from './team.js';
 import { seasonId } from './season.js';
 import { now, json, enc, b64u, b642u8, rnd, sha256hex, KEY_RE, normKey } from './util.js';
 import { hasRole, dapi } from './discord.js';
+import { tierUpdate } from './tiers.js';
 import { redeemKey, getKey, pickKey } from './keys.js';
 
 const DISCORD = 'https://discord.com/api/v10';
@@ -137,7 +138,8 @@ export async function licensePing(body, env) {
   const sess = await getSession(env, body.session);
   if (!sess) return json({ ok: false, error: 'session' }, 401);
   await env.DB.prepare('UPDATE sessions SET last_seen=?, app_version=COALESCE(NULLIF(?,\'\'), app_version) WHERE token_hash=?').bind(now(), String(body.appVersion || '').slice(0, 20), sess.token_hash).run();
-  return json({ ok: true });
+  const tier = await tierUpdate(env, sess.discord_id, body.prog).catch(() => null); // Rollen-Stufe
+  return json({ ok: true, ...(tier != null ? { tier } : {}) });
 }
 export async function licenseRefresh(body, env) {
   const sess = await getSession(env, body.session);

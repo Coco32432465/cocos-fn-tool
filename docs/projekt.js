@@ -15,10 +15,11 @@ window.PROJEKT = {
   aufgaben: [
     { status: 'braucht-dich', bereich: 'App', text: 'Tweaks und Fortnite-Grafik einmal auf einem echten Windows-PC testen' },
     { status: 'braucht-dich', bereich: 'App', text: 'Screenshot vom Viewer-HUD schicken (für die HUD-Feinarbeit)' },
-    { status: 'braucht-dich', bereich: 'Discord', text: '/setup mit erneuern: True ausführen, damit Key- und Download-Panel aktuell sind; Bot-Rolle über alle Team-Rollen schieben' },
+    { status: 'braucht-dich', bereich: 'Discord', text: '/setup mit erneuern: True ausführen (neue Kanäle, Panels und Stufen-Rollen); Bot-Rolle über alle Team-Rollen schieben' },
     { status: 'braucht-dich', bereich: 'Server', text: 'Einmal pro Woche D1-Backup (Keys, Verkäufe) exportieren' },
     { status: 'offen', bereich: 'App', text: 'Coach-Notizen: Markierungen und Kommentare im Replay speichern', aufwand: 'L' },
     { status: 'offen', bereich: 'App', text: 'Duo-Synergie: zwei Spieler vergleichen (wer stirbt zuerst, wer rotiert früher)', aufwand: 'L' },
+    { status: 'fertig', bereich: 'Discord', text: 'Rollen-Stufen Bronze bis Diamant nach Season-Level oder Streak (0.27.0)' },
     { status: 'fertig', bereich: 'Werbung', text: 'Landing-Page mit Download, Screenshots und Preisen (0.26.0)' },
     { status: 'fertig', bereich: 'Discord', text: 'Clip des Monats mit Abstimmung und Titel in der App (0.25.0)' },
     { status: 'fertig', bereich: 'Discord', text: 'FAQ-Bot: /hilfe und Auswahlmenü im Fragen-Kanal (0.24.0)' },
@@ -40,7 +41,6 @@ window.PROJEKT = {
     { bereich: 'App', titel: 'Gegner-Scouting', text: 'Spielweise der Gegner in Zone 4 aus einem Replay zusammenfassen', aufwand: 'L' },
     { bereich: 'App', titel: 'Daily-Spin-Erweiterung', text: 'Seltene Gewinne wie Farbschema, Titel oder Bonustag (Server nötig)', aufwand: 'M' },
     { bereich: 'Discord', titel: 'Replay-Feedback-Abend', text: 'Einmal pro Woche Zuschauer-Replays live reviewen', aufwand: 'S' },
-    { bereich: 'Discord', titel: 'Rollen-Stufen', text: 'Rolle nach Streak oder Level (Bronze bis Diamant)', aufwand: 'M' },
     { bereich: 'Werbung', titel: 'Vorher/Nachher-Clips', text: 'Clips aus echten Reviews für TikTok und Twitch', aufwand: 'S' },
     { bereich: 'Werbung', titel: 'Creator-Rolle', text: 'Streamer bekommen einen Gratis-Key gegen Erwähnung', aufwand: 'S' }
   ]

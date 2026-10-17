@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('fn', {
   rankSet: (on, stats) => ipcRenderer.invoke('lic-rank-set', on, stats),
   rankAvg: () => ipcRenderer.invoke('lic-rank-avg'),
   rankSync: (stats) => ipcRenderer.invoke('lic-rank-sync', stats),
+  progSet: (p) => ipcRenderer.invoke('lic-prog', p),
   season: (a, b) => ipcRenderer.invoke('lic-season', a, b),
   team: (a, b) => ipcRenderer.invoke('lic-team', a, b),
   pcScan: (o) => ipcRenderer.invoke('pc-scan', o),

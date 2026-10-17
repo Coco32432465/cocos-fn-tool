@@ -356,7 +356,7 @@
     store.set('cft_unl', u); return u;
   }
   window.cftSeasonRefresh = function () {
-    try { saveUnlocks(seasonState()); } catch (e) { /* ohne Season weiter */ }
+    try { var sn = seasonState(); saveUnlocks(sn); if (window.fn && window.fn.progSet) window.fn.progSet({ level: sn.level, streak: ST.spinState(store.get('cft_spin')).streak }); } catch (e) { /* ohne Season weiter */ }
     if (!SN.entsLoaded && window.fn && window.fn.licState) { SN.entsLoaded = true; window.fn.licState().then(function (l) { if (l && l.ents) { SN.ents = l.ents; try { saveUnlocks(seasonState()); } catch (e) { /* egal */ } } }, function () { SN.entsLoaded = false; }); }
   };
   function seasonStyle() {
@@ -587,7 +587,7 @@
         var k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 4);
         wh.style.transform = 'rotate(' + (end * e) + 'deg)';
         if (k < 1) { SPN.raf = requestAnimationFrame(step); return; }
-        store.set('cft_spin', r.state); SPN.busy = false;
+        store.set('cft_spin', r.state); SPN.busy = false; if (window.cftSeasonRefresh) window.cftSeasonRefresh();
         if (window.cftRankSync) { try { window.cftRankSync(); } catch (x) { /* egal */ } }
         if ($('spgo')) renderSpin(w, true);
       })(t0);

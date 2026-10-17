@@ -22,6 +22,12 @@ const ROLES = [
   { name: 'Content Creator', key: 'creator_role', color: 0xff6ec7, hoist: true, perms: '0' },
   { name: 'Customer', key: 'customer_role', color: 0x2ecc71, hoist: true, perms: '0' },
   { name: 'Top 10', key: 'rank_role', color: 0xf1c40f, hoist: true, perms: '0' }, // vergibt der Bot automatisch an die Rangliste
+  // Rollen-Stufen: vergibt der Bot automatisch nach Season-Level oder Daily-Spin-Streak
+  { name: '🥉 Bronze', key: 'tier1_role', color: 0xcd7f32, hoist: false, perms: '0' },
+  { name: '🥈 Silber', key: 'tier2_role', color: 0xc0c0c0, hoist: false, perms: '0' },
+  { name: '🥇 Gold', key: 'tier3_role', color: 0xf1c40f, hoist: false, perms: '0' },
+  { name: '💠 Platin', key: 'tier4_role', color: 0x4fd1c5, hoist: false, perms: '0' },
+  { name: '💎 Diamant', key: 'tier5_role', color: 0x5dade2, hoist: true, perms: '0' },
   { name: 'Tester', key: 'tester_role', color: 0xf1c40f, hoist: false, perms: '0' },
   { name: 'Member', key: 'member_role', color: 0x8ea0c0, hoist: false, perms: '0' },
   { name: 'User', key: 'user_role', color: 0x5c97ff, hoist: false, perms: '0' } // Zugangs-Rolle: ohne sie sieht man keine Kanaele
