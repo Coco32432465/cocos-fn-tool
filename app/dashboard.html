@@ -605,6 +605,9 @@ main .center>.slider{flex:1 1 200px;min-height:170px;max-height:min(34vh,320px);
 .mkb{font-size:16px;color:#f1c40f;width:auto;padding:0 12px}.mkd.usr{background:#f1c40f;border-radius:3px;width:9px;height:14px;top:-1px;margin-left:-4px;--c:#f1c40f}.mkd{position:absolute;top:2px;width:11px;height:11px;margin-left:-5px;border-radius:50%;border:1px solid #0A0A0C;background:var(--c);box-shadow:0 0 8px var(--c);transition:transform .15s;padding:0}
 .mkd:hover{transform:scale(1.6);z-index:2}
 .mkd.usr.nt{background:#4ade80;--c:#4ade80}
+.rpane>.panel.sct{flex:1.3 1 0}.sctz{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:13px;color:var(--mute)}.sctz button{font:700 12px 'Orbitron',sans-serif;min-width:30px;padding:5px 8px;border-radius:7px;border:1px solid #ffffff22;color:var(--mute);background:none;cursor:pointer}.sctz button.on{border-color:var(--acc);color:#fff;background:rgba(var(--rgb),.2)}.sctz small{margin-left:auto}
+.sctk{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}.sctk div{background:#0c0c11;border:1px solid #ffffff14;border-radius:9px;padding:7px 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}.sctk b{display:block;font:800 18px 'Orbitron',sans-serif;color:#fff;letter-spacing:0}
+.sct p{font-size:14px;line-height:1.45;margin:0 0 6px}.sctt{margin-top:8px;padding:9px 11px;border-radius:9px;background:rgba(var(--rgb),.1);border-left:3px solid var(--acc)}.sctt b{display:block;font:700 12px Rajdhani,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--acc-light,var(--acc));margin-bottom:4px}
 .nts h2 small{font:600 12px Rajdhani,sans-serif;letter-spacing:.08em;color:var(--mute);margin-left:6px}
 .ntf{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.ntf label{font-size:13px;color:var(--mute)}.ntf label b{color:var(--acc-light,var(--acc));font-family:'Orbitron',sans-serif}
 .nts textarea{width:100%;min-height:64px;resize:vertical;background:#0c0c11;border:1px solid #ffffff1c;border-radius:10px;color:#fff;font:500 15px Rajdhani,sans-serif;padding:8px 10px}.nts textarea:focus{outline:none;border-color:var(--acc)}
@@ -1036,7 +1039,7 @@ header .mbtn{margin-right:14px}
 
     </section>
     <aside class="vr">
-      <div class="rtabs" id="rtabs" role="tablist"><button class="on" data-p="an" role="tab">Analyse</button><button data-p="fd" role="tab">Feed</button><button data-p="fi" role="tab">Fights</button><button data-p="gm" role="tab">Games</button><button data-p="nt" role="tab">Notizen</button></div>
+      <div class="rtabs" id="rtabs" role="tablist"><button class="on" data-p="an" role="tab">Analyse</button><button data-p="fd" role="tab">Feed</button><button data-p="fi" role="tab" title="Fight-Analyse und Gegner-Scouting">Fights</button><button data-p="gm" role="tab">Games</button><button data-p="nt" role="tab">Notizen</button></div>
       <div class="rpane" data-p="an">
         <section class="panel la"><h2 class="disp">Live Analysis</h2><div id="la"></div></section>
         <section class="panel"><h2 class="disp">Phasen-Bewertung</h2><div class="phs" id="phs"></div></section>
@@ -1046,6 +1049,7 @@ header .mbtn{margin-right:14px}
       </div>
       <div class="rpane" data-p="fi" hidden>
         <section class="panel"><h2 class="disp">Fight-Analyse</h2><div class="fsum" id="fsum"></div><ul class="fl" id="fl"></ul></section>
+        <section class="panel sct" id="sctp" hidden><h2 class="disp">Gegner-Scouting</h2><div class="sctz" id="sctz"></div><div id="sct"></div></section>
       </div>
       <div class="rpane" data-p="nt" hidden>
         <section class="panel nts"><h2 class="disp">Coach-Notizen <small id="ntn"></small></h2>
@@ -1498,6 +1502,14 @@ function mkList(){return CFT.stats.marksNorm(mkAll()[mkKey()])}
 function mkSave(l){try{var a=mkAll();if(l.length)a[mkKey()]=l;else delete a[mkKey()];localStorage.setItem('cft_marks',JSON.stringify(a))}catch(e){}}
 function renderMarks(){var box=$('mks');[].forEach.call(box.querySelectorAll('.usr'),function(n){n.remove()});mkList().forEach(function(m,i){var t=m.t,b=document.createElement('button');b.className='mkd usr'+(m.txt?' nt':'');b.setAttribute('aria-label','Marker '+(i+1)+' bei '+fmt(t)+(m.txt?': '+m.txt:''));b.title=(m.txt?fmt(t)+' · '+m.txt:'Marker '+(i+1)+' · '+fmt(t))+' (Rechtsklick löscht)';b.style.left='calc(9px + (100% - 18px)*'+(t/DUR)+')';b.onclick=function(){seek(Math.max(0,t-3))};b.oncontextmenu=function(e){e.preventDefault();var l=mkList();l.splice(i,1);mkSave(l);renderMarks();window.toast('Marker gelöscht')};box.appendChild(b)});renderNotes()}
 function addMark(){var l=mkList(),t=Math.round(V.t);if(l.some(function(x){return Math.abs(x.t-t)<2}))return window.toast('Hier ist schon ein Marker');l=CFT.stats.marksSet(l,t,'');mkSave(l);renderMarks();window.toast('Marker '+(l.map(function(x){return x.t}).indexOf(t)+1)+' bei '+fmt(t)+' gesetzt')}
+/* Gegner-Scouting: wie haben die Gegner in einer Zone gespielt? */
+var SCZ=4,SCR=null;
+function renderScout(R0){var R=R0&&R0.zones?R0:curM&&curM.real,box=$('sctp');SCR=R;if(!box)return;var Zs=R?CFT.stats.scoutZones(R):[];box.hidden=!Zs.length;if(!Zs.length)return;
+ var z=Zs.indexOf(SCZ)>=0?SCZ:Zs.indexOf(4)>=0?4:Zs[Zs.length-1],c=CFT.stats.scout(R,z),tx=CFT.stats.scoutText(c);
+ $('sctz').innerHTML='<span>Zone</span>'+Zs.map(function(n){return '<button data-z="'+n+'" class="'+(n===z?'on':'')+'">'+n+'</button>'}).join('')+(c?'<small>'+fmt(c.s)+' – '+fmt(c.e)+'</small>':'');
+ $('sct').innerHTML=c?'<div class="sctk"><div><b>'+c.alive+'</b>Gegner</div><div><b>'+c.mid+'</b>Mitte</div><div><b>'+c.edge+'</b>Rand</div><div><b>'+c.storm+'</b>Sturm</div></div>'+tx.lines.map(function(l){return '<p>'+esc(l)+'</p>'}).join('')+(tx.tips.length?'<div class="sctt"><b>So spielst du dagegen</b>'+tx.tips.map(function(t){return '<p>'+esc(t)+'</p>'}).join('')+'</div>':''):'<p>Für diese Zone gibt es keine Daten.</p>';
+ [].forEach.call($('sctz').querySelectorAll('button'),function(b){b.onclick=function(){SCZ=+b.dataset.z;renderScout(SCR)}})}
+window.cftScout=renderScout;
 /* Coach-Notizen: Marker mit Kommentar, Tab „Notizen“ rechts im Viewer */
 var NTE=-1;
 function renderNotes(){var box=$('ntl');if(!box)return;var L=mkList();$('ntat').textContent=fmt(Math.round(V.t||0));$('ntn').textContent=L.length?L.length+(L.length===1?' Notiz':' Notizen'):'';
@@ -1515,7 +1527,7 @@ window.openViewer=function(i){
  setTimeout(function(){
   V.pin=null;V.t=0;V.sp=1;V.zoom=1;V.cx=V.cy=.5;V.follow=false;zUI();cur=-2;curM=m;build(m);feed();fightsUI(m);grades(m);hideMis();HUDC={};if(!GEN)GEN=genMap();if(MAP_SRC&&!MAPIMG)setImg(MAP_SRC);
   [].forEach.call($('spds').children,function(b){b.classList.toggle('on',b.dataset.s==='1')});
-  V.map=!(m.real&&m.real.meta&&m.real.meta.mapOn===false);$('mb').textContent=V.map?'Karte ausblenden':'Karte anzeigen';$('vt').textContent=m.n;V.m=m;window.__lastM=m;V.laK=null;renderLeft();scoreUpd();
+  V.map=!(m.real&&m.real.meta&&m.real.meta.mapOn===false);$('mb').textContent=V.map?'Karte ausblenden':'Karte anzeigen';$('vt').textContent=m.n;V.m=m;window.__lastM=m;V.laK=null;renderLeft();scoreUpd();renderScout(m.real);
   $('vs').textContent=m.real?(m.pl>0?'Platz #'+m.pl+' · ':'')+m.k+' Elims · '+m.real.nPlayers+' Spieler'+(m.real.meta.landPoi?' · gelandet: '+m.real.meta.landPoi:'')+(m.real.meta.mode?' · '+m.real.meta.mode:''):'Platz #'+m.pl+' · '+m.pts+' Pkt · '+m.k+' Elims';
   $('status').classList.toggle('real',!!m.real);$('mc').hidden=!m.real;$('cal').hidden=true;$('mg').textContent=m.g;$('mg').className=gc[m.g];
   $('sc').max=DUR;document.body.classList.remove('rp');document.body.classList.add('vw');size();setPlay(true);last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
