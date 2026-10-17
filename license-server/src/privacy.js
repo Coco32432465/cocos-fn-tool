@@ -32,7 +32,7 @@ export const askDelete = env => ({ type: 4, data: { flags: 64, embeds: [emb(env,
 
 export async function doDelete(i, env, uid) {
   for (const [sql, ...b] of [
-    ['DELETE FROM sessions WHERE discord_id=?', uid], ['DELETE FROM logins WHERE discord_id=?', uid], ['DELETE FROM ranks WHERE discord_id=?', uid], ['DELETE FROM cup WHERE discord_id=?', uid], ['DELETE FROM team_members WHERE user_id=?', uid],
+    ['DELETE FROM sessions WHERE discord_id=?', uid], ['DELETE FROM logins WHERE discord_id=?', uid], ['DELETE FROM ranks WHERE discord_id=?', uid], ['DELETE FROM cup WHERE discord_id=?', uid], ['DELETE FROM clip_votes WHERE user_id=?', uid], ['DELETE FROM team_members WHERE user_id=?', uid],
     ['DELETE FROM poll_votes WHERE user_id=?', uid], ['DELETE FROM gw_entries WHERE user_id=?', uid], ['DELETE FROM reminders WHERE user_id=?', uid],
     ['UPDATE keys SET last_seen=NULL WHERE discord_id=?', uid]]) { await env.DB.prepare(sql).bind(...b).run().catch(() => {}); }
   return { type: 7, data: { embeds: [emb(env, { title: '✅ Daten gelöscht', color: COL.ok, desc: 'App-Verbindungen, Rangliste, Stimmen, Giveaway-Teilnahmen und Erinnerungen sind entfernt. Für ein Ticket-Transkript oder weitere Anliegen öffne bitte ein Support-Ticket.' })], components: [] } };

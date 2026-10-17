@@ -14,6 +14,7 @@ import { getCfg, setCfg, dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, 
 import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statusOf, expireSweep } from './keys.js';
 import { openEventModal, submitEvent, eventButton, eventSweep, weeklySweep, newsletterSweep } from './community.js';
 import { handleHilfe, faqPick, FAQ_CHOICES } from './faq.js';
+import { handleClip, voteClip, clipSweep } from './clip.js';
 import { startTrial, welcomeDM, rate, openRewardModal, submitReward } from './growth.js';
 import { openTicket, selectPlan, closeTicket, confirmTicket, codeButton, submitCode } from './tickets.js';
 import { ensureSchema } from './schema.js';
@@ -61,6 +62,9 @@ const COMMANDS = [
     { type: 1, name: 'liste', description: 'Deine offenen Erinnerungen' },
     { type: 1, name: 'löschen', description: 'Erinnerung löschen', options: [{ type: 4, name: 'id', description: 'ID aus /erinnerung liste', required: true }] }] },
   { name: 'tipp', description: 'Zufälliger Pro-Tipp' },
+  { name: 'clip', description: 'Clip des Monats', options: [
+    { type: 1, name: 'einreichen', description: 'Deinen Clip einreichen', options: [{ type: 3, name: 'link', description: 'Link (YouTube, TikTok, Twitch, Medal …)', required: true }, { type: 3, name: 'titel', description: 'Kurzer Titel', required: false, max_length: 80 }] },
+    { type: 1, name: 'top', description: 'Aktuelle Top 5 des Monats' }] },
   { name: 'hilfe', description: 'Antworten auf die häufigsten Fragen', options: [{ type: 3, name: 'thema', description: 'Direkt zu einem Thema', required: false, choices: FAQ_CHOICES }] },
   { name: 'datenschutz', description: 'Deine gespeicherten Daten ansehen und löschen' },
   { name: 'event', description: 'Team: Event oder Scrim im Kalender anlegen (Formular)', options: [] },
@@ -161,6 +165,7 @@ async function handleInteraction(i, env, ctx) {
     if (/^event_(yes|no):\d+$/.test(id)) return eventButton(i, env, uid, id.startsWith('event_yes'), id.split(':')[1]);
     if (id === 'trial_start') return startTrial(i, env, uid);
     if (id === 'faq_pick') return faqPick(i, env);
+    if (/^clip_vote:\d+$/.test(id)) return voteClip(i, env, uid, id.split(':')[1]);
     if (id.startsWith('rate:')) { const [, n, ch] = id.split(':'); return rate(i, env, uid, n, ch); }
     if (id === 'ticket_close') return closeTicket(i, env, ctx, uid);
     if (id === 'ticket_confirm') return confirmTicket(i, env, uid);
@@ -238,6 +243,7 @@ async function handleInteraction(i, env, ctx) {
     if (name === 'key') return handleKey(i, env, ctx, uid);
     if (name === 'rank') return handleRank(i, env, uid);
     if (name === 'hilfe') return handleHilfe(i, env);
+    if (name === 'clip') return handleClip(i, env, uid);
     if (name === 'giveaway') return handleGiveaway(i, env, uid);
     if (name === 'team') return handleTeam(i, env);
     if (['umfrage', 'lfg', 'erinnerung', 'tipp'].includes(name)) return handleFun(i, env, uid);
@@ -358,7 +364,7 @@ export default {
       if (cron === '* * * * *') { await safe(() => endSweep(env)); await safe(() => pollSweep(env)); await safe(() => reminderSweep(env)); await safe(() => eventSweep(env)); if (Math.floor(Date.now() / 60000) % 5 === 0) await safe(() => syncStats(env)); }
       else if (cron === '15,45 * * * *') { await safe(() => syncPatchnotes(env)); await safe(() => syncStatus(env)); }
       else if (cron === '30 * * * *') await safe(() => syncRank(env));
-      else { await expireSweep(env, notifyExpired(env)); await safe(() => remindSweep(env)); await safe(() => weeklySweep(env)); await safe(() => newsletterSweep(env)); await safe(() => endSweep(env)); await cleanup(env0); }
+      else { await expireSweep(env, notifyExpired(env)); await safe(() => remindSweep(env)); await safe(() => weeklySweep(env)); await safe(() => clipSweep(env)); await safe(() => newsletterSweep(env)); await safe(() => endSweep(env)); await cleanup(env0); }
     })());
   }
 };

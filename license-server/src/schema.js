@@ -1,7 +1,7 @@
 // Selbst-Migration: neue Tabellen/Spalten werden beim ersten Aufruf automatisch angelegt (kein manueller Schritt noetig).
 import { getCfg, setCfg } from './discord.js';
 
-const SCHEMA_V = '14';
+const SCHEMA_V = '15';
 const STEPS = [
   'ALTER TABLE tickets ADD COLUMN code TEXT',
   `CREATE TABLE IF NOT EXISTS codes (code TEXT PRIMARY KEY, owner TEXT NOT NULL, created_at INTEGER NOT NULL, uses INTEGER NOT NULL DEFAULT 0, earned_days REAL NOT NULL DEFAULT 0)`,
@@ -49,7 +49,10 @@ const STEPS = [
   'ALTER TABLE codes ADD COLUMN owner_week REAL',
   'ALTER TABLE codes ADD COLUMN owner_month REAL',
   `CREATE TABLE IF NOT EXISTS cup (discord_id TEXT NOT NULL, week TEXT NOT NULL, name TEXT, games INTEGER NOT NULL DEFAULT 0, score REAL NOT NULL DEFAULT 0, best INTEGER, wins INTEGER NOT NULL DEFAULT 0, kills INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL, PRIMARY KEY (discord_id, week))`,
-  'CREATE INDEX IF NOT EXISTS cup_week ON cup(week, score DESC)'
+  'CREATE INDEX IF NOT EXISTS cup_week ON cup(week, score DESC)',
+  `CREATE TABLE IF NOT EXISTS clips (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, url TEXT NOT NULL, title TEXT, month TEXT NOT NULL, channel_id TEXT, message_id TEXT, status TEXT NOT NULL DEFAULT 'open', created_at INTEGER NOT NULL)`,
+  'CREATE INDEX IF NOT EXISTS clips_month ON clips(month)',
+  `CREATE TABLE IF NOT EXISTS clip_votes (clip_id INTEGER NOT NULL, user_id TEXT NOT NULL, PRIMARY KEY (clip_id, user_id))`
 ];
 
 let done = false;

@@ -352,10 +352,13 @@
   }
   function saveUnlocks(sn) { // Kosmetik bleibt dauerhaft freigeschaltet, auch nach Season-Ende
     var c = ST.passCosmetics(sn.level, sn.premium), u = store.get('cft_unl') || { themes: [], titles: [] };
-    c.themes.forEach(function (x) { if (u.themes.indexOf(x) < 0) u.themes.push(x); }); c.titles.forEach(function (x) { if (u.titles.indexOf(x) < 0) u.titles.push(x); });
+    c.themes.forEach(function (x) { if (u.themes.indexOf(x) < 0) u.themes.push(x); }); c.titles.concat(ST.entTitles(SN.ents)).forEach(function (x) { if (u.titles.indexOf(x) < 0) u.titles.push(x); });
     store.set('cft_unl', u); return u;
   }
-  window.cftSeasonRefresh = function () { try { saveUnlocks(seasonState()); } catch (e) { /* ohne Season weiter */ } };
+  window.cftSeasonRefresh = function () {
+    try { saveUnlocks(seasonState()); } catch (e) { /* ohne Season weiter */ }
+    if (!SN.entsLoaded && window.fn && window.fn.licState) { SN.entsLoaded = true; window.fn.licState().then(function (l) { if (l && l.ents) { SN.ents = l.ents; try { saveUnlocks(seasonState()); } catch (e) { /* egal */ } } }, function () { SN.entsLoaded = false; }); }
+  };
   function seasonStyle() {
     if (document.getElementById('sncss')) return;
     var st = document.createElement('style'); st.id = 'sncss';

@@ -275,6 +275,37 @@ await T('FAQ: /hilfe Übersicht, Thema direkt, Auswahl privat oder ersetzt', asy
   assert.equal(own.type, 7); assert.match(J(own), /ein Gerät/);
   const cmds = (await import('../src/index.js')).COMMANDS; assert.ok(cmds.find(c => c.name === 'hilfe').options[0].choices.length === 10);
 });
+await T('Clip des Monats: einreichen, abstimmen, Limit, Auswertung mit Titel', async () => {
+  const { withCfg } = await import('../src/discord.js'); const e2 = await withCfg(env); const CL = await import('../src/clip.js');
+  assert.ok(e2.CLIP_CHANNEL_ID, 'Clip-Kanal aus /setup');
+  const sub = (who, link, titel) => inter({ type: 2, data: { name: 'clip', options: [{ type: 1, name: 'einreichen', options: [{ name: 'link', value: link }, ...(titel ? [{ name: 'titel', value: titel }] : [])] }] }, member: mem(who) });
+  assert.match(J(await sub('C1', 'http://youtube.com/x')), /Link nicht erkannt/);
+  assert.match(J(await sub('C1', 'https://evil.example/clip')), /Link nicht erkannt/);
+  assert.match(J(await sub('C1', 'https://www.youtube.com/watch?v=abc', 'Sauberer 1v3')), /Clip eingereicht/);
+  assert.match(J(await sub('C2', 'https://www.youtube.com/watch?v=abc')), /Schon eingereicht/);
+  assert.match(J(await sub('C1', 'https://clips.twitch.tv/Foo')), /Clip eingereicht/);
+  assert.match(J(await sub('C1', 'https://www.tiktok.com/@x/video/1')), /Limit erreicht/);
+  assert.match(J(await sub('C2', 'https://medal.tv/games/fortnite/clips/1')), /Clip eingereicht/);
+  const [c1, , c3] = db.prepare('SELECT * FROM clips ORDER BY id').all(); assert.ok(c1.message_id);
+  const post = S.msgs[e2.CLIP_CHANNEL_ID].find(m => m.id === c1.message_id); assert.match(post.content, /youtube\.com/); assert.equal(post.components[0].components[0].custom_id, 'clip_vote:' + c1.id);
+  const vote = (who, c) => inter({ type: 3, data: { custom_id: 'clip_vote:' + c.id }, member: mem(who) });
+  assert.match(J(await vote('C1', c1)), /Eigener Clip/);
+  let v = await vote('V1', c1); assert.equal(v.type, 7); assert.match(J(v), /Stimme · 1/);
+  v = await vote('V2', c1); assert.match(J(v), /Stimme · 2/);
+  v = await vote('V2', c1); assert.match(J(v), /Stimme · 1/); // zurückgenommen
+  await vote('V3', c1); await vote('V1', c3);
+  assert.match(J(await inter({ type: 2, data: { name: 'clip', options: [{ type: 1, name: 'top' }] }, member: mem('V1') })), /1\.\*\* \[Sauberer 1v3\]/);
+  // Auswertung am 1. des Folgemonats 10:30 deutscher Zeit
+  const [y, mo] = c1.month.split('-').map(Number), first = Date.UTC(mo === 12 ? y + 1 : y, mo % 12, 1, 9, 30) / 1000;
+  assert.equal(await CL.clipSweep(e2, first - 3600 * 2), undefined); // vor 10 Uhr
+  const d0 = S.dms.length;
+  assert.equal(await CL.clipSweep(e2, first), 'C1'); assert.equal(await CL.clipSweep(e2, first + 3600), undefined);
+  assert.ok(db.prepare("SELECT 1 FROM entitlements WHERE user_id='C1' AND ent='title:clip'").get(), 'Titel freigeschaltet');
+  assert.ok(S.dms.slice(d0).some(d => d.to === 'C1' && /Clip des Monats/.test(JSON.stringify(d.body))));
+  assert.equal(db.prepare("SELECT status FROM clips WHERE id=?").get(c1.id).status, 'won');
+  assert.ok(S.msgs[e2.CLIP_CHANNEL_ID].find(m => m.id === c1.message_id).components[0].components[0].disabled, 'Buttons gesperrt');
+  assert.ok(CL.clipUrl('https://youtu.be/x') && CL.clipUrl('https://m.youtube.com/shorts/x') && !CL.clipUrl('https://youtube.com.evil.io/x'));
+});
 await T('Wochen-Cup: Werte mit /rank/submit, Tabelle im Kanal, /rank cup, austragen löscht', async () => {
   const e2 = await (await import('../src/discord.js')).withCfg(env);
   db.prepare('DELETE FROM cup').run();
