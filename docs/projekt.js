@@ -19,6 +19,7 @@ window.PROJEKT = {
     { status: 'braucht-dich', bereich: 'Server', text: 'Einmal pro Woche D1-Backup (Keys, Verkäufe) exportieren' },
     { status: 'offen', bereich: 'App', text: 'Coach-Notizen: Markierungen und Kommentare im Replay speichern', aufwand: 'L' },
     { status: 'offen', bereich: 'App', text: 'Duo-Synergie: zwei Spieler vergleichen (wer stirbt zuerst, wer rotiert früher)', aufwand: 'L' },
+    { status: 'fertig', bereich: 'Discord', text: 'FAQ-Bot: /hilfe und Auswahlmenü im Fragen-Kanal (0.24.0)' },
     { status: 'fertig', bereich: 'App', text: 'Benachrichtigungen: Daily-Spin-Erinnerung und Update-Hinweis (0.23.0)' },
     { status: 'fertig', bereich: 'Discord', text: 'Wöchentlicher Cup mit Live-Tabelle, /rank cup und 7 Bonustagen für Platz 1 (0.22.0)' },
     { status: 'fertig', bereich: 'Discord', text: 'Willkommens-DM nach den Regeln und SmartScreen-Hinweis im #download-Panel (0.21.0)' },
@@ -39,7 +40,6 @@ window.PROJEKT = {
     { bereich: 'Discord', titel: 'Clip des Monats', text: 'Clips mit Abstimmung, Gewinner bekommt Titel in der App', aufwand: 'S' },
     { bereich: 'Discord', titel: 'Replay-Feedback-Abend', text: 'Einmal pro Woche Zuschauer-Replays live reviewen', aufwand: 'S' },
     { bereich: 'Discord', titel: 'Rollen-Stufen', text: 'Rolle nach Streak oder Level (Bronze bis Diamant)', aufwand: 'M' },
-    { bereich: 'Discord', titel: 'FAQ-Bot', text: '/hilfe beantwortet die 10 häufigsten Fragen', aufwand: 'S' },
     { bereich: 'Werbung', titel: 'Landing-Page', text: 'Eine Seite mit Banner, Download, Preisen und Screenshots', aufwand: 'M' },
     { bereich: 'Werbung', titel: 'Vorher/Nachher-Clips', text: 'Clips aus echten Reviews für TikTok und Twitch', aufwand: 'S' },
     { bereich: 'Werbung', titel: 'Creator-Rolle', text: 'Streamer bekommen einen Gratis-Key gegen Erwähnung', aufwand: 'S' }

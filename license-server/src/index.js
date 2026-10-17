@@ -13,6 +13,7 @@ import { sha256hex, json, now, emb, eph, bad, noPerm, COL, PLANS, PLAN_ALL, fmtD
 import { getCfg, setCfg, dapi, addRole, delRole, tryDM, verifyDiscord, withCfg, isAdmin, isTeam, isCodeManager } from './discord.js';
 import { createKeys, redeemKey, bestKey, revokeKey, resetDevice, listKeys, statusOf, expireSweep } from './keys.js';
 import { openEventModal, submitEvent, eventButton, eventSweep, weeklySweep, newsletterSweep } from './community.js';
+import { handleHilfe, faqPick, FAQ_CHOICES } from './faq.js';
 import { startTrial, welcomeDM, rate, openRewardModal, submitReward } from './growth.js';
 import { openTicket, selectPlan, closeTicket, confirmTicket, codeButton, submitCode } from './tickets.js';
 import { ensureSchema } from './schema.js';
@@ -60,6 +61,7 @@ const COMMANDS = [
     { type: 1, name: 'liste', description: 'Deine offenen Erinnerungen' },
     { type: 1, name: 'löschen', description: 'Erinnerung löschen', options: [{ type: 4, name: 'id', description: 'ID aus /erinnerung liste', required: true }] }] },
   { name: 'tipp', description: 'Zufälliger Pro-Tipp' },
+  { name: 'hilfe', description: 'Antworten auf die häufigsten Fragen', options: [{ type: 3, name: 'thema', description: 'Direkt zu einem Thema', required: false, choices: FAQ_CHOICES }] },
   { name: 'datenschutz', description: 'Deine gespeicherten Daten ansehen und löschen' },
   { name: 'event', description: 'Team: Event oder Scrim im Kalender anlegen (Formular)', options: [] },
   { name: 'belohnung', description: 'Team: Bonus-Tage als Belohnung vergeben (Formular)', options: [] },
@@ -158,6 +160,7 @@ async function handleInteraction(i, env, ctx) {
     if (id === 'ticket_plan') return selectPlan(i, env, uid);
     if (/^event_(yes|no):\d+$/.test(id)) return eventButton(i, env, uid, id.startsWith('event_yes'), id.split(':')[1]);
     if (id === 'trial_start') return startTrial(i, env, uid);
+    if (id === 'faq_pick') return faqPick(i, env);
     if (id.startsWith('rate:')) { const [, n, ch] = id.split(':'); return rate(i, env, uid, n, ch); }
     if (id === 'ticket_close') return closeTicket(i, env, ctx, uid);
     if (id === 'ticket_confirm') return confirmTicket(i, env, uid);
@@ -234,6 +237,7 @@ async function handleInteraction(i, env, ctx) {
     }
     if (name === 'key') return handleKey(i, env, ctx, uid);
     if (name === 'rank') return handleRank(i, env, uid);
+    if (name === 'hilfe') return handleHilfe(i, env);
     if (name === 'giveaway') return handleGiveaway(i, env, uid);
     if (name === 'team') return handleTeam(i, env);
     if (['umfrage', 'lfg', 'erinnerung', 'tipp'].includes(name)) return handleFun(i, env, uid);

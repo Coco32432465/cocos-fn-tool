@@ -264,6 +264,17 @@ await T('Rangliste: Opt-in per Sitzung, Top 10, Rolle, /rank ich + austragen', a
   await worker.scheduled({ cron: '30 * * * *' }, env, ctx); await flush();
   assert.ok(!S.members.U7.roles.includes(e2.RANK_ROLE_ID));
 });
+await T('FAQ: /hilfe Übersicht, Thema direkt, Auswahl privat oder ersetzt', async () => {
+  const o = await inter({ type: 2, data: { name: 'hilfe' }, member: mem('U1') });
+  assert.equal(o.data.flags, 64); assert.match(J(o), /Häufige Fragen/); assert.equal(o.data.components[0].components[0].options.length, 10);
+  const k = await inter({ type: 2, data: { name: 'hilfe', options: [{ name: 'thema', value: 'kaufen' }] }, member: mem('U1') });
+  assert.match(J(k), /5 €/); assert.match(J(k), /15 €/);
+  const pub = await inter({ type: 3, data: { custom_id: 'faq_pick', component_type: 3, values: ['download'] }, message: { flags: 0 }, member: mem('U1') });
+  assert.equal(pub.type, 4); assert.equal(pub.data.flags, 64); assert.match(J(pub), /Trotzdem ausführen/);
+  const own = await inter({ type: 3, data: { custom_id: 'faq_pick', component_type: 3, values: ['geraet'] }, message: { flags: 64 }, member: mem('U1') });
+  assert.equal(own.type, 7); assert.match(J(own), /ein Gerät/);
+  const cmds = (await import('../src/index.js')).COMMANDS; assert.ok(cmds.find(c => c.name === 'hilfe').options[0].choices.length === 10);
+});
 await T('Wochen-Cup: Werte mit /rank/submit, Tabelle im Kanal, /rank cup, austragen löscht', async () => {
   const e2 = await (await import('../src/discord.js')).withCfg(env);
   db.prepare('DELETE FROM cup').run();
